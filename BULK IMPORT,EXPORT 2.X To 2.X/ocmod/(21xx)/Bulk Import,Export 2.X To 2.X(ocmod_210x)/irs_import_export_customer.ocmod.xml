@@ -1,0 +1,729 @@
+<modification>
+    <name>irs_import_export_customer</name>
+    <version>1.1</version>
+    <author>IRSSOFT</author>
+    <code>irs_import_export_customer</code>
+    <link>www.irssoft.com</link>
+<!--Customer Import-->
+<file path="admin/language/english/sale/customer.php">
+        <operation>
+            <search><![CDATA[$_['heading_title']         = 'Customers';]]></search>
+            <add position="after"><![CDATA[$_['button_import']                = 'Import';
+$_['button_export']                = 'Export';]]></add>
+        </operation>
+    </file>
+
+<file path="admin/controller/customer/customer.php">
+        <operation>
+            <search><![CDATA[$data['delete'] = $this->url->link('customer/customer/delete', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></search>
+            <add position="after"><![CDATA[$data['button_import'] = $this->language->get('button_import');
+        $data['import'] = $this->url->link('customer/customer/import', 'token=' . $this->session->data['token'] . $url, 'SSL');
+$data['button_export'] = $this->language->get('button_export');
+	$data['export'] = $this->url->link('customer/customer/customers_export', 'token=' . $this->session->data['token']. $url, 'SSL');
+]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[protected function validateForm() {]]></search>
+            <add position="before"><![CDATA[public function import() {     
+    
+        $excel_field_error = 0;
+		
+        $_SESSION['customerlist']=array();
+
+        $this->load->language('customer/customer');
+        //$this->load->model('customer/customer');
+
+        $data['heading_title'] = "Import Customer Data";
+
+        $data['entry_import'] = $this->language->get('Upload CSV File');
+
+        $data['entry_insertonly'] = $this->language->get('Insert Only');
+
+        $data['action'] = $this->url->link('customer/customer/import', 'token=' . $this->session->data['token'], 'SSL');
+		//$version=$_POST['opcversion'];
+		
+
+        $data['importdataurl'] = $this->url->link('customer/customer/importcustomer', 'token=' . $this->session->data['token'], 'SSL');
+        $data['sampleexport'] = $this->url->link('customer/customer/customersampleexport', 'token=' . $this->session->data['token'], 'SSL');
+        $data['sample_export'] = $this->language->get('Sample Csv File');
+
+        $data['breadcrumbs'] = array();
+
+        $data['breadcrumbs'][] = array(
+            'text'      => $this->language->get('text_home'),
+            'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),
+            'separator' => false
+        );
+
+        $data['breadcrumbs'][] = array(
+            'text'      => $this->language->get('heading_title'),
+            'href'      => $this->url->link('customer/customer', 'token=' . $this->session->data['token'], 'SSL'),
+            'separator' => ' :: '
+        );
+
+
+        if(isset($_POST['submit']))
+        {
+        	
+        	$version_check=$_POST['opcversion'];	
+			
+            $insertonly=0;
+
+            if(isset($_POST['insertonly']) && $_POST['insertonly']==1)
+                $insertonly=1;
+
+            if($this->validateImport())
+            {  // import form validate start
+
+                if ((isset($this->request->files['file'])) && (is_uploaded_file($this->request->files['file']['tmp_name'])))
+                { //file upload start
+                   
+			            if($version_check=="opc2101" || $version_check=="opc2102" || $version_check=="opc2031" || $version_check=="opc2020" || $version_check=="opc2011" || $version_check=="opc2010")
+						{ //opc version check start
+			 
+                    @set_time_limit(3600);
+                    if (substr(@ini_get("memory_limit"), 0, -1) < "512") {
+                        @ini_set("memory_limit", "512M");
+                    }
+                    ini_set("memory_limit", "512M");
+                    ini_set("max_execution_time", 180);
+                    ini_set('display_errors', 1);
+                    ini_set('log_errors', 1);
+                    error_reporting(E_ALL);
+                    //set_time_limit( 60 );
+
+                    $filename = $this->request->files['file']['tmp_name'];
+
+                    //chdir('../system/library/PHPExcel'); // change directory to PHPExcel library
+                    //require_once( 'Classes/PHPExcel.php' );
+                    //chdir('../../../admin');
+
+                    require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+                    $inputFileType = PHPExcel_IOFactory::identify($filename);
+                    $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+                    //$objReader->setReadDataOnly(true);
+                    $reader = $objReader->load($filename);
+                    $reader = &$reader;
+                    //			$this->clearCache();
+
+                    $xldata = $reader->getSheet(0);
+
+                    $isFirstRow = TRUE;
+
+                    $i = 0;
+
+                    $temp=0;//declared
+                    $b=0;//declared
+                    $temp_add=0;
+                    
+                   
+
+                    $k = $xldata->getHighestRow();
+					
+                    $customer_array = array();
+				    $customer_array_add=array();
+					
+                    $columns = PHPExcel_Cell::columnIndexFromString($xldata->getHighestColumn());
+
+                    if($columns == 25)
+                    {
+                        for ($i = 0; $i < $k; $i++) {  // Excel row loop start
+                            //Skip the header row
+                            if ($isFirstRow) {
+                                $isFirstRow = FALSE;
+                                continue;
+                            }
+
+                            $store_id = $this->getCell($xldata, $i, 1);
+                            $customer_firstname = $this->getCell($xldata, $i, 2);                            
+                            $customer_lastname = $this->getCell($xldata, $i, 3);
+                           // $ip=$this->model_sale_order->getip();
+                            $email = $this->getCell($xldata, $i, 4);                           
+                            $telephone = $this->getCell($xldata, $i, 5);
+                            $fax = $this->getCell($xldata, $i, 6);							
+                            $password = $this->getCell($xldata, $i, 7);				
+							
+                            //print_r($password1);exit;
+                            $salt = $this->getCell($xldata, $i, 8);
+							$wishlist = $this->getCell($xldata, $i, 9);
+                            $newsletter = $this->getCell($xldata, $i, 10);							
+							$customer_group_id = $this->getCell($xldata, $i, 11);
+							$ip = $this->getCell($xldata, $i, 12);
+							$status = $this->getCell($xldata, $i, 13);
+							$approved = $this->getCell($xldata, $i, 14);							
+							
+							$address_firstname = $this->getCell($xldata, $i, 15);
+							$address_lastname = $this->getCell($xldata, $i, 16);
+							$company = $this->getCell($xldata, $i, 17);
+							$company_id = $this->getCell($xldata, $i, 18);
+							$tax_id = $this->getCell($xldata, $i, 19);
+							$address_1 = $this->getCell($xldata, $i, 20);
+							$address_2 = $this->getCell($xldata, $i, 21);
+							$city = $this->getCell($xldata, $i, 22);
+							$postcode = $this->getCell($xldata, $i, 23);
+							$country_id = $this->getCell($xldata, $i, 24);
+							$zone_id = $this->getCell($xldata, $i, 25);			
+							//$customer_array[$temp]['zone'] = $zone;
+							//$customer_array[$temp]['country'] = $country;							
+						    //$this->load->model('sale/customer');
+							//$zone_id=$this->model_sale_customer->getZoneId($zone);//print_r($zone);
+					        //$country_id=$this->model_sale_customer->getCountryId($country);//print_r($zone);
+							if($store_id!==''){
+								$temp++;
+								$temp_add=0;
+								$customer_array[$temp]['customer_group_id'] = $customer_group_id;
+                                $customer_array[$temp]['store_id'] = $store_id;
+                                $customer_array[$temp]['firstname'] = $customer_firstname;
+                                $customer_array[$temp]['lastname'] = $customer_lastname;
+                                $customer_array[$temp]['email'] = $email;
+                                $customer_array[$temp]['telephone'] = $telephone;
+                                $customer_array[$temp]['fax'] = $fax;
+								$customer_array[$temp]['custom_field'] = '';
+								$customer_array[$temp]['salt'] = $salt;
+								$customer_array[$temp]['password'] = $password;
+								$customer_array[$temp]['newsletter'] = $newsletter;
+								$customer_array[$temp]['ip'] = $ip;
+								$customer_array[$temp]['status'] = $status;
+								$customer_array[$temp]['approved'] = $approved;								
+								
+								//$customer_array[$temp]['firstname'] = $address_firstname;
+								//$customer_array[$temp]['lastname'] = $address_lastname;
+								
+								$customer_array_add[$temp_add]['company'] = $company;
+								$customer_array_add[$temp_add]['address_1'] = $address_1;
+								$customer_array_add[$temp_add]['address_2'] = $address_2;
+								$customer_array_add[$temp_add]['city'] = $city;
+								$customer_array_add[$temp_add]['postcode'] = $postcode;
+								$customer_array_add[$temp_add]['zone_id'] = $zone_id;
+								$customer_array_add[$temp_add]['country_id'] = $country_id;								
+								$customer_array_add[$temp_add]['custom_field'] = '';
+								
+								$customer_array[$temp]['address_fiels']=$customer_array_add;
+								}
+								else{
+								$temp_add++;
+								$customer_array_add[$temp_add]['company'] = $company;
+								$customer_array_add[$temp_add]['address_1'] = $address_1;
+								$customer_array_add[$temp_add]['address_2'] = $address_2;
+								$customer_array_add[$temp_add]['city'] = $city;
+								$customer_array_add[$temp_add]['postcode'] = $postcode;
+								$customer_array_add[$temp_add]['zone_id'] = $zone_id;
+								$customer_array_add[$temp_add]['country_id'] = $country_id;								
+								$customer_array_add[$temp_add]['custom_field'] = '';
+								$customer_array[$temp]['address_fiels']=$customer_array_add;
+							
+								}
+							   
+                     
+                            } // Excel row loop end
+
+                          
+
+                        $order_list_data=$customer_array;
+
+                    }
+                    else
+                    {
+                        $excel_field_error = 1;
+                    }
+					
+                    }//opc version check end
+                   
+                } //file upload end
+
+                if(!$excel_field_error)
+                {
+
+                    $data['sampletabledata']= $order_list_data;
+
+                    $_SESSION['customerlist'] = $order_list_data;
+                }
+
+            } // import form validate end
+
+       
+        }
+
+        if (isset($this->error['warning'])) {
+            $data['error_warning'] = $this->error['warning'];
+        } else {
+            $data['error_warning'] = '';
+        }
+
+        if (isset($this->error['errorfile'])) {
+            $data['error_file'] = $this->error['errorfile'];
+        } else {
+            $data['error_file'] = '';
+        }
+		
+		if (isset($this->error['errorfile_opcversion'])) {
+            $data['error_file_opcversion'] = $this->error['errorfile_opcversion'];
+        } else {
+            $data['error_file_opcversion'] = '';
+        }
+
+        if($excel_field_error)
+        {
+            $data['error_fields'] = 'Upload like our Sample Excel File';
+        }
+        else
+        {
+            $data['error_fields'] = '';
+        }
+
+        /* $this->load->model('design/layout');
+       $data['layouts']=$this->model_design_layout->getLayouts();*/
+
+        $data['header']=$this->load->controller('common/header');
+        $data['footer']=$this->load->controller('common/footer');
+        $data['column_left']=$this->load->controller('common/column_left');
+
+        if (isset($this->request->server['HTTPS']) && (($this->request->server['HTTPS'] == 'on') || ($this->request->server['HTTPS'] == '1'))) {
+            $data['base'] = $this->config->get('config_ssl');
+        } else {
+            $data['base'] = $this->config->get('config_url');
+        }
+
+        $this->response->setOutput($this->load->view('customer/customer_import.tpl',$data));
+
+    }
+
+
+
+    public function importcustomer(){
+
+        unset($_SESSION['customerlist']);
+        $url = '';
+        $this->response->redirect($this->url->link('customer/customer', 'token=' . $this->session->data['token'] . $url, 'SSL'));
+    }
+
+    function getCell(&$worksheet, $row, $col, $default_val = '') {
+        $col -= 1; // we use 1-based, PHPExcel uses 0-based column index
+        $row += 1; // we use 0-based, PHPExcel used 1-based row index
+        return ($worksheet->cellExistsByColumnAndRow($col, $row)) ? $worksheet->getCellByColumnAndRow($col, $row)->getValue() : $default_val;
+    }
+
+    public function customersampleexport()
+    {
+        /* Include PHPExcel class */
+        //chdir('../system/library/PHPExcel');
+        //require_once( 'Classes/PHPExcel.php' );
+        //chdir('../../../admin');
+
+        require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+        // Instantiate a new PHPExcel object
+        $objPHPExcel = new PHPExcel();
+        // Set the active Excel worksheet to sheet 0
+        $objPHPExcel->setActiveSheetIndex(0);
+        // Initialise the Excel row number
+        $rowCount = 1;
+		
+       //customer field
+        $objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Store_id');
+        $objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Customer FirstName');
+        $objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Customer LastName');
+        $objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Email');
+        $objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, 'Telephone');
+        $objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, 'Fax');
+        $objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, 'Password');
+        $objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, 'Salt');
+        $objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, 'Wishlist');
+        $objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, 'Newsletter');
+        $objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, 'Customer_group_id');
+        $objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, 'IP');        //products option
+        $objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, 'Status');
+        $objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, 'Approved');
+		//address field
+      
+		$objPHPExcel->getActiveSheet()->SetCellValue('O'.$rowCount, 'Address Firstname');
+		$objPHPExcel->getActiveSheet()->SetCellValue('P'.$rowCount, 'Address Lastname');
+		$objPHPExcel->getActiveSheet()->SetCellValue('Q'.$rowCount, 'Company');
+		$objPHPExcel->getActiveSheet()->SetCellValue('R'.$rowCount, 'Company_id');
+		$objPHPExcel->getActiveSheet()->SetCellValue('S'.$rowCount, 'Tax Id');
+		$objPHPExcel->getActiveSheet()->SetCellValue('T'.$rowCount, 'Address 1');
+		$objPHPExcel->getActiveSheet()->SetCellValue('U'.$rowCount, 'Address 2');
+		$objPHPExcel->getActiveSheet()->SetCellValue('V'.$rowCount, 'City');
+		$objPHPExcel->getActiveSheet()->SetCellValue('W'.$rowCount, 'Postcode');
+		$objPHPExcel->getActiveSheet()->SetCellValue('X'.$rowCount, 'Country');
+		$objPHPExcel->getActiveSheet()->SetCellValue('Y'.$rowCount, 'Zone');
+        //voucher
+
+        header("Content-Type: text/csv; charset=utf-8");
+        header('Content-Disposition: attachment;filename="customer_list_'.date("Y m d G i s").'.csv"');
+        //header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        // Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+        //$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'CSV');
+        // Write the Excel file to filename some_excel_file.xlsx in the current directory
+        //$objWriter->save('some_excel_file.xlsx');
+
+        /* Download CsV file in downloads */
+        $objWriter->save('php://output');
+
+//        chdir('../../..');
+    }
+    protected function validateImport() {
+         /*if (!$this->user->hasPermission('modify', 'sale/customer')) {
+            $this->error['warning'] = $this->language->get('error_permission');
+        }*/
+
+        if(!$_POST['opcversion']){
+	     $this->error['errorfile_opcversion'] = $this->language->get('Please Select upload version');
+        }
+		
+        if (!$this->request->files['file']['tmp_name']) {
+            $this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+        }
+        elseif($_FILES["file"]["name"])
+        {
+            $allowedExts = array("csv", "xlsx", "xls");
+            $temp = explode(".", $_FILES["file"]["name"]);
+            $extension = end($temp);
+
+            if(!in_array($extension, $allowedExts))
+                $this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+        }
+
+        if (!$this->error) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+//export customer
+public function customers_export(){    
+        
+       	if (isset($this->request->get['filter_name'])) {
+			$filter_name = $this->request->get['filter_name'];
+		} else {
+			$filter_name = null;
+		}
+
+		if (isset($this->request->get['filter_email'])) {
+			$filter_email = $this->request->get['filter_email'];
+		} else {
+			$filter_email = null;
+		}
+		
+		if (isset($this->request->get['filter_customer_group_id'])) {
+			$filter_customer_group_id = $this->request->get['filter_customer_group_id'];
+		} else {
+			$filter_customer_group_id = null;
+		}
+
+		if (isset($this->request->get['filter_status'])) {
+			$filter_status = $this->request->get['filter_status'];
+		} else {
+			$filter_status = null;
+		}
+		
+		if (isset($this->request->get['filter_approved'])) {
+			$filter_approved = $this->request->get['filter_approved'];
+		} else {
+			$filter_approved = null;
+		}	
+
+		if (isset($this->request->get['filter_ip'])) {
+			$filter_ip = $this->request->get['filter_ip'];
+		} else {
+			$filter_ip = null;
+		}				
+
+		if (isset($this->request->get['filter_date_added'])) {
+			$filter_date_added = $this->request->get['filter_date_added'];
+		} else {
+			$filter_date_added = null;
+		}
+
+        
+        	$data = array(
+			'filter_name'              => $filter_name, 
+			'filter_email'             => $filter_email, 
+			'filter_customer_group_id' => $filter_customer_group_id,
+			'filter_status'            => $filter_status,
+			'filter_approved'          => $filter_approved, 
+			'filter_date_added'        => $filter_date_added,
+			'filter_ip'                => $filter_ip,
+			
+		);
+		
+		 $customers_list = array();
+		 $temp_cus = 1;
+		 $temp_add = 0;
+		 
+		$b=1;
+		$customers_list_add=array();
+		 
+		$this->load->model('customer/customer');
+		
+        $results = $this->model_customer_customer->getCustomerstoexport($data);//print_r($results);exit;       
+        
+        
+        foreach ($results as $result) {
+        	
+        	//$customers_list[$temp_count]['customer_id']        			= $result['customer_id'];
+        	$customers_list[$temp_cus]['store_id']        				= $result['store_id'];
+            $customers_list[$temp_cus]['firstname']        				= $result['firstname'];
+			$customers_list[$temp_cus]['lastname']        				= $result['lastname'];
+			$customers_list[$temp_cus]['email']        			   		= $result['email'];
+			$customers_list[$temp_cus]['telephone']        				= $result['telephone'];
+			$customers_list[$temp_cus]['fax']        					= $result['fax'];
+			$customers_list[$temp_cus]['password']        				= $result['password'];
+			$customers_list[$temp_cus]['salt']        					= $result['salt'];
+//			$customers_list[$temp_cus]['cart']        					= $result['cart'];
+			$customers_list[$temp_cus]['wishlist']        				= $result['wishlist'];
+			$customers_list[$temp_cus]['newsletter']        			= $result['newsletter'];
+			//$customers_list[$temp_count]['address_id']        			= $result['address_id'];
+			$customers_list[$temp_cus]['customer_group_id']        		= $result['customer_group_id'];
+			$customers_list[$temp_cus]['ip']        					= $result['ip'];
+			$customers_list[$temp_cus]['status']        				= $result['status'];
+			$customers_list[$temp_cus]['approved']        				= $result['approved'];//
+			
+			
+			$customer_address = $this->model_customer_customer->getAddresstoexport($result['customer_id']);
+			  //print_r($customer_address);exit;       
+			$a=1;
+			//address table
+			//$customers_list[$temp_count]['customer_id']        		= $result['c_customer_id'];
+			foreach ($customer_address as $customer_address1) {
+				if($a==$b){
+					$customers_list[$temp_cus]['address_firstname']        			= $customer_address1['firstname'];
+					$customers_list[$temp_cus]['address_lastname']        			= $customer_address1['lastname'];
+					$customers_list[$temp_cus]['company']        					= $customer_address1['company'];
+					$customers_list[$temp_cus]['company_id']        				= '';
+					$customers_list[$temp_cus]['tax_id']        					= '';
+					$customers_list[$temp_cus]['adddress_1']        				= $customer_address1['address_1'];
+					$customers_list[$temp_cus]['adddress_2']        				= $customer_address1['address_2'];
+					$customers_list[$temp_cus]['city']        						= $customer_address1['city'];
+					$customers_list[$temp_cus]['postcode']        					= $customer_address1['postcode'];
+					$customers_list[$temp_cus]['country_id']        				= $customer_address1['country_id'];
+					$customers_list[$temp_cus]['zone_id']        					= $customer_address1['zone_id'];
+				}
+				else{
+					$customers_list[$temp_cus]['store_id']        				= '';
+		            $customers_list[$temp_cus]['firstname']        				= '';
+					$customers_list[$temp_cus]['lastname']        				= '';
+					$customers_list[$temp_cus]['email']        			   		= '';
+					$customers_list[$temp_cus]['telephone']        				= '';
+					$customers_list[$temp_cus]['fax']        					= '';
+					$customers_list[$temp_cus]['password']        				= '';
+					$customers_list[$temp_cus]['salt']        					= '';
+					//$customers_list[$temp_add]['cart']        					= '';
+					$customers_list[$temp_cus]['wishlist']        				= '';
+					$customers_list[$temp_cus]['newsletter']        			= '';
+					//$customers_list[$temp_count]['address_id']        			= $result['address_id'];
+					$customers_list[$temp_cus]['customer_group_id']        		= '';
+					$customers_list[$temp_cus]['ip']        					= '';
+					$customers_list[$temp_cus]['status']        				= '';
+					$customers_list[$temp_cus]['approved']        				= '';//
+					$customers_list[$temp_cus]['address_firstname']        			= $customer_address1['firstname'];
+					$customers_list[$temp_cus]['address_lastname']        			= $customer_address1['lastname'];
+					$customers_list[$temp_cus]['company']        					= $customer_address1['company'];
+					$customers_list[$temp_cus]['company_id']        				= '';
+					$customers_list[$temp_cus]['tax_id']        					= '';
+					$customers_list[$temp_cus]['adddress_1']        				= $customer_address1['address_1'];
+					$customers_list[$temp_cus]['adddress_2']        				= $customer_address1['address_2'];
+					$customers_list[$temp_cus]['city']        						= $customer_address1['city'];
+					$customers_list[$temp_cus]['postcode']        					= $customer_address1['postcode'];
+					$customers_list[$temp_cus]['country_id']        				= $customer_address1['country_id'];
+					$customers_list[$temp_cus]['zone_id']        					= $customer_address1['zone_id'];
+					
+			 }
+				$temp_cus++; $a++;
+		 }
+			//$customers_list[$temp_cus]['address_field']=$customers_list_add;
+            $temp_cus++;
+        }  
+
+
+        //print_r($customers_list);exit;  
+        $customers = array();
+        
+        $customers_column=array();        
+		        
+        $customers_column = array('Store_id','Customer FirstName','Customer LastName','Email', 'Telephone','Fax','Password','Salt','Wishlist','Newsletter','Customer_group_id','IP','Status','Approved','Address Firstname','Address Lastname','Company','Company_id','Tax Id','Address 1','Address 2','City','Postcode', 'Country', 'Zone');
+            
+        $customers[0] = $customers_column;          
+  
+        foreach($customers_list as $customer_row)
+        {
+            $customers[]=$customer_row;
+        }
+     
+                        header( 'Content-Type: text/csv' );
+				        header( 'Content-Disposition: attachment;filename="Customer_List_'.date("Y m d G i s").'.csv"');
+						$out = fopen('php://output', 'w');
+				
+						foreach ($customers as $fields) {
+						    fputcsv($out, $fields);
+						}
+						
+						fclose($out);
+	     }
+]]></add>
+        </operation>
+    </file>
+ <file path="admin/model/customer/customer.php">
+        <operation>
+            <search><![CDATA[public function editCustomer($customer_id, $data) {]]></search>
+            <add position="before"><![CDATA[ public function getCustomerstoexport($data = array())         {									
+								
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "customer");
+
+		return $query->rows;							
+					
+	}
+	
+	public function getAddresstoexport($customer_id) {									
+								
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "address WHERE customer_id= '". (int)$customer_id ."'");
+
+		return $query->rows;							
+					
+	}]]></add>
+        </operation>
+    </file>
+ <file path="admin/view/template/customer/customer_list.tpl">
+        <operation>
+            <search><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+            <add position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $import; ?>" data-toggle="tooltip" title="<?php echo $button_import; ?>" class="btn btn-success"><i class="fa fa-arrow-down"></i></a><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo "Export"; ?>" class="btn btn-success"><i class="fa fa-arrow-up"></i></a><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+        </operation>
+    </file>
+<!--front end customer import array values  passed model-->
+<file path="catalog/controller/account/account.php">
+        <operation>
+            <search><![CDATA[public function country() {]]></search>
+            <add position="before"><![CDATA[  public function passingcustomervalues() {
+
+        $this->load->model('account/customer');
+       // print_r($_SESSION['customerlist'] );exit;
+        foreach($_SESSION['customerlist'] as $data) {
+		//print_r($data);exit;
+            $Impot_customer_values = $this->model_account_customer->ImportaddCustomer($data);
+	
+        }
+    }]]></add>
+        </operation>
+    </file>
+<file path="catalog/model/account/customer.php">
+        <operation>
+            <search><![CDATA[public function editCustomer($data) {]]></search>
+            <add position="before"><![CDATA[public function ImportaddCustomer($data) {  //print_r($data);print_r($data['address_fiels']);exit;
+		$this->event->trigger('pre.customer.add', $data);
+
+		if (isset($data['customer_group_id']) && is_array($this->config->get('config_customer_group_display')) && in_array($data['customer_group_id'], $this->config->get('config_customer_group_display'))) {
+			$customer_group_id = $data['customer_group_id'];
+		} else {
+			$customer_group_id = $this->config->get('config_customer_group_id');
+		}
+
+		$this->load->model('account/customer_group');
+
+		$customer_group_info = $this->model_account_customer_group->getCustomerGroup($customer_group_id);
+
+		$this->db->query("INSERT INTO " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$customer_group_id . "', store_id = '" . (int)$this->config->get('config_store_id') . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']['account']) ? serialize($data['custom_field']['account']) : '') . "', salt = '" . $this->db->escape($data['salt']) . "', password = '" . $this->db->escape($data['password']) . "', newsletter = '" . (isset($data['newsletter']) ? (int)$data['newsletter'] : 0) . "', ip = '" . $this->db->escape($this->request->server['REMOTE_ADDR']) . "', status = '1', approved = '" . (int)!$customer_group_info['approval'] . "', date_added = NOW()");
+
+		$customer_id = $this->db->getLastId();
+		
+		
+        foreach ($data['address_fiels'] as $data1) {
+	
+	    $this->db->query("INSERT INTO " . DB_PREFIX . "address SET customer_id = '" . (int)$customer_id . "', firstname = '" . $this->db->escape($data1['firstname']) . "', lastname = '" . $this->db->escape($data1['lastname']) . "', company = '" . $this->db->escape($data1['company']) . "', address_1 = '" . $this->db->escape($data1['address_1']) . "', address_2 = '" . $this->db->escape($data1['address_2']) . "', city = '" . $this->db->escape($data1['city']) . "', postcode = '" . $this->db->escape($data1['postcode']) . "', country_id = '" . (int)$data1['country_id'] . "', zone_id = '" . (int)$data1['zone_id'] . "', custom_field = '" . $this->db->escape(isset($data1['custom_field']['address']) ? serialize($data1['custom_field']['address']) : '') . "'");
+
+		$address_id = $this->db->getLastId();
+		//$this->db->query("UPDATE " . DB_PREFIX . "customer SET address_id = '" . (int)$address_id . "' WHERE customer_id = '" . (int)$customer_id . "'");
+		
+        }
+        $this->db->query("UPDATE " . DB_PREFIX . "customer SET address_id = '" . (int)$address_id . "' WHERE customer_id = '" . (int)$customer_id . "'");
+		//$this->db->query("INSERT INTO " . DB_PREFIX . "address SET customer_id = '" . (int)$customer_id . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '" . $this->db->escape($data['company']) . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '" . $this->db->escape($data['address_2']) . "', city = '" . $this->db->escape($data['city']) . "', postcode = '" . $this->db->escape($data['postcode']) . "', country_id = '" . (int)$data['country_id'] . "', zone_id = '" . (int)$data['zone_id'] . "', custom_field = '" . $this->db->escape(isset($data['custom_field']['address']) ? serialize($data['custom_field']['address']) : '') . "'");
+
+		//$address_id = $this->db->getLastId();
+
+		//$this->db->query("UPDATE " . DB_PREFIX . "customer SET address_id = '" . (int)$address_id . "' WHERE customer_id = '" . (int)$customer_id . "'");
+
+		
+		
+		$this->load->language('mail/customer');
+
+		$subject = sprintf($this->language->get('text_subject'), html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
+
+		$message = sprintf($this->language->get('text_welcome'), html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8')) . "\n\n";
+
+		if (!$customer_group_info['approval']) {
+			$message .= $this->language->get('text_login') . "\n";
+		} else {
+			$message .= $this->language->get('text_approval') . "\n";
+		}
+
+		$message .= $this->url->link('account/login', '', 'SSL') . "\n\n";
+		$message .= $this->language->get('text_services') . "\n\n";
+		$message .= $this->language->get('text_thanks') . "\n";
+		$message .= html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8');
+
+		$mail = new Mail();
+		$mail->protocol = $this->config->get('config_mail_protocol');
+		$mail->parameter = $this->config->get('config_mail_parameter');
+		$mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+		$mail->smtp_username = $this->config->get('config_mail_smtp_username');
+		$mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+		$mail->smtp_port = $this->config->get('config_mail_smtp_port');
+		$mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+			
+		$mail->setTo($data['email']);
+		$mail->setFrom($this->config->get('config_email'));
+		$mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
+		$mail->setSubject($subject);
+		$mail->setText($message);
+		$mail->send();
+
+		// Send to main admin email if new account email is enabled
+		if ($this->config->get('config_account_mail')) {
+			$message  = $this->language->get('text_signup') . "\n\n";
+			$message .= $this->language->get('text_website') . ' ' . html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8') . "\n";
+			$message .= $this->language->get('text_firstname') . ' ' . $data['firstname'] . "\n";
+			$message .= $this->language->get('text_lastname') . ' ' . $data['lastname'] . "\n";
+			$message .= $this->language->get('text_customer_group') . ' ' . $customer_group_info['name'] . "\n";
+			$message .= $this->language->get('text_email') . ' '  .  $data['email'] . "\n";
+			$message .= $this->language->get('text_telephone') . ' ' . $data['telephone'] . "\n";
+
+			$mail = new Mail();
+			$mail->protocol = $this->config->get('config_mail_protocol');
+			$mail->parameter = $this->config->get('config_mail_parameter');
+			$mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+			$mail->smtp_username = $this->config->get('config_mail_smtp_username');
+			$mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+			$mail->smtp_port = $this->config->get('config_mail_smtp_port');
+			$mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+			
+			$mail->setTo($this->config->get('config_email'));
+			$mail->setFrom($this->config->get('config_email'));
+			$mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
+			$mail->setSubject(html_entity_decode($this->language->get('text_new_customer'), ENT_QUOTES, 'UTF-8'));
+			$mail->setText($message);
+			$mail->send();
+
+			// Send to additional alert emails if new account email is enabled
+			$emails = explode(',', $this->config->get('config_mail_alert'));
+
+			foreach ($emails as $email) {
+				if (utf8_strlen($email) > 0 && preg_match('/^[^\@]+@.*.[a-z]{2,15}$/i', $email)) {
+					$mail->setTo($email);
+					$mail->send();
+				}
+			}
+		}
+
+		$this->event->trigger('post.customer.add', $customer_id);
+
+		return $customer_id;
+	}
+]]></add>
+        </operation>
+    </file>
+</modification>

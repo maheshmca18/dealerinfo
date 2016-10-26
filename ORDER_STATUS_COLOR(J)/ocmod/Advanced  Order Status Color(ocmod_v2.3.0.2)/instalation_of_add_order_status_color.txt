@@ -1,0 +1,46 @@
+---------------------------------------------------------------------------------------------
+         Module : Advanced Order Status Color
+---------------------------------------------------------------------------------------------
+The Advanced Order Status Color module allows the admin user to Enable or Disable the Order Status Color in  Admin's Order List Page and Widget. 
+
+Feature :
+- Set color for all status.
+- choose colors with colorpicker tool.
+- Just updated, now you can view colour changes in order list, order history, dashboard.
+
+It display on your store backend using install/uninstall like others modules.
+
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because add a new files .
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Go to admin page and ,
+             Extensions -> extension installer ->upload your (filename.ocmod.xml) ocmod file.
+
+4. View upload file your Modification,and click refresh button.
+
+5. Login to Admin Dashboard
+ 
+		(i)Extensions -> Extensions ->  Choose the extension type (From Drop Down) -> Select  Modules ->  Advanced Order Status Color ->  Click [install] link to install this Plugin.
+		(i)Extensions -> Module ->  Advanced Order Status Color ->  Click [Edit] link and to Enable or Disable this Module.
+
+6. Go to Order Status list page [System -> localisation -> Order Statuses]
+
+	 ->Select existing Order status and click Edit for pick order status color.
+		
+	 ->Add new Order status with pick order status color.
+
+7. Go to the Order list page [Sales -> Orders]
+
+	-> See the Order List with order status color
+		
+		 
+8. Go to dashboard
+
+	-> See the Latest Orders with order status color on dashboard

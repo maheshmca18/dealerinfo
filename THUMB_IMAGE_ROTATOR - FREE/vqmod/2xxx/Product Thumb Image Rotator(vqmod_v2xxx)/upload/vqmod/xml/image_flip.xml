@@ -1,0 +1,129 @@
+<modification>
+    <id>Image Flip</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRSSOFT</author>
+    <!--Featured page-->
+    <file path="catalog/view/theme/*/template/module/featured.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<div class="image"><a href="<?php echo $product['href']; ?>"><img src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" class="img-responsive" /></a></div>]]></search>
+            <add><![CDATA[
+             <div class="item">
+                        <div class="col-item">
+                            <div class="product-wrapper">
+
+                                <div class="thumb-wrapper">
+                                    <a class="blue test thumb flip" href="<?php echo $product['href']; ?>">
+                                        <span class="face"><div class="image"><img style="width:80%;" src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>"></div></span>
+                                                        <span class="face back"><div class="image"><img style="width:80%;" src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" href="<?php echo $product['href']; ?>"></div>
+                                                            </span></a>
+                                </div>
+                        </div>
+                    </div>
+                </div>]]></add>
+        </operation>
+    </file>
+
+    <!--Search page-->
+    <file path="catalog/view/theme/*/template/product/search.tpl">
+    <operation>
+        <search position="replace"><![CDATA[<div class="image"><a href="<?php echo $product['href']; ?>"><img src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" class="img-responsive" /></a></div>]]></search>
+        <add><![CDATA[
+         <div class="item">
+                      <div class="col-item">
+                          <div class="product-wrapper">
+
+                              <div class="thumb-wrapper">
+                                  <a class="blue test thumb flip" href="<?php echo $product['href']; ?>">
+                                      <span class="face"><div class="image"><img style="width:85%;" src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>"></div></span>
+                                                        <span class="face back"><div class="image"><img style="width:85%;" src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" href="<?php echo $product['href']; ?>"></div>
+                                                            </span></a>
+                              </div>
+                      </div>
+                  </div>
+              </div>
+          ]]></add>
+    </operation>
+        <operation>
+            <search position="replace"><![CDATA[<div id="content" class="<?php echo $class; ?>"><?php echo $content_top; ?>]]></search>
+            <add><![CDATA[
+<div id="content" class="<?php echo $class; ?>">
+          ]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[<?php echo $header; ?>]]></search>
+            <add><![CDATA[
+ <style>
+    .product-list .product-thumb .thumb-wrapper
+    {
+        width: 20% !important;
+    }
+</style>
+                   ]]></add>
+        </operation>
+
+    </file>
+
+    <!--Category page-->
+    <file path="catalog/view/theme/*/template/product/category.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<div class="image"><a href="<?php echo $product['href']; ?>"><img src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" class="img-responsive" /></a></div>]]></search>
+            <add><![CDATA[
+                   <div class="item">
+                      <div class="col-item">
+                          <div class="product-wrapper">
+
+                              <div class="thumb-wrapper">
+                                  <a class="blue test thumb flip" href="<?php echo $product['href']; ?>">
+                                      <span class="face"><div class="image"><img style="width:85%;" src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>"></div></span>
+                                                        <span class="face back"><div class="image"><img style="width:85%;" src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" href="<?php echo $product['href']; ?>"></div>
+                                                            </span></a>
+                              </div>
+                      </div>
+                  </div>
+              </div>]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[<?php echo $header; ?>]]></search>
+            <add><![CDATA[
+ <style>
+    .product-list .product-thumb .thumb-wrapper
+    {
+        width: 30% !important;
+    }
+</style>
+                   ]]></add>
+        </operation>
+    </file>
+
+    <!--Product page(Related product)-->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+    <operation>
+        <search position="replace"><![CDATA[<div class="image"><a href="<?php echo $product['href']; ?>"><img src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" class="img-responsive" /></a></div>]]></search>
+        <add><![CDATA[
+                    <div class="item">
+                      <div class="col-item">
+                          <div class="product-wrapper">
+
+                              <div class="thumb-wrapper">
+                                  <a class="blue test thumb flip" href="<?php echo $product['href']; ?>">
+                                      <span class="face"><div class="image"><img style="width:30%;" src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>"></div></span>
+                                                        <span class="face back"><div class="image"><img style="width:30%;" src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" href="<?php echo $product['href']; ?>"></div>
+                                                            </span></a>
+                              </div>
+                      </div>
+                  </div>
+              </div>]]></add>
+    </operation>
+    </file>
+
+    <!--add library file in header file-->
+    <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation>
+            <search position="after"><![CDATA[<link href="catalog/view/theme/default/stylesheet/stylesheet.css" rel="stylesheet">]]></search>
+            <add><![CDATA[
+  <link href="catalog/view/javascript/css/style.css" rel="stylesheet">]]></add>
+        </operation>
+    </file>
+</modification>

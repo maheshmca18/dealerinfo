@@ -1,0 +1,409 @@
+<modification>
+    <id>product video</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRSSOFT</author>
+<!--catalog page-->
+    <!-- widget add video tag -->
+    <file path="catalog/controller/product/product.php">
+
+        <operation>
+            <search position="after"><![CDATA[$data['tab_attribute'] = $this->language->get('tab_attribute');]]></search>
+            <add><![CDATA[$data['tab_video'] = $this->language->get('tab_video');]]></add>
+        </operation>
+
+      <operation>
+            <search position="before"><![CDATA[if ($product_info) {]]></search>
+            <add><![CDATA[
+            $product_videoinfo = $this->model_catalog_product->getProductvideoinfo($this->request->get['product_id']);
+
+            ]]></add>
+        </operation>
+
+         <operation>
+            <search position="before"><![CDATA[if ($product_info['quantity'] <= 0) {]]></search>
+            <add><![CDATA[
+            $video=array();
+              if(isset($this->request->get['product_id'])) {
+                    $video=$this->model_catalog_product->getProductVideolink($this->request->get['product_id'],$data);
+
+                }
+
+              if(isset($video['url'])) {
+              $data['video_url'] = $video['url'];
+              } else {
+              $data['video_url'] = "";
+              }
+
+            if( isset($video['status'])) {
+            $data['video_status'] = $video['status'];
+            } else {
+            $data['video_status'] = "";
+            }
+
+             $this->load->model('tool/image');
+             if (isset($this->request->post['image']) && is_file(DIR_IMAGE . $this->request->post['image'])) {
+             $data['video_thumb'] = $this->model_tool_image->resize($this->request->post['image'], 300, 200);
+             } elseif (!empty($product_videoinfo) && is_file(DIR_IMAGE . $product_videoinfo['image'])) {
+             $data['video_thumb'] = $this->model_tool_image->resize($product_videoinfo['image'], 300, 200);
+
+             } else {
+             $data['video_thumb'] = $this->model_tool_image->resize('no_image.png', 300, 200);
+             }
+             $data['placeholder'] = $this->model_tool_image->resize('no_image.png', 300, 200);
+
+
+            ]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/catalog/product.php">
+        <operation>
+            <search position="before"><![CDATA[public function getProduct($product_id) {]]></search>
+            <add><![CDATA[
+            public function getProductvideoinfo($product_id) {
+        $query = $this->db->query("SELECT image FROM `" . DB_PREFIX . "video_link` WHERE product_id='" . (int)$product_id . "'");
+        return $query->row;
+    }]]></add>
+        </operation>
+
+        <operation>
+        <search position="before"><![CDATA[public function getTotalProductSpecials() {]]></search>
+        <add><![CDATA[
+                public function getProductVideolink($product_id) {
+        $product_videolink_data = array();
+
+        $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "video_link` WHERE product_id = '" . (int)$product_id . "'");
+
+        foreach ($query->rows as $result) {
+            $product_videolink_data = array(
+                'label'             => $result['label'],
+                'url'      => $result['url'],
+                'image'       => $result['image'],
+                'status'       => $result['status'],
+            );
+        }
+
+        return $product_videolink_data;
+    }
+]]></add>
+    </operation>
+    </file>
+
+    <file path="catalog/language/en-gb/product/product.php">
+        <operation>
+            <search position="after"><![CDATA[$_['tab_review']               = 'Reviews (%s)';]]></search>
+            <add><![CDATA[$_['tab_video']               = 'Video';]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search position="after" offset="1"><![CDATA[<li><a href="#tab-review" data-toggle="tab"><?php echo $tab_review; ?></a></li>]]></search>
+            <add><![CDATA[
+             <?php if($video_status==1) { ?>
+              <li><a href="#tab-video" data-toggle="tab" ><?php echo $tab_video; ?></a></li>
+               <?php  } ?>
+              ]]></add>
+        </operation>
+
+        <operation>
+            <search position="before"><![CDATA[<div class="tab-pane active" id="tab-description"><?php echo $description; ?></div>]]></search>
+            <add><![CDATA[
+            <div id="tab-video" class="tab-pane">
+                  <div class="mainrunner"><a class="btn btn-default"  data-featherlight="#fl3"><img class="img1" src="<?php echo  $video_thumb; ?>" width="300" height="200"/> <img class="img2" src="image/imageplay1.jpg" width="40" height="40"> </a></div>
+                  <div style="display:none"> <iframe  width="560" height="315"  src="<?php echo $video_url; ?>" frameborder="0" id="fl3" style="border:none;" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>
+              </div>
+]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[<?php echo $header; ?>]]></search>
+            <add><![CDATA[<script src="catalog/view/javascript/release/featherlight.min.js"
+        type="text/javascript" charset="utf-8" xmlns="http://www.w3.org/1999/html"></script>
+]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation>
+            <search position="after"><![CDATA[<link href="//fonts.googleapis.com/css?family=Open+Sans:400,400i,300,700" rel="stylesheet" type="text/css" />]]></search>
+            <add><![CDATA[<link type="text/css" rel="stylesheet" href="catalog/view/javascript/release/featherlight.min.css" title="Featherlight Styles" />
+            <link href="catalog/view/javascript/release/videoimage.css" rel="stylesheet">
+            ]]></add>
+        </operation>
+    </file>
+
+
+
+    <!--admin page-->
+         <!--controller file add variable entry and text-->
+   <file path="admin/controller/catalog/product.php">
+        <operation>
+            <search position="after"><![CDATA[$data['entry_recurring'] = $this->language->get('entry_recurring');]]></search>
+            <add><![CDATA[
+            $data['entry_label'] = $this->language->get('entry_label');
+            $data['entry_url'] = $this->language->get('entry_url');
+            $data['entry_status'] = $this->language->get('entry_status');
+            $data['entry_image'] = $this->language->get('entry_image');
+            $data['entry_video'] = $this->language->get('entry_video');
+                ]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[$data['text_amount'] = $this->language->get('text_amount');]]></search>
+            <add><![CDATA[
+            $data['text_enabled'] = $this->language->get('text_enabled');
+            $data['text_disabled'] = $this->language->get('text_disabled');
+            ]]></add>
+        </operation>
+
+       <operation>
+           <search position="after"><![CDATA[$product_info = $this->model_catalog_product->getProduct($this->request->get['product_id']);]]></search>
+           <add><![CDATA[
+           $product_videoinfo = $this->model_catalog_product->getProductvideoinfo($this->request->get['product_id']);
+            ]]></add>
+       </operation>
+
+
+       <operation>
+           <search position="before"><![CDATA[if (isset($this->request->post['image'])) {]]></search>
+           <add><![CDATA[
+         $video=array();
+              if (isset($this->request->get['product_id'])) {
+                    $video=$this->model_catalog_product->getProductVideolink($this->request->get['product_id']);
+                }
+
+             if (isset($this->request->post['video_label'])) {
+            $data['video_label'] = $this->request->post['video_label'];
+        } elseif (isset($this->request->get['product_id']) && isset($video['label'])) {
+            $data['video_label'] = $video['label'];
+        } else {
+            $data['video_label'] = "";
+        }
+
+
+
+
+            if (isset($this->request->post['video_url'])) {
+            $data['video_url'] = $this->request->post['video_url'];
+        } elseif (isset($this->request->get['product_id']) && isset($video['url'])) {
+            $data['video_url'] = $video['url'];
+        } else {
+            $data['video_url'] = "";
+        }
+
+
+
+             if (isset($this->request->post['video_image'])) {
+            $data['video_image'] = $this->request->post['video_image'];
+        } elseif (isset($this->request->get['product_id']) && isset($video['image'])) {
+            $data['video_image'] = $video['image'];
+            } else {
+            $data['video_image'] = "";
+        }
+
+
+             if (isset($this->request->post['video_status'])) {
+            $data['video_status'] = $this->request->post['video_status'];
+        } elseif (isset($this->request->get['product_id']) && isset($video['status'])) {
+            $data['video_status'] = $video['status'];
+        } else {
+            $data['video_status'] = "";
+        }
+
+        if (isset($this->request->post['video_image'])) {
+            $data['video_image'] = $this->request->post['image'];
+       } elseif (!empty($product_videoinfo)) {
+            $data['video_image'] = $product_videoinfo['image'];
+        } else {
+            $data['video_image'] = '';
+        }
+
+        $this->load->model('tool/image');
+        if (isset($this->request->post['image']) && is_file(DIR_IMAGE . $this->request->post['image'])) {
+            $data['video_thumb'] = $this->model_tool_image->resize($this->request->post['image'], 300, 200);
+        } elseif (!empty($product_videoinfo) && is_file(DIR_IMAGE . $product_videoinfo['image'])) {
+            $data['video_thumb'] = $this->model_tool_image->resize($product_videoinfo['image'], 300, 200);
+
+        } else {
+            $data['video_thumb'] = $this->model_tool_image->resize('no_image.png', 300, 200);
+        }
+        $data['placeholder'] = $this->model_tool_image->resize('no_image.png', 300, 200);
+       ]]></add>
+       </operation>
+   </file>
+
+    <!--language file add variable entry and text-->
+
+    <file path="admin/language/en-gb/catalog/product.php">
+        <operation>
+            <search position="after"><![CDATA[$_['entry_recurring']        = 'Recurring Profile';]]></search>
+            <add><![CDATA[
+            $_['entry_label']        = 'Label';
+            $_['entry_url']        = 'Url';
+            $_['entry_status']        = 'status';
+            $_['entry_image']        = 'image';
+            $_['entry_video']        = 'video';
+            ]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[$_['text_amount']            = 'Fixed Amount';]]></search>
+            <add><![CDATA[
+            $_['entry_label']        = 'Label';
+            $_['text_enabled']        = 'Enable';
+            $_['text_disabled']        = 'Disable';
+            ]]></add>
+        </operation>
+    </file>
+
+
+<!-- tpl file to display video tag and its components-->
+
+    <file path="admin/view/template/catalog/product_form.tpl">
+        <operation>
+            <search position="after"><![CDATA[<li><a href="#tab-design" data-toggle="tab"><?php echo $tab_design; ?></a></li>]]></search>
+            <add><![CDATA[<li><a href="#tab-videos" data-toggle="tab"><?php echo $entry_video; ?></a></li>]]></add>
+        </operation>
+
+        <operation>
+            <search position="before" offset="1"><![CDATA[</form>]]></search>
+            <add><![CDATA[
+               <div class="tab-pane" id="tab-videos">
+                  <div class="form-group">
+                      <label class="col-sm-2 control-label" for="input-label"><?php echo $entry_label; ?></label>
+                      <div class="col-sm-10">
+                          <input type="text" name="video_label" id="input-label" class="form-control"  placeholder="label" value="<?php echo $video_label; ?>"/>
+                      </div>
+                  </div>
+
+                  <div class="form-group">
+                      <label class="col-sm-2 control-label" for="input-url"><?php echo $entry_url; ?></label>
+                      <div class="col-sm-10">
+                          <input type="text" name="video_url" id="input-url" class="form-control" placeholder="url" value="<?php echo $video_url; ?>" />
+                      </div>
+                  </div>
+
+                    <div class="form-group">
+                      <label class="col-sm-2 control-label" for="input-image">image</label>
+                      <div class="col-sm-10">
+                          <a href="" id="video-image" data-toggle="image" class="img-thumbnail"><img src="<?php echo $video_thumb; ?>" alt="" title="" data-placeholder="<?php echo $placeholder; ?>" /></a>
+                          <input type="hidden" name="video_image" value="<?php echo $video_image; ?>" id="input-video-image-1" />
+                    </div>
+                  </div>
+
+                 <div class="form-group">
+                      <label class="col-sm-2 control-label" for="input-status"><?php echo $entry_status; ?></label>
+                      <div class="col-sm-10">
+                          <select name="video_status" id="input-status" class="form-control">
+                              <?php  if ($video_status==1) { ?>
+                              <option value="1" selected="selected"><?php echo $text_enabled; ?></option>
+                              <option value="0"><?php echo $text_disabled; ?></option>
+                              <?php } elseif($video_status==0) { ?>
+                              <option value="1"><?php echo $text_enabled; ?></option>
+                              <option value="0" selected="selected"><?php echo $text_disabled; ?></option>
+                              <?php } ?>
+                          </select>
+                      </div>
+                  </div>
+              </div>
+       ]]></add>
+        </operation>
+    </file>
+
+    <!-- model admin page add,upodate datas, images-->
+
+
+   <file path="admin/model/catalog/product.php">
+
+       <operation>
+           <search position="after"><![CDATA[$product_id = $this->db->getLastId();]]></search>
+           <add><![CDATA[
+        $this->db->query("DELETE FROM `" . DB_PREFIX . "video_link` WHERE product_id = '" . (int)$product_id . "'");
+        $this->db->query("INSERT INTO `" . DB_PREFIX . "video_link`  SET product_id = '" . (int)$product_id . "', label =  '" . $this->db->escape($data['video_label']) . "', url = '" . $this->db->escape($data['video_url']) . "',image = '" . $this->db->escape($data['video_image']) . "', status = '" . $this->db->escape($data['video_status']) . "'");
+
+       ]]></add>
+       </operation>
+
+
+       <operation>
+            <search position="after"><![CDATA[public function editProduct($product_id, $data) {]]></search>
+            <add><![CDATA[
+        $this->db->query("DELETE FROM `" . DB_PREFIX . "video_link` WHERE product_id = '" . (int)$product_id . "'");
+        $this->db->query("INSERT INTO `" . DB_PREFIX . "video_link`  SET product_id = '" . (int)$product_id . "', label =  '" . $this->db->escape($data['video_label']) . "', url = '" . $this->db->escape($data['video_url']) . "',image = '" . $this->db->escape($data['video_image']) . "', status = '" . $this->db->escape($data['video_status']) . "'");
+
+        $this->db->query("UPDATE `" . DB_PREFIX . "video_link` SET label =  '" . $this->db->escape($data['video_label']) . "', url = '" . $this->db->escape($data['video_url']) . "',image = '" . $this->db->escape($data['video_image']) . "', status = '" . $this->db->escape($data['video_status']) . "' WHERE product_id = '" . (int)$product_id . "'");
+
+        if (isset($data['video_image'])) {
+            $this->db->query("UPDATE `" . DB_PREFIX . "video_link` SET image = '" . $this->db->escape($data['video_image']) . "' WHERE product_id = '" . (int)$product_id . "'");
+        }
+       ]]></add>
+        </operation>
+
+       <operation>
+            <search position="before"><![CDATA[$this->addProduct($data);]]></search>
+            <add><![CDATA[
+                    $data = array_merge($data, array('product_videolink' => $this->getProductVideolink($product_id)));
+            ]]></add>
+    </operation>
+
+       <operation>
+           <search position="before"><![CDATA[public function getProducts($data = array()) {]]></search>
+           <add><![CDATA[
+                     public function getProductvideoinfo($product_id) {
+        $query = $this->db->query("SELECT image FROM `" . DB_PREFIX . "video_link` WHERE product_id='" . (int)$product_id . "'");
+        return $query->row;
+    }
+            ]]></add>
+       </operation>
+
+
+       <operation>
+           <search position="before"><![CDATA[public function getProductCategories($product_id) {]]></search>
+           <add><![CDATA[
+                    public function getProductVideolink($product_id) {
+        $product_videolink_data = array();
+
+        $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "video_link` WHERE product_id = '" . (int)$product_id . "'");
+
+        foreach ($query->rows as $result) {
+            $product_videolink_data = array(
+                'label'             => $result['label'],
+                'url'      => $result['url'],
+                'image'       => $result['image'],
+                'status'       => $result['status'],
+
+            );
+        }
+
+        return $product_videolink_data;
+    }
+            ]]></add>
+       </operation>
+
+   </file>
+   <!-- catalog view file end-->
+<file path="admin/controller/extension/extension/module.php">
+   	<operation>
+            <search position="after" ><![CDATA['name'      => $this->language->get('heading_title'),]]></search>
+            <add><![CDATA['display1'  => $display_style1,]]>
+            </add>
+        </operation>
+<operation>
+            <search position="before" ><![CDATA[$data['extensions'][] = array(]]></search>
+            <add><![CDATA[$display_style1 = ($this->language->get('heading_title') == 'product video') ? "style=display:none" : "";]]>
+            </add>
+        </operation>
+
+    </file>
+    <!--catalog view file start-->
+    <file path="admin/view/template/extension/extension/module.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<a href="<?php echo $extension['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a>]]></search>
+            <add><![CDATA[<a href="<?php echo $extension['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary" <?php echo $extension['display1']; ?>><i class="fa fa-pencil"></i></a>]]>
+            </add>
+        </operation>
+   </file>
+   
+</modification>

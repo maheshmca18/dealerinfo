@@ -1,0 +1,94 @@
+---------------------------------------------------------------------------------------------
+         Module : Holiday Based Delivery
+---------------------------------------------------------------------------------------------
+The Holiday Based Delivery module allows the delivery date field has shows in Delivery Method Tab, On Cart checkout page.
+
+When customer place order with pick his expected delivery date in Delivery Method Tab, On Cart checkout page.
+
+Main Feature :-
+=> It allows the admin user can add minimum and maximum days for order delivery.
+=> It allows the admin user can add normal holidays for order delivery.
+=> It allows the admin user can add recursive holidays for order delivery (for all years).
+=> It allows the admin user can add week holidays for order delivery.
+=> This extension adds delivery date field in the store front checkout Delivery Method Tab.
+=> The customer can pick expected delivery date.
+=> Delivery date is shown in Store front's Orderdetail.
+=> Delivery date is shown in Admin Dashboard's Order detail page.
+=> Delivery date is shown in Order Invoice bill and Order confirmation mail also.
+
+It display on yourstore front using install/uninstall like others modules.
+
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because add a new files .
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin Dashboard
+ 
+		Extensions -> Module(Choose Module from Module) ->  Holiday Based Delivery -> Then  Click [install] link to install this Plugin.
+		 
+4.Go to 
+        System -> Users -> User Groups
+
+	Select Top Administrator -> Edit
+		  
+		  Enable the following checkbox,
+		  
+        		 Access Permission : localisation/holidaymaster
+                                             module/holidayweekday 
+			 
+			 Modify Permission : localisation/holidaymaster
+                                             module/holidayweekday  
+			 
+		  Then Click the Save button.
+
+
+5. Edit the  Holiday Based Delivery Module,
+
+	Extensions -> Module -> Holidays and Weekdays Master ->Then  Click Edit
+		
+        -> Enter Minimum days. [delivery date enables from current date + minimum days]
+
+        -> Enter Maximum days. [delivery date enables to minimum date + maximum days]
+
+        -> Select status Enable/Disable. [Disable :- delivery date field has disabled at store front]
+
+6. Go to the Week Holidays page [System -> Localisation -> Weekdays Master]
+
+	-> Pick your week holidays [These days delivery date field has disabled at store front]
+
+
+7. Go to the Holiday Master page [System -> Localisation -> Holiday Master]
+
+	[These dates are disabled in store front delivery date field]
+
+	-> Click "Add New" button to Add new Holiday
+		=> Enter Holiday name
+		=> Enter Holiday Date
+		=> Pick Is Recursive 
+			[No  :- It considers holiday for active year only (like local holidays)]
+			[Yes :- It considers holiday for all year (like New Year, Christmas)]
+
+	-> Click "Edit" button to update existing Holiday
+		 
+8. Go to store front
+
+	-> See the delivery date field in Delivery Method Tab, On Cart checkout page.
+	-> Customer can select his prefer delivery date
+	-> The Delivery Dates are enables between minimum and maximum day, and also except holiday only.
+
+9. Go to store front Order detail page and see the Delivery date appears.
+
+10. Go to Order List [ Admin -> Sales -> Orders ]
+
+       -> Click the view button in Orders list and see the Delivery date in order detail.
+       -> Click the Print Invoice button and see the Delivery date appears in Invoice bill.
+       -> Edit existing Order and see the Delivery date field appears in Shipping Detail Tab.
+       -> Add New Your Order and see the Delivery date field appears in Shipping Detail Tab.
+       
+

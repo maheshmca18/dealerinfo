@@ -1,0 +1,32 @@
+<modification>
+    <id>Deal of the day</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRSSOFT</author>
+
+    <file path="catalog/controller/common/header.php">
+        <operation>
+            <search position="after"><![CDATA[$data['telephone'] = $this->config->get('config_telephone');]]></search>
+            <add><![CDATA[$data['dealoftheday'] = $this->url->link('information/productoftheday_todayproducts');]]></add>
+        </operation>
+    </file>
+
+ <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation>
+            <search position="before"><![CDATA[<?php foreach ($categories as $category) { ?>]]></search>
+            <add><![CDATA[<li><a href="<?php echo $dealoftheday; ?>"><?php echo 'Deal Of The Day'; ?></a></li>]]></add>
+        </operation>
+    </file>
+ <file path="admin/model/sale/customer_group.php">
+        <operation>
+            <search position="before"><![CDATA[public function getCustomerGroups($data = array()) {]]></search>
+            <add><![CDATA[public function getCustomerGroup_deal($customer_group_id) {
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "customer_group_description WHERE customer_group_id = '" . (int)$customer_group_id . "'");
+		return $query->row;
+	}]]></add>
+        </operation>
+    </file>
+
+   
+</modification>
+

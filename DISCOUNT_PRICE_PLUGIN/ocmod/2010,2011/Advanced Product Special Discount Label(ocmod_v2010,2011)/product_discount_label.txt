@@ -1,0 +1,51 @@
+---------------------------------------------------------------------------------------------
+         Module : Advanced Product Special Discount Label
+--------------------------------------------------------------------------------------------
+
+The Advanced Product Special Discount Label module allows the admin user to do add,change and approve special price ,discount price,change label color & text color and finally show to the label  price or percentage  it display on yourstore front using install/uninstall like others modules.
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because add a new files .
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Go to 
+        System -> Users -> User Groups
+
+Select Top Administrator -> Edit
+		  
+		  Enable the following checkbox,
+		  
+        		 Access Permission : module/discountprice 
+			 
+			 Modify Permission : module/discountprice 
+			 
+		  Then Click the Save button.
+
+4. Go to admin page and ,
+             Extensions -> extension installer ->upload your (filename.ocmod.xml) ocmod file.
+
+
+5. View upload file your Modification,and click refresh button.
+
+6. Login to Admin panel 
+		Extensions -> Module -> Advanced Product Special Discount Label -> Then  Click [install] link to install this Plugin.
+		 
+7. Edit the Advanced Product Special Discount Label Module,
+Extensions -> Module -> Advanced Product Special Discount Label ->Then  Click Edit
+		
+        a.1)If you want to show price then select price radio button'
+(or)
+        a.2)If you want to show percentage then select percent radio button.
+
+        b)if you want to change the label color and label text color using color picker.
+      
+        c)select enable from status,otherwise not display.goto step6
+
+        d)both percent and price not display simply disabled from status or uninstall the module.
+		 
+8. Go to frontend and see the price or percent  label box in the image top left

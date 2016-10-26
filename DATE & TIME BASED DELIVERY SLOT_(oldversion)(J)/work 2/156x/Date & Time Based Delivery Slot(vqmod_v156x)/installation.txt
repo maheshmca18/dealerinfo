@@ -1,0 +1,13 @@
+==========================================
+Date & Time Based Delivery Slot
+==========================================
+Installation
+==========================================
+
+1. First You must backup your opencart site/cart and also database. Because add a new files .
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+
+
+

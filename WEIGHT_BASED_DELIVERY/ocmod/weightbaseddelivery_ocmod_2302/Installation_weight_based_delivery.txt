@@ -1,0 +1,61 @@
+---------------------------------------------------------------------------------------------
+         Module : Weight Based Delivery
+---------------------------------------------------------------------------------------------
+
+The Weight Based Delivery module has allows the store admin adds shipping charges based on product/cart weight for zip code/postcode. 
+
+The store front having check zipcode/post availabilty widget in product detail page.
+
+Main Feature :-
+=> The admin user can add shipping charge based on cart weight with zipcode/postcode.
+=> Customer can view all Available postcode with weight based shipping charge details in store front.
+=> Customer can check postcode availability in Product detail page.
+=> It also validates postcode/zipcode on customer checkout his cart.
+=> The Cart checkout confirm page shows the shipping charge based on customer zipcode/postcode with cart weight.
+
+Using install/uninstall like others modules.
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because add a new files .
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin Dashboard
+ 
+		Extensions -> Module (Choose Module from Dropdown) ->  Weight Based Delivery -> Then  Click [install] link to install this Plugin.
+		 
+4.Go to 
+        System -> Users -> User Groups
+
+	Select Top Administrator -> Edit
+		  
+		  Enable the following checkbox,
+		  
+        		 Access Permission : localisation/postcodemaster_weight_based
+                                             
+			 Modify Permission : localisation/postcodemaster_weight_based
+                                              
+			 
+		  Then Click the Save button.
+
+5.Go to the Postcodemaster page [System -> Localisation ->Postcodes]
+
+         ->Enter delivery Postcode 
+
+         ->Select Condition Type based on product weight
+
+         ->Enter product weight
+
+         ->Enter Shipping Charge and click save Button.
+
+6.Go to check available postcode and their product weight based on shipping charge Lists on your store front from below link.
+  [ http://yourdomain.com/index.php?route=information/postcodemaster ]
+
+7.Go to Product Detail page  on Your Store front and see the [ Check Availability at ] widget for check customer zipcode/postcode availability.
+  
+8.Go to cart checkout confirm page shows the shipping charge based on customer zipcode/postcode with cart weight.
+

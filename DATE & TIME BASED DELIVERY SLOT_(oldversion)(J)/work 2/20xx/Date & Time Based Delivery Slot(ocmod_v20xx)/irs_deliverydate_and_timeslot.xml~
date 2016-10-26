@@ -1,0 +1,782 @@
+<modification>
+    <id>irs_deliverydate_and_timeslot</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRSSOFT</author>
+    <!--catalog page-->
+    <!--add menu holiday and weekdays to localization-->
+    <file path="catalog/controller/checkout/shipping_method.php">
+        <operation>
+            <search position="before"><![CDATA[if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/checkout/shipping_method.tpl')) {]]></search>
+            <add><![CDATA[$this->load->model('localisation/shippingdate');
+		$delivery_time_slote = $this->model_localisation_shippingdate->getShippingdate();
+
+		foreach($delivery_time_slote as $delivery_time_slote_split){
+			$data['delivery_times'][] = array(
+				'deliverytime_id' => $delivery_time_slote_split['deliverytime_id'],
+				//'title'       => $delivery_time_slote_split['title'],
+				'from_time'       => $delivery_time_slote_split['from_time'],
+				'to_time'       => $delivery_time_slote_split['to_time'],
+				'status'      => $delivery_time_slote_split['status']
+			);
+
+		}
+
+		date_default_timezone_set('Asia/Kolkata');
+		$data['current_time']=date("H:i");
+		$data['current_date']=date("d/m/Y");//echo $data['current_date'];
+
+		$data['timeslotinstall_status']=$this->config->get('deliverydatetime_status');
+		$data['deliverydatetime_timeinterval']=$this->config->get('deliverydatetime_timeinterval');
+
+		//mindate and max date from setting table ......
+
+        $data['minimum_day']=$this->config->get('deliverydatetime_min_day');
+        $data['maximum_day']=$this->config->get('deliverydatetime_max_day');
+      
+//get disabled week dates...............
+
+        $getdbweekdaysdisable=$this->config->get('weekdays_weekdayslist');
+
+        if(isset($getdbweekdaysdisable)){
+            $data['getdbdate']=$this->config->get('weekdays_weekdayslist');
+        }
+        else{
+            $data['getdbdate']='';
+        }
+]]></add>
+        </operation>
+ <operation>
+            <search position="before"><![CDATA[public function index() {]]></search>
+            <add><![CDATA[
+             public function getajaxdate(){
+
+        //take holiday date because also disable holiday date
+
+        $this->load->model('checkout/holidaydate');
+
+        $Holiday_check=$this->model_checkout_holidaydate->getHolidaydate();
+
+
+        foreach($Holiday_check as $allday)
+        {
+                if(strtotime($allday['holiday_date']) >= strtotime(date("d-m-Y")) )
+                {
+                $holidays[]=$allday['holiday_date'];
+                $date = date("Y");
+                $datevalue[]= date("d/m", strtotime($allday['holiday_date'])). "/" .$date ;
+                }
+                 elseif($allday['is_recursive'] == 1)
+                {
+                $date = date("Y");
+                $datevalue[]= date("d/m", strtotime($allday['holiday_date'])). "/" .$date ;
+                }
+        }
+
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($datevalue));
+    }
+]]></add>
+        </operation>
+         <operation>
+            <search position="after"><![CDATA[public function save() {]]></search>
+            <add><![CDATA[
+		unset($this->session->data['delivery_date']);
+
+		if(isset($this->request->post['delivery_date'])){  //echo $this->request->post['delivery_date']."hai";exit;
+			$this->session->data['delivery_date'] = $this->request->post['delivery_date'];
+		}
+
+		unset($this->session->data['delivery_time']);
+
+		if(isset($this->request->post['delivery_time'])){
+			$this->session->data['delivery_time'] = $this->request->post['delivery_time'];
+		}
+]]></add>
+        </operation>
+<operation>
+            <search position="after"><![CDATA[$json = array();]]></search>
+            <add><![CDATA[if($this->config->get('deliverydatetime_status')==1) { //echo $this->request->post['delivery_date'];exit;
+			if($this->request->post['delivery_date']=='')
+			{
+				$json['error']['warning'] = "Please select the preferred Delivery / Pickup date";
+			}
+			if(!isset($this->request->post['delivery_time']))
+			{
+				$json['error']['warning'] = "Pickup / Delivery Time Slot";
+			}
+		 }
+]]></add>
+        </operation>
+    </file>
+ <file path="catalog/view/theme/*/template/checkout/shipping_method.tpl">
+        <operation>
+            <search position="before"><![CDATA[<?php if ($error_warning) { ?>]]></search>
+            <add><![CDATA[<link href="catalog/view/javascript/dist/css/bootstrap-datepicker.css" rel="stylesheet" media="screen" />
+<link href="catalog/view/javascript/dist/css/bootstrap-datepicker.min.css" rel="stylesheet" media="screen" />
+				<?php if($timeslotinstall_status==1) { ?>
+<div class="form-group">
+     <label class="col-sm-6 control-label"><?php echo "<b>Please select the preferred Delivery / Pickup date<b>"; ?></label>
+  <div class="col-sm-6">
+    <input type='text' name="delivery_date" data-date-format="DD/MM/YYYY"  id='date' readonly="true" style="width:185px;">
+  </div>
+</div>
+<input type="hidden" name="cur_date"  id="datepick_cur" value="<?php echo $current_date; ?>"  readonly="true"/>
+<div id="irs"></div><br><?php } ?>
+
+<input type="hidden" id="min_day" value="<?php echo $minimum_day; ?>" />
+<input type="hidden" id="max_day" value="<?php echo $maximum_day; ?>" />
+<input type="hidden" id="disable_date" value="<?php echo $getdbdate; ?>" />
+
+<br><br>]]></add>
+        </operation>
+        <operation>
+            <search position="after" offset="2"><![CDATA[<input type="button" value="<?php echo $button_continue; ?>" id="button-shipping-method" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary" />]]></search>
+            <add><![CDATA[<!--<script src="catalog/view/javascript/dist/js/bootstrap-datepicker.js" type="text/javascript"></script>
+ <script src="catalog/view/javascript/dist/js/bootstrap-datepicker.min.js" type="text/javascript"></script>
+ <script src="catalog/view/javascript/dist/js/bootstrap-datepicker.js" type="text/javascript"></script>-->
+ <!--<script src="catalog/view/javascript/dist/locales/bootstrap-datepicker.nl.min.js" type="text/javascript"></script>-->
+				<script type="text/javascript">
+  $(document).ready(function(){
+    var datepick_cur=$("#datepick_cur").val(); //alert(datepick_cur);
+//*************************
+
+        var min_day=$("#min_day").val();
+        var max_day=$("#max_day").val();
+
+        var ddd=new Date();
+        var day=1;
+        Date.prototype.addDays = function(day) {
+            this.setDate(this.getDate() + parseInt(day));
+            return this;
+        };
+        var addonedate=ddd.addDays(day);//add one date to current date because disable date start to next day.
+
+
+        var today = new Date(addonedate);
+
+        var days=min_day;
+        Date.prototype.addDays = function(days) {
+            this.setDate(this.getDate() + parseInt(days));
+            return this;
+        };
+        var addDaysdate=today.addDays(days);
+
+        var newDate=addDaysdate.getDate();
+
+        var newmonth=addDaysdate.getMonth()+1;
+
+        var newyear=addDaysdate.getFullYear();
+
+        var min_date=newmonth+"/"+newDate+"/"+newyear;
+
+
+        var min_date_default=newDate+"/"+newmonth+"/"+newyear;
+
+       // $('#date').val(min_date_default);//show default date in picker
+
+        var daysmaximum=max_day-1;
+        Date.prototype.addDays = function(daysmaximum) {
+            this.setDate(this.getDate() + parseInt(daysmaximum));
+            return this;
+        };
+        var addDaysdatemax=today.addDays(daysmaximum);
+
+        var newDatemax=addDaysdatemax.getDate();
+
+        var newmonthmax=addDaysdatemax.getMonth()+1;
+
+        var newyearmax=addDaysdatemax.getFullYear();
+
+
+
+       var max_date=newmonthmax+"/"+newDatemax+"/"+newyearmax;
+
+//take festival holiday disabled
+        function getalldates(){
+            $data = '';
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                async: false,
+                url: "index.php?route=checkout/shipping_method/getajaxdate",
+                success: function(data){
+                    $data = data;
+                    // executed on success
+                }
+            });
+            return $data;
+        }
+
+        datearray1 = getalldates();
+
+//take weekdays holiday disabled
+
+        var disableweek_date=$('#disable_date').val();
+        var array_disableweek_date = JSON.parse("[" + disableweek_date + "]");//alert(array_disableweek_date);
+//**********************
+
+    
+    $("#date").datetimepicker({   
+          // minDate:datepick_cur,
+    // startDate: 'd',
+	// daysOfWeekDisabled: [0],
+	       pickTime: false,
+	       minDate: moment(min_date),
+           maxDate: moment(max_date),
+	       disabledDates: datearray1,
+	       daysOfWeekDisabled:array_disableweek_date,
+	       
+	// weekStart: 0,
+	// language: 'nl'
+ 
+    });
+
+   $('#date').change(function () {    
+     display( $('#date').val() );
+   });
+
+    function display(msg) { 
+      if(datepick_cur==msg){
+        $result="Pickup / Delivery Time Slot";
+        $result += " <br> ";
+        $result += "<?php $timeslotexist=0;  ?>";
+        $result += "<?php  $hour_add=$deliverydatetime_timeinterval; foreach($delivery_times as $delivery_time) { ?>";
+        $result += " <?php  if($delivery_time['status']==1) { ?>";
+        $result +="<?php if(($current_time+$hour_add) < $delivery_time['from_time'] && ($current_time+$hour_add)< $delivery_time['to_time'] ){ ?>";
+        $result += "<?php $timeslotexist=1;  ?>";
+        $result +="  <input type='radio' id='timeslot' name='delivery_time' value='";
+        $result += "<?php echo date('g:i a', strtotime($delivery_time['from_time'])); ?>";
+        $result +=" To ";
+        $result +="<?php echo date('g:i a', strtotime($delivery_time['to_time'])); ?>";
+        $result +="'>";
+        $result +="<?php echo date('g:i a', strtotime($delivery_time['from_time'])); ?>"; $result +=" To "; $result +="<?php echo date('g:i a', strtotime($delivery_time['to_time'])); ?>";
+        $result += "	<br> ";
+        $result += "	<?php  } } } ?>";
+        $result += "<?php if(!$timeslotexist) { ?> ";
+        $result += "<span style='color:red;'>";
+        $result += "<?php echo 'There is no delivery time slot available. Please select other date'; } ?>";
+        $result += "</span>";
+
+      }else{
+
+        $result="<b>Pickup / Delivery Time Slot</b>";
+        $result += " <br> ";
+        $result += "<?php  foreach($delivery_times as $delivery_time) { ?>";
+        $result += " <?php  if($delivery_time['status']==1) { ?>";
+        $result +="  <input type='radio' id='timeslot' name='delivery_time' value='";
+        $result += "<?php echo  date('g:i a', strtotime($delivery_time['from_time'])); ?>";
+        $result +=" To ";
+        $result +="<?php echo  date('g:i a', strtotime($delivery_time['to_time'])); ?>";
+        $result +="'>";
+        $result +="<?php echo  date('g:i a', strtotime($delivery_time['from_time'])); ?>"; $result +=" To "; $result +="<?php echo date('g:i a', strtotime($delivery_time['to_time'])); ?>";
+        $result += "	<br> ";
+        $result += "	<?php  } } ?>";
+
+      }
+      $("#irs").html( $result);
+
+    }
+  });
+
+</script>
+]]></add>
+        </operation>
+   </file>
+<file path="catalog/view/theme/*/template/checkout/checkout.tpl">
+        <operation>
+            <search position="replace"><![CDATA[data: $('#collapse-shipping-method input[type=\'radio\']:checked, #collapse-shipping-method textarea'),]]></search>
+            <add><![CDATA[data: $('#collapse-shipping-method input[type=\'radio\']:checked, #collapse-shipping-method textarea,#collapse-shipping-method #date,#collapse-shipping-method input[name=\'delivery_time\']:checked'),]]></add>
+        </operation>
+</file>
+
+<file path="catalog/controller/checkout/confirm.php">
+        <operation>
+            <search position="before"><![CDATA[$order_data['comment'] = $this->session->data['comment'];]]></search>
+            <add><![CDATA[if(isset($this->session->data['delivery_date']))
+                {
+                $order_data['delivery_date'] = $this->session->data['delivery_date'];
+                }
+
+                if(isset($this->session->data['delivery_time']))
+                {
+                $order_data['delivery_time'] = $this->session->data['delivery_time'];
+                }]]></add>
+        </operation>
+</file>
+
+ <file path="catalog/model/checkout/order.php">
+    <operation>
+        <search position="replace"><![CDATA[$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? serialize($data['custom_field']) : '') . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(isset($data['payment_custom_field']) ? serialize($data['payment_custom_field']) : '') . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(isset($data['shipping_custom_field']) ? serialize($data['shipping_custom_field']) : '') . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', marketing_id = '" . (int)$data['marketing_id'] . "', tracking = '" . $this->db->escape($data['tracking']) . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");]]></search>
+        <add><![CDATA[if(isset($data['delivery_date'])){
+
+            $date = str_replace('/', '-',$data['delivery_date']);
+            $datevaluechange = date('Y-m-d', strtotime($date));
+	    $timeslot=$data['delivery_time'];
+$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? serialize($data['custom_field']) : '') . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(isset($data['payment_custom_field']) ? serialize($data['payment_custom_field']) : '') . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(isset($data['shipping_custom_field']) ? serialize($data['shipping_custom_field']) : '') . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "',delivery_date = '" . $datevaluechange . "',delivery_time = '" . $this->db->escape($timeslot) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', marketing_id = '" . (int)$data['marketing_id'] . "', tracking = '" . $this->db->escape($data['tracking']) . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");
+} else {
+$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? serialize($data['custom_field']) : '') . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(isset($data['payment_custom_field']) ? serialize($data['payment_custom_field']) : '') . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(isset($data['shipping_custom_field']) ? serialize($data['shipping_custom_field']) : '') . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', marketing_id = '" . (int)$data['marketing_id'] . "', tracking = '" . $this->db->escape($data['tracking']) . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");
+} ]]></add>
+    </operation>
+
+        <operation>
+            <search position="replace"><![CDATA[$this->db->query("UPDATE `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(serialize($data['payment_custom_field'])) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(serialize($data['shipping_custom_field'])) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");]]></search>
+            <add><![CDATA[if(isset($data['delivery_date'])){
+
+            $date = str_replace('/', '-',$data['delivery_date']);
+            $datevaluechange = date('Y-m-d', strtotime($date));
+	        $timeslot=$data['delivery_time'];
+$this->db->query("UPDATE `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(serialize($data['payment_custom_field'])) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(serialize($data['shipping_custom_field'])) . "',delivery_date = '" . $datevaluechange . "',delivery_time = '" . $this->db->escape($timeslot) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+
+} else {
+$this->db->query("UPDATE `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(serialize($data['payment_custom_field'])) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(serialize($data['shipping_custom_field'])) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+}]]></add>
+        </operation>
+
+         <operation>
+            <search position="before"><![CDATA['date_added'              => $order_query->row['date_added']]]></search>
+            <add><![CDATA['delivery_date'           => $order_query->row['delivery_date'],
+'delivery_time'           => $order_query->row['delivery_time'],]]></add>
+        </operation>
+
+        <operation>
+            <search position="before"><![CDATA[$data['link'] = $order_info['store_url'] . 'index.php?route=account/order/info&order_id=' . $order_id;]]></search>
+            <add><![CDATA[$data['delivery_date'] = $order_info['delivery_date'];
+$data['delivery_time'] = $order_info['delivery_time'];
+$data['timeslotinstall_status']=$this->config->get('deliverydatetime_status');]]></add>
+        </operation>
+</file>
+<file path="catalog/view/theme/*/template/mail/order.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<b><?php echo $text_ip; ?></b> <?php echo $ip; ?><br />]]></search>
+            <add><![CDATA[<b><?php echo $text_ip; ?></b> <?php echo $ip; ?><br />
+<?php if($timeslotinstall_status==1) { ?>
+<b><?php echo "Delivery Date :"; ?></b> <?php echo $delivery_date; ?><br />
+<b><?php echo "Delivery Time :"; ?></b> <?php echo $delivery_time; ?><br /><?php } ?>]]></add>
+        </operation>
+</file>
+   <!--delivery date show in order history-->
+<file path="catalog/controller/account/order.php">
+        <operation>
+            <search position="before"><![CDATA[if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/account/order_info.tpl')) {]]></search>
+            <add><![CDATA[if (isset($this->request->get['order_id'])) {
+                $order_id = $this->request->get['order_id'];
+            } else {
+                $order_id = 0;
+            }
+
+            $this->load->model("account/order");
+            $delivery_datetime=$this->model_account_order->getdeliverydatetime($order_id);  
+             
+            if($delivery_datetime['delivery_date']!="0000-00-00") {
+            $date = str_replace('/', '-', $delivery_datetime['delivery_date']);            
+            $data['delivery_date'] = date('d/m/Y', strtotime($date)); 
+			}   
+			else{
+				$data['delivery_date']="";
+			}    
+            $data['delivery_time']= $delivery_datetime['delivery_time'];
+            $data['timeslotinstall_status']=$this->config->get('deliverydatetime_status');]]></add>
+        </operation>
+</file>
+<file path="catalog/model/account/order.php">
+        <operation>
+            <search position="before"><![CDATA[public function getOrder($order_id) {]]></search>
+            <add><![CDATA[public  function getdeliverydatetime($order_id){
+
+                $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order WHERE order_id = '" . (int)$order_id . "'");
+	
+		return $query->row;
+		
+        }]]></add>
+        </operation>
+</file>
+<file path="catalog/view/theme/*/template/account/order_info.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<b><?php echo $text_shipping_method; ?></b> <?php echo $shipping_method; ?>]]></search>
+            <add><![CDATA[<b><?php echo $text_shipping_method; ?></b> <?php echo $shipping_method; ?><br/>
+<?php } ?>
+ <?php if($timeslotinstall_status==1) {  ?>
+    <?php if ($delivery_date) { ?>
+          <b><?php echo "Delivery Date: "; ?></b> <?php echo $delivery_date; ?><br />
+          <?php } ?>
+          
+           <?php if ($delivery_time) { ?>
+          <b><?php echo "Delivery Time: "; ?></b> <?php echo $delivery_time; ?><br /> <?php } ?>]]></add>
+        </operation>
+</file>
+
+<!--admin page-->
+<file path="admin/controller/sale/order.php">
+        <operation>
+            <search position="before"><![CDATA[$this->response->setOutput($this->load->view('sale/order_form.tpl', $data));]]></search>
+            <add><![CDATA[$data['array_timeslot_list'] = array();
+
+        $delivery_datetimes=$this->model_sale_order->getdeliverytimeslot();
+
+	   foreach($delivery_datetimes as $delivery_datetime){ //print_r($delivery_datetime['title']);
+		    $data['array_timeslot_list'][]=array(
+			 'deliverytime_id' => $delivery_datetime['deliverytime_id'],			
+                         'from_time'          => $delivery_datetime['from_time'],
+                         'to_time'          => $delivery_datetime['to_time'],
+			 'status'          => $delivery_datetime['status']
+		    );
+	}
+$data['timeslotinstall_status']=$this->config->get('deliverydatetime_status');
+
+        $data['minimum_day']=$this->config->get('deliverydatetime_min_day');
+        $data['maximum_day']=$this->config->get('deliverydatetime_max_day');
+       
+
+//get disabled week dates...............
+
+        $getdbweekdaysdisable=$this->config->get('weekdays_weekdayslist');
+
+        if(isset($getdbweekdaysdisable)){
+            $data['getdbdate']=$this->config->get('weekdays_weekdayslist');
+        }
+        else{
+            $data['getdbdate']='';
+        }
+        
+        	date_default_timezone_set('Asia/Kolkata');
+		$data['current_time']=date("H:i");
+		$data['current_date']=date("d/m/Y");//echo $data['current_date'];
+]]></add>
+        </operation>
+
+	<operation>
+            <search position="before"><![CDATA[$data['order_status_id'] = $this->config->get('config_order_status_id');]]></search>
+            <add><![CDATA[$data['delivery_date'] ="";
+			  $data['delivery_time']="";]]></add>
+        </operation>
+
+	<operation>
+            <search position="after"><![CDATA[$data['shipping_code'] = $order_info['shipping_code'];]]></search>
+            <add><![CDATA[if($order_info['delivery_date']!="0000-00-00") {
+                   $date = str_replace('/', '-',$order_info['delivery_date']);
+                   $data['delivery_date'] = date('d/m/Y', strtotime($date));
+		   }
+		   else {
+		   $data['delivery_date'] ="";
+		   }
+                   $data['delivery_time'] = $order_info['delivery_time'];]]></add>
+        </operation>
+
+        <operation>
+            <search position="before"><![CDATA[$this->response->setOutput($this->load->view('sale/order_info.tpl', $data));]]></search>
+            <add><![CDATA[$this->load->model("sale/order");
+            $delivery_datetime=$this->model_sale_order->getdeliverydatetime($order_id);
+
+            if($delivery_datetime['delivery_date']!="0000-00-00") {
+            $date = str_replace('/', '-', $delivery_datetime['delivery_date']);            
+            $data['delivery_date'] = date('d/m/Y', strtotime($date)); 
+		    } else {
+				$data['delivery_date'] ="";
+			}
+		           
+            $data['delivery_time']= $delivery_datetime['delivery_time'];
+            $data['timeslotinstall_status']=$this->config->get('deliverydatetime_status');]]></add>
+        </operation>
+
+        <operation>
+            <search position="before"><![CDATA[$this->response->setOutput($this->load->view('sale/order_invoice.tpl', $data));]]></search>
+            <add><![CDATA[ if (isset($this->request->get['order_id'])) {
+            $order_id = $this->request->get['order_id'];
+            } else {
+            $order_id = 0;
+            }
+
+            $this->load->model("sale/order");
+            $delivery_datetime=$this->model_sale_order->getdeliverydatetime($order_id);
+            
+            if($delivery_datetime['delivery_date']!="0000-00-00") {
+            $date = str_replace('/', '-', $delivery_datetime['delivery_date']);            
+            $data['delivery_date'] = date('d/m/Y', strtotime($date)); 
+		    } else {
+			   $data['delivery_date'] ="";
+		    }
+                      
+            $data['delivery_time']= $delivery_datetime['delivery_time'];
+    
+		    $data['timeslotinstall_status']=$this->config->get('deliverydatetime_status');]]></add>
+        </operation>
+ <operation>
+            <search position="after"><![CDATA[private $error = array();]]></search>
+            <add><![CDATA[
+            public function getajaxdate(){
+
+        //take holiday date because also disable holiday date
+
+        $this->load->model('sale/order');
+
+        $Holiday_check=$this->model_sale_order->getHolidaydate();
+        foreach($Holiday_check as $allday)
+        {
+            $recursive=$allday['is_recursive'];
+
+            if(strtotime($allday['holiday_date']) >= strtotime(date("d-m-Y")) ){
+
+                $holidays[]=$allday['holiday_date'];
+                $date = date("Y");
+                $datevalue[]= date("d/m", strtotime($allday['holiday_date'])). "/" .$date ;
+
+            }
+            elseif($allday['is_recursive'] == 1){
+
+                $date = date("Y");
+                $datevalue[]= date("d/m", strtotime($allday['holiday_date'])). "/" .$date ;
+
+            }
+        }
+
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($datevalue));
+    }
+    ]]></add>
+        </operation>
+</file>
+
+<file path="admin/model/sale/order.php">
+        <operation>
+            <search position="before"><![CDATA[public function getOrder($order_id) {]]></search>
+            <add><![CDATA[ public  function getdeliverydatetime($order_id){
+
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order WHERE order_id = '" . (int)$order_id . "'");
+	
+		return $query->row;
+		
+        }
+
+       public  function getdeliverytimeslot(){
+    
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "deliverydatetime");
+	
+		return $query->rows;
+		
+        }
+        public function getHolidaydate() {
+
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "holiday_master");
+        return $query->rows;
+
+        }]]></add>
+        </operation>
+
+	<operation>
+            <search position="before"><![CDATA['date_modified'           => $order_query->row['date_modified']]]></search>
+            <add><![CDATA['delivery_date'           => $order_query->row['delivery_date'],
+'delivery_time'           => $order_query->row['delivery_time'],]]></add>
+        </operation>
+
+        
+</file>
+
+<file path="admin/view/template/sale/order_info.tpl">
+        <operation>
+            <search position="before" offset="2"><![CDATA[<div class="tab-pane" id="tab-payment">]]></search>
+            <add><![CDATA[<?php if($timeslotinstall_status==1) {  ?>
+       <?php if ($delivery_date) { ?>
+              <tr>
+                  <td><?php echo "Delivery Date"; ?></td>
+                  <td><?php echo $delivery_date; ?><br /></td>
+              </tr>
+       <?php } ?>
+       <?php if ($delivery_time) { ?>
+              <tr>
+                  <td><?php echo "Delivery Time"; ?></td>
+                  <td> <?php echo $delivery_time; ?><br /></td>
+              </tr>
+ <?php }  } ?>]]></add>
+        </operation>
+</file>
+<file path="admin/view/template/sale/order_invoice.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<b><?php echo $text_shipping_method; ?></b> <?php echo $order['shipping_method']; ?><br />]]></search>
+            <add><![CDATA[<b><?php echo $text_shipping_method; ?></b> <?php echo $order['shipping_method']; ?><br />
+            <?php }  ?>
+            <?php if($timeslotinstall_status==1) {  ?>
+      <?php if ($delivery_date) { ?>
+             <b><?php echo "Delivery Date"; ?></b>
+              <?php echo $delivery_date; ?><br />              
+     <?php } ?>
+     <?php if ($delivery_time) { ?>
+             <b><?php echo "Delivery Time"; ?></b>
+             <?php echo $delivery_time; ?><br />             
+<?php }  ?>]]></add>
+        </operation>
+</file>
+
+<file path="admin/view/template/sale/order_form.tpl">
+        <operation>
+            <search position="after" offset="3"><![CDATA[<select name="zone_id" id="input-shipping-zone" class="form-control">]]></search>
+            <add><![CDATA[<?php if($timeslotinstall_status==1) { ?>
+  
+		 <input type="hidden" id="min_day" value="<?php echo $minimum_day; ?>" />
+                <input type="hidden" id="max_day" value="<?php echo $maximum_day; ?>" />
+                <input type="hidden" id="disable_date" value="<?php echo $getdbdate; ?>" />
+                   <div class="form-group">
+                      <td><label class="col-sm-2 control-label" ><?php echo "Delivery Date"; ?></label>
+                      <div class="col-sm-10">
+                          <input type="text" name="delivery_date" value="<?php echo $delivery_date; ?>" id="date" data-date-format="DD/MM/YYYY" class="form-control" id="datepick" readonly="true"   />
+
+                      </div>
+                  </div>
+                
+
+
+                 
+                   <div class="form-group">
+                      <label class="col-sm-2 control-label" ><?php echo "Delivery Time"; ?></label>
+                      <div class="col-sm-10">                      
+                            <?php foreach($array_timeslot_list as $array_timeslot_list1) {?>
+				<?php if($array_timeslot_list1['status']==1){ ?>
+				    <input type="radio" id="timeslot" name="delivery_time" value="<?php  echo date('g:i a', strtotime($array_timeslot_list1['from_time']))." To ".date('g:i a', strtotime($array_timeslot_list1['to_time'])); ?>" <?php echo ($delivery_time == (date('g:i a', strtotime($array_timeslot_list1['from_time']))." To ".date('g:i a', strtotime($array_timeslot_list1['to_time']))) ? 'checked=checked' : ''); ?>><?php echo date('g:i a', strtotime($array_timeslot_list1['from_time']))." To ".date('g:i a', strtotime($array_timeslot_list1['to_time'])); ?>
+			    <?php } }  ?>     
+                     
+                      </div>
+                  </div>
+                
+<?php } ?>
+]]></add>
+        </operation>
+ <operation>
+            <search position="before"><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[<script type="text/javascript">
+ //$('#datepick').datetimepicker({ });
+ 
+  $(document).ready(function(){   
+//*************************
+
+        var min_day=$("#min_day").val();
+        var max_day=$("#max_day").val();
+
+        var ddd=new Date();
+        var day=1;
+        Date.prototype.addDays = function(day) {
+            this.setDate(this.getDate() + parseInt(day));
+            return this;
+        };
+        var addonedate=ddd.addDays(day);//add one date to current date because disable date start to next day.
+
+
+        var today = new Date(addonedate);
+
+        var days=min_day;
+        Date.prototype.addDays = function(days) {
+            this.setDate(this.getDate() + parseInt(days));
+            return this;
+        };
+        var addDaysdate=today.addDays(days);
+
+        var newDate=addDaysdate.getDate();
+
+        var newmonth=addDaysdate.getMonth()+1;
+
+        var newyear=addDaysdate.getFullYear();
+
+        var min_date=newmonth+"/"+newDate+"/"+newyear;
+
+
+        var min_date_default=newDate+"/"+newmonth+"/"+newyear;
+
+       // $('#date').val(min_date_default);//show default date in picker
+
+        var daysmaximum=max_day-1;
+        Date.prototype.addDays = function(daysmaximum) {
+            this.setDate(this.getDate() + parseInt(daysmaximum));
+            return this;
+        };
+        var addDaysdatemax=today.addDays(daysmaximum);
+
+        var newDatemax=addDaysdatemax.getDate();
+
+        var newmonthmax=addDaysdatemax.getMonth()+1;
+
+        var newyearmax=addDaysdatemax.getFullYear();
+
+
+
+       var max_date=newmonthmax+"/"+newDatemax+"/"+newyearmax;
+
+//take festival holiday disabled
+        function getalldates(){
+            $data = '';
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                async: false,
+                url: "index.php?route=sale/order/getajaxdate&token=<?php echo $token; ?>",
+                success: function(data){ 
+                    $data = data;
+                    //console.log(data);return false;
+                    // executed on success
+                }
+            });
+            return $data;
+        }
+
+        datearray1 = getalldates();
+
+//take weekdays holiday disabled
+
+        var disableweek_date=$('#disable_date').val();
+        var array_disableweek_date = JSON.parse("[" + disableweek_date + "]");//alert(array_disableweek_date);
+//**********************
+
+
+    $("#date").datetimepicker({   
+          // minDate:datepick_cur,
+    // startDate: 'd',
+	// daysOfWeekDisabled: [0],
+	       pickTime: false,
+	       minDate: moment(min_date),
+               maxDate: moment(max_date),
+	       disabledDates: datearray1,
+	       daysOfWeekDisabled:array_disableweek_date,
+	       
+	// weekStart: 0,
+	// language: 'nl'
+ 
+    });
+
+  });
+ 
+ 
+ </script>]]></add>
+        </operation>
+</file>
+
+<file path="catalog/controller/api/order.php">
+        <operation>
+            <search position="before"><![CDATA[$order_data['payment_firstname'] = $this->session->data['payment_address']['firstname'];]]></search>
+            <add><![CDATA[$order_data['delivery_date'] = $this->session->data['shipping_address']['delivery_date'];
+$order_data['delivery_time'] = $this->session->data['shipping_address']['delivery_time'];]]></add>
+        </operation>
+</file>
+<file path="catalog/controller/api/shipping.php">
+        <operation>
+            <search position="after"><![CDATA[$this->session->data['shipping_address'] = array(]]></search>
+            <add><![CDATA['delivery_date'=>(isset($this->request->post['delivery_date'])?$this->request->post['delivery_date']:""),
+'delivery_time'=>(isset($this->request->post['delivery_time'])?$this->request->post['delivery_time']:""),]]></add>
+        </operation>
+</file>
+
+<!--admin Menu Delivery time slot in localisation-->
+<file path="admin/controller/common/menu.php">
+        <operation>
+            <search position="before"><![CDATA[$data['currency'] = $this->url->link('localisation/currency', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+            <add><![CDATA[$data['deliverytimeslot'] = $this->url->link('localisation/deliverytimeslot', 'token=' . $this->session->data['token'], 'SSL');
+$data['holidaymaster'] = $this->url->link('localisation/holidaymaster', 'token=' . $this->session->data['token'], 'SSL');
+        $data['weekdaymaster'] = $this->url->link('localisation/holidaymaster/weekdays', 'token=' . $this->session->data['token'], 'SSL');]]></add>
+        </operation>
+</file>
+<file path="admin/view/template/common/menu.tpl">
+        <operation>
+            <search position="before"><![CDATA[<li><a href="<?php echo $location; ?>"><?php echo $text_location; ?></a></li>]]></search>
+            <add><![CDATA[<li><a href="<?php echo $deliverytimeslot; ?>"><?php echo "Delivery Timeslot"; ?></a></li>
+<li><a href="<?php echo $holidaymaster; ?>"><?php echo "Holiday Master"; ?></a></li>
+            <li><a href="<?php echo $weekdaymaster; ?>"><?php echo "Weekdays Master"; ?></a></li>]]></add>
+        </operation>
+</file>
+</modification>	

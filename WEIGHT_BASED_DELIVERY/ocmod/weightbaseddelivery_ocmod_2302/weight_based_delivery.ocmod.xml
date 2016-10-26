@@ -1,0 +1,537 @@
+<modification>
+    <name>weight_based_delivery.ocmod</name>
+    <code>weight_based_delivery.ocmod</code>
+    <version>1.0</version>
+    <author>IRSSOFT</author>
+    <link>www.irssoft.com</link>
+<!--catalog-->
+<!--postcode validation-> shipping_address.php-->
+    <file path="catalog/controller/checkout/shipping_address.php">
+        <operation>
+            <search><![CDATA[class ControllerCheckoutShippingAddress extends Controller {]]></search>
+            <add position="after"><![CDATA[
+            public  function postcodevalidation($request_postcode)
+        {
+        $this->load->model('checkout/postcodeval');
+
+        $postcode_check=$this->model_checkout_postcodeval->getPostcode($request_postcode);
+
+        return $postcode_check;
+       }
+    ]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[$this->session->data['shipping_address'] = $this->model_account_address->getAddress($this->request->post['address_id']);]]></search>
+            <add position="after"><![CDATA[
+                    $existing_postcode_check=$this->postcodevalidation($this->session->data['shipping_address']['postcode']);
+
+                    if($existing_postcode_check=="")
+                    {
+                        $json['error']['warning'] = $this->language->get('error_novalidpostcode');
+                    }
+    ]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[$country_info = $this->model_localisation_country->getCountry($this->request->post['country_id']);]]></search>
+            <add position="after"><![CDATA[
+                    $getpostcode_formvalid=$this->postcodevalidation($this->request->post['postcode']);
+    ]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[if ($this->request->post['country_id'] == '') {]]></search>
+            <add position="before"><![CDATA[
+                     elseif($getpostcode_formvalid=="")
+                     {
+                      $json['error']['postcode'] = $this->language->get('error_novalidpostcode');
+                     }
+    ]]></add>
+        </operation>
+</file>
+
+    <file path="catalog/language/en-gb/checkout/checkout.php">
+        <operation>
+            <search><![CDATA[$_['error_postcode']                 = 'Postcode must be between 2 and 10 characters!';]]></search>
+            <add position="after"><![CDATA[
+           $_['error_novalidpostcode']          = 'Delivery not available for this postcode !';
+$_['error_minweight']                = 'kindly purchase above minimum weight !  ';
+$_['error_maxamount']                = 'kindly purchase below maximum weight !  ';
+                    ]]></add>
+        </operation>
+    </file>
+    <!-- shipping charge validation added in cart -->
+    <!-- cart.php ->  -->
+
+    <file path="catalog/controller/checkout/cart.php">
+    <operation>
+        <search><![CDATA[class ControllerCheckoutCart extends Controller {]]></search>
+        <add position="after"><![CDATA[
+        public function getshipping(){
+
+        $getcartweight = $this->cart->getWeight();//opencart db cart weight
+		//echo $getcartweight.'cart weight';
+
+        $this->load->model('checkout/postcodeval');
+
+       $flat_shipping=$this->model_checkout_postcodeval->getshipping_charge($this->session->data['shipping_address']['postcode']);
+	//	print_r($flat_shipping);
+        $default_flat_cost= $this->config->get('flat_cost');//get module->shipping>default charge
+
+        $shipping=0;
+
+        foreach($flat_shipping as $flat){
+		
+            switch($flat['condition_type']){
+                case 1:
+                    if($getcartweight <= $flat['min_weight']){
+
+                        $shipping=$flat['shipping_charge'];
+
+                    }
+                    break;
+                case 2:
+                    if($getcartweight > $flat['max_weight']){
+
+                        $shipping=$flat['shipping_charge'];
+
+                    }
+                    break;
+                case 3:
+                    if($getcartweight > $flat['min_weight'] && $getcartweight <= $flat['max_weight']){
+
+                            $shipping=$flat['shipping_charge'];
+                    }
+                    break;
+                }
+        if($shipping!=0){
+            break;
+        }
+
+        }
+
+        if($shipping == 0){
+            $shipping = $default_flat_cost;
+        }
+        return $shipping;
+        }
+    ]]></add>
+    </operation>
+
+        <operation>
+            <search><![CDATA[$data['totals'] = array();]]></search>
+            <add position="after"><![CDATA[
+                     $shipping_charge=$this->getshipping();
+    ]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[foreach ($totals as $total) {]]></search>
+            <add position="after"><![CDATA[
+                     $Flat_Shipping_Rate='';
+
+                if("Flat Shipping Rate" == $total['title'])
+                {
+
+                    $Flat_Shipping_Rate=$shipping_charge;
+                    //echo $Flat_Shipping_Rate;exit;
+                }
+
+
+    ]]></add>
+        </operation>
+        <operation>
+            <search><![CDATA['text'  => $this->currency->format($total['value'], $this->session->data['currency'])]]></search>
+            <add position="replace"><![CDATA[
+                     'text'  => (!empty($Flat_Shipping_Rate) ?  $this->currency->format($Flat_Shipping_Rate, $this->session->data['currency']) : $this->currency->format($total['value'], $this->session->data['currency']))
+    ]]></add>
+        </operation>
+    </file>
+
+    <!-- shipping charge validation added in confirm -->
+    <!-- confirm.php ->  -->
+
+        <file path="catalog/controller/checkout/confirm.php">
+            <operation>
+                <search><![CDATA[class ControllerCheckoutConfirm extends Controller {]]></search>
+                <add position="after"><![CDATA[
+
+                 public function getshipping(){
+
+        $getcartweight = $this->cart->getWeight();
+
+        $this->load->model('checkout/postcodeval');
+
+        //$flat_shipping=$this->model_checkout_postcodeval->getshipping_charge($this->session->data['shipping_address']['postcode']);
+        $flat_shipping=$this->model_checkout_postcodeval->getshipping_charge($this->session->data['shipping_address']['postcode']);
+
+        $default_flat_cost= $this->config->get('flat_cost');//get module->shipping>default charge
+
+        $shipping=0;
+
+        foreach($flat_shipping as $flat){
+
+            switch($flat['condition_type']){
+                case 1:
+                    if($getcartweight <= $flat['min_weight']){
+
+                        $shipping=$flat['shipping_charge'];
+
+                    }
+                    break;
+                case 2:
+                    if($getcartweight > $flat['max_weight']){
+
+                        $shipping=$flat['shipping_charge'];
+
+                    }
+                    break;
+                case 3:
+                    if($getcartweight > $flat['min_weight'] && $getcartweight <= $flat['max_weight']){
+
+                        $shipping=$flat['shipping_charge'];
+                    }
+                    break;
+            }
+            if($shipping!=0){
+                break;
+            }
+
+        }
+
+        if($shipping == 0){
+            $shipping = $default_flat_cost;
+        }
+
+        return $shipping;
+
+    }
+
+                 ]]></add>
+            </operation>
+
+            <operation>
+                <search><![CDATA[$data['totals'] = array();]]></search>
+                <add position="after"><![CDATA[
+                     $shipping_charge=$this->getshipping();
+    ]]></add>
+            </operation>
+
+            <operation>
+                <search><![CDATA[foreach ($order_data['totals'] as $total) {]]></search>
+                <add position="after"><![CDATA[
+                      $Flat_Shipping_Rate='';
+
+                if("Flat Shipping Rate" == $total['title'])
+                {
+
+                    $Flat_Shipping_Rate=$shipping_charge;
+                    //echo $Flat_Shipping_Rate;exit;
+                }
+
+    ]]></add>
+            </operation>
+    </file>
+
+    <!-- shipping charge validation added in db and shipping flat shipping show in step 4 -->
+    <!-- flat.php ->  -->
+            <file path="catalog/model/extension/shipping/flat.php">
+                <operation>
+                    <search><![CDATA[class ModelExtensionShippingFlat extends Model {]]></search>
+                    <add position="after"><![CDATA[
+                    function getshipping(){
+
+        $getcartweight = $this->cart->getWeight();
+
+        $this->load->model('checkout/postcodeval');
+
+        //$flat_shipping=$this->model_checkout_postcodeval->getshipping_charge($this->session->data['shipping_address']['postcode']);
+        $flat_shipping=$this->model_checkout_postcodeval->getshipping_charge($this->session->data['shipping_address']['postcode']);
+
+        $default_flat_cost= $this->config->get('flat_cost');//get module->shipping>default charge
+
+        $shipping=0;
+
+        foreach($flat_shipping as $flat){
+
+            switch($flat['condition_type']){
+                case 1:
+                    if($getcartweight <= $flat['min_weight']){
+
+                        $shipping=$flat['shipping_charge'];
+
+                    }
+                    break;
+                case 2:
+                    if($getcartweight > $flat['max_weight']){
+
+                        $shipping=$flat['shipping_charge'];
+
+                    }
+                    break;
+                case 3:
+                    if($getcartweight > $flat['min_weight'] && $getcartweight <= $flat['max_weight']){
+
+                        $shipping=$flat['shipping_charge'];
+                    }
+                    break;
+            }
+            if($shipping!=0){
+                break;
+            }
+
+        }
+
+        if($shipping == 0){
+            $shipping = $default_flat_cost;
+        }
+
+
+        return $shipping;
+
+    }
+
+]]></add>
+                </operation>
+                <operation>
+                    <search><![CDATA[$method_data = array();]]></search>
+                    <add position="before"><![CDATA[
+                    $shipping_charge=$this->getshipping();
+    ]]></add>
+                </operation>
+
+                <operation>
+                    <search><![CDATA['cost'         => $this->config->get('flat_cost'),]]></search>
+                    <add position="replace"><![CDATA[
+                   'cost'         => $shipping_charge,
+    ]]></add>
+                </operation>
+
+                <operation>
+                    <search><![CDATA['text'         => $this->currency->format($this->tax->calculate($this->config->get('flat_cost'), $this->config->get('flat_tax_class_id'), $this->config->get('config_tax')), $this->session->data['currency'])]]></search>
+                    <add position="replace"><![CDATA['text'         => $this->currency->format($this->tax->calculate($shipping_charge, $this->config->get('flat_tax_class_id'), $this->config->get('config_tax')), $this->session->data['currency'])]]></add>
+                </operation>
+
+        </file>
+
+
+<!-- weight list and shipping charge listed in front footer page -->
+<file path="catalog/controller/common/header.php">
+<operation>
+    <search><![CDATA[$data['telephone'] = $this->config->get('config_telephone');]]></search>
+    <add position="after"><![CDATA[
+            $data['postcodemaster'] = $this->url->link('information/postcodemaster');
+                    ]]></add>
+</operation>
+</file>
+
+    <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation>
+            <search><![CDATA[<li><a href="<?php echo $checkout; ?>" title="<?php echo $text_checkout; ?>"><i class="fa fa-share"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $text_checkout; ?></span></a></li>]]></search>
+            <add position="after"><![CDATA[
+             <li><a href="<?php echo $postcodemaster; ?>" <?php echo "Shipping Charge Detail"; ?>><i class="fa fa-location-arrow"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo "Shipping Charge Detail"; ?></span></a></li>
+                    ]]></add>
+        </operation>
+    </file>
+
+
+
+
+<!--detail page validation of postcode availability -->
+<file path="catalog/controller/product/product.php">
+<operation>
+    <search><![CDATA[private $error = array();]]></search>
+    <add position="after"><![CDATA[
+        public function ajaxpostcode_check() {
+
+        $user_enter_postcode=$_POST['postcode'];
+
+        $this->load->model('checkout/postcodeval');
+
+        $shipping_charge_list=$this->model_checkout_postcodeval->getshipping_charge($user_enter_postcode);
+
+        $status=0;
+        if(!empty($shipping_charge_list)){
+            $status=1;
+            $data['delivery_available']="Available for delivery at your location";
+        }
+        else{
+            $data['delivery_not_available']="Delivery not available for this  location";
+        }
+
+
+        $data['postcodemaster']=array();
+        $data['status']=$status;
+
+        foreach($shipping_charge_list as $shipping){
+            $data['postcodemaster'][]=array(
+                'postcode'=>$shipping['postcode'],
+                'condition_type'=>$shipping['condition_type'],
+                'min_weight'=>$shipping['min_weight'],
+                'max_weight'=>$shipping['max_weight'],
+                'shipping_charge'=>$shipping['shipping_charge']
+            );
+        }
+
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($data));
+
+}
+                    ]]></add>
+</operation>
+
+</file>
+
+<file path="catalog/view/theme/*/template/product/product.tpl">
+<operation>
+    <search><![CDATA[<div id="product">]]></search>
+    <add position="before"><![CDATA[
+
+            <div class="form-group">
+                <?php echo "Check Availability at"; ?>
+
+                <input type="text" name="postcode_check_availability" id="postcode_check" maxlength="6"  value="<?php //echo $postcode; ?>" placeholder="<?php echo 'Enter pincode'; ?>" />
+
+                <button type="submit"  title="<?php echo 'Check Postcode'; ?>" id="check_pincode"><?php echo "Check"; ?> </button><br>
+
+                <div id="availability" class="alert-danger"></div>
+
+
+                <div class="shipping_charge">
+
+        </div>
+                    ]]></add>
+</operation>
+
+    <operation>
+        <search><![CDATA[<?php echo $footer; ?>]]></search>
+        <add position="before"><![CDATA[
+
+
+<script type="text/javascript">
+    $(document).ready(function(){
+
+        $("#check_pincode").on("click",function(){
+
+           var postcode=$("#postcode_check").val();
+            //alert(postcode);
+
+            $.ajax({
+
+                type:'POST',
+                datatype:'json',
+                async:false,
+                data: {postcode: postcode},
+                url:"index.php?route=product/product/ajaxpostcode_check",
+                success:function(data) {
+
+                    var status = data.status;
+                    // alert(data.status);
+                    // return false;
+
+                    var passingtoHTML = "";
+if(status==1) {
+    $('#availability').empty();
+   // passingtoHTML = data.delivery_available;
+
+
+                    passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' width='100%' > ";
+                    passingtoHTML += " <thead><tr><th>Weight</th><th>Shipping Charge</th></tr></thead><tbody>";
+
+//parse data using foreach
+                    $.each(data.postcodemaster, function (id, row_array) {
+
+                        // $.each(row, function (id1, row_array) {
+
+                        passingtoHTML += "<tr class='record'>";
+
+                        if (row_array["condition_type"] == 1) {
+                            passingtoHTML += "<td>" +"Below    " + row_array["min_weight"] + "  kg" + "</td>";
+                        }
+
+                        else if (row_array["condition_type"] == 3) {
+                            passingtoHTML += "<td>" + "Above     " + row_array["max_weight"] + "  kg" + "</td>";
+                        }
+
+                        else if (row_array["condition_type"] == 2) {
+                            passingtoHTML += "<td>" + row_array["min_weight"] + "  kg  to " + row_array["max_weight"] + "  kg" + "</td>";
+                        }
+
+                        passingtoHTML += "<td width='20%'>" + row_array["shipping_charge"] + "</td>";
+                        passingtoHTML += "</tr>";
+
+                        // });//end each
+
+                    });//end each
+
+                    $('.shipping_charge').html(passingtoHTML);
+
+                }
+                    else {
+    $('.shipping_charge').empty();
+    passingtoHTML = data.delivery_not_available;
+    $('#availability').html(passingtoHTML);
+
+                    }
+
+                }//end success
+
+            });//end ajax
+        });
+    });
+
+</script>
+
+                    ]]></add>
+    </operation>
+</file>
+
+<!-- admin page-->
+    <!-- hide edit button in admin module wight based dellivery -->
+
+    <file path="admin/controller/extension/module.php">
+        <operation>
+            <search><![CDATA['name'      => $this->language->get('heading_title'),]]></search>
+            <add position="after"><![CDATA['display' => $display_style,]]>
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[$data['extensions'][] = array(]]></search>
+            <add position="before"><![CDATA[$display_style = ($this->language->get('heading_title') == 'Weight Based Delivery') ? "style=display:none" : "";]]></add>
+            ;
+        </operation>
+
+    </file>
+
+    <file path="admin/view/template/extension/module.tpl">
+        <operation>
+            <search><![CDATA[<a href="<?php echo $extension['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a>]]></search>
+            <add position="replace"><![CDATA[<a href="<?php echo $extension['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary" <?php echo $extension['display']; ?>><i class="fa fa-pencil"></i></a>]]></add>
+        </operation>
+    </file>
+
+ <!-- add postcodemaster heading-->
+
+	<!--admin page-->
+    <file path="admin/controller/common/column_left.php">
+        <operation>
+            <search><![CDATA[$localisation = array();]]></search>
+            <add position="after"><![CDATA[if ($this->user->hasPermission('access', 'localisation/postcodemaster_weight_based')) { 
+				$localisation[] = array(
+					'name'	   => $this->language->get('Postcodes'),
+					'href'     => $this->url->link('localisation/postcodemaster_weight_based', 'token=' . $this->session->data['token'], true),
+					'children' => array()		
+				);	
+			}]]></add>
+        </operation>
+    </file>
+<file path="admin/view/template/common/column_left.tpl">
+        <operation>
+            <search><![CDATA[// Text]]></search>
+            <add position="before"><![CDATA[<li><a href="<?php echo $postcodemaster_weight; ?>"><?php echo "Postcodes"; ?></a></li>]]></add>
+        </operation>
+    </file>
+	
+	
+</modification>

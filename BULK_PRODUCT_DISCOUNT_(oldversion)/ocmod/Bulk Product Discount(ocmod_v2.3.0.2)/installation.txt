@@ -1,0 +1,15 @@
+==========================================
+Bulk Product Discount
+==========================================
+Installation
+==========================================
+
+1. Upload the "admin" & "system" to your root folder. (No file are replaced, all files are new)
+Done.
+
+
+
+
+
+
+

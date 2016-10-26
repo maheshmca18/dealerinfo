@@ -1,0 +1,36 @@
+---------------------------------------------------------------------------------------------
+  Product Thumb Image Rotator
+---------------------------------------------------------------------------------------------
+
+This Extension allows, when mouse hover on product thumb images from anywhere your store that will be rotates automatically.
+
+This Extension has works in following pages:- 
+Related product from Product detail page,
+Category page,
+Search page,
+Feature page
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database.
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Go to admin page and ,
+             Extensions -> extension installer ->upload your (filename.ocmod.xml) ocmod file.
+
+4.  View upload file your Modification,and click refresh button.
+
+5. Go to your frontend and mouse hover Product image,see image rotation on your front.
+   Related product from Product detail page,
+   Category page,
+   Search page and
+   Feature page
+
+            
+             
+
+             

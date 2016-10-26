@@ -1,0 +1,358 @@
+<modification>
+    <name>Product_discount_label</name>
+    <version>1.1</version>
+    <author>IRSSOFT</author>
+    <code>productdiscountlabel</code>
+    <link>www.irssoft.com</link>
+    <file path="catalog/language/en-gb/en-gb.php">
+        <operation>
+            <search><![CDATA[$_['text_loading']          = 'Loading...';]]></search>
+            <add position="after"><![CDATA[ 	$_['text_percent'] = '- %s&#37;';]]></add>
+        </operation>
+    </file>
+
+    <!--widget special price display for using feature file-->
+    <file path="catalog/controller/extension/module/featured.php">
+        <operation>
+            <search><![CDATA[
+	$data['products'][] = array(
+	]]></search>
+
+            <add position="after"><![CDATA[
+	'percent'	=> sprintf($this->language->get('text_percent'), (round((($product_info['price'] -  $product_info['special'])/$product_info['price'])*100 ,0))),
+	'discountamount'=>$this->currency->format(round($product_info['price'] -  $product_info['special']), $this->session->data['currency']),
+]]></add>
+        </operation>
+        <operation>
+            <search><![CDATA[$data['button_compare'] = $this->language->get('button_compare');]]></search>
+
+            <!--get percent_or_price and status values from database -->
+            <add position="after"><![CDATA[
+            $data['discountprice_option'] = $this->config->get('discountprice_option');
+            $data['discountprice_option_status'] = $this->config->get('discountprice_status');
+]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/extension/module/featured.tpl">
+        <operation>
+            <search><![CDATA[
+	<div class="image"><a href="<?php echo $product['href']; ?>"><img src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" class="img-responsive" /></a></div>
+	]]></search>
+
+            <add position="before"><![CDATA[
+
+            <?php
+            if($discountprice_option_status==1)
+            {
+                  if ($product['special'])
+                  { ?>
+                        <div class="discount-sticker">
+                            <?php
+                            if($discountprice_option=="percent")
+                            {
+                            echo $product['percent'];
+                            }
+                            else if($discountprice_option=="price")
+                            {
+                            echo "-".$product['discountamount'];
+                            }?>
+                        </div>
+                 <?php }
+          }?>
+]]></add>
+        </operation>
+    </file>
+
+    <!--to add special % label in search file -->
+    <file path="catalog/controller/product/search.php">
+        <operation>
+            <search><![CDATA[
+	$data['products'][] = array(
+	]]></search>
+
+            <add position="after"><![CDATA[
+	'percent'	=> sprintf($this->language->get('text_percent'), (round((($result['price'] -  $result['special'])/$result['price'])*100 ,0))),
+	'discountamount'=>$this->currency->format(round($result['price'] -  $result['special']), $this->session->data['currency']),
+	]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[$data['text_empty'] = $this->language->get('text_empty');]]></search>
+
+            <add position="before"><![CDATA[
+	        $data['discountprice_option'] = $this->config->get('discountprice_option');
+            $data['discountprice_option_status'] = $this->config->get('discountprice_status');
+	]]></add>
+        </operation>
+
+    </file>
+
+    <file path="catalog/view/theme/*/template/product/search.tpl">
+        <operation>
+            <search><![CDATA[
+	<div class="image"><a href="<?php echo $product['href']; ?>"><img src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" class="img-responsive" /></a></div>
+	]]></search>
+
+            <add position="before"><![CDATA[
+             <?php
+            if($discountprice_option_status==1)
+            {
+                  if ($product['special'])
+                  { ?>
+                        <div class="discount-sticker">
+                            <?php
+                            if($discountprice_option=="percent")
+                            {
+                            echo $product['percent'];
+                            }
+                            else if($discountprice_option=="price")
+                            {
+                            echo "-".$product['discountamount'];
+                            }?>
+                        </div>
+                 <?php }
+          }?>
+]]></add>
+        </operation>
+    </file>
+
+    <!--to add special % label in category file -->
+    <file path="catalog/controller/product/category.php">
+        <operation>
+            <search><![CDATA[
+	$data['products'][] = array(
+            ]]></search>
+
+            <add position="after"><![CDATA[
+	'percent'	=> sprintf($this->language->get('text_percent'), (round((($result['price'] -  $result['special'])/$result['price'])*100 ,0))),
+	'discountamount'=>$this->currency->format(round($result['price'] -  $result['special']), $this->session->data['currency']),
+	]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[$data['text_refine'] = $this->language->get('text_refine');]]></search>
+
+            <add position="before"><![CDATA[
+	        $data['discountprice_option'] = $this->config->get('discountprice_option');
+            $data['discountprice_option_status'] = $this->config->get('discountprice_status');
+	]]></add>
+        </operation>
+
+    </file>
+
+    <file path="catalog/view/theme/*/template/product/category.tpl">
+        <operation>
+            <search><![CDATA[
+	<div class="image"><a href="<?php echo $product['href']; ?>"><img src="<?php echo $product['thumb']; ?>" alt="<?php echo $product['name']; ?>" title="<?php echo $product['name']; ?>" class="img-responsive" /></a></div>
+	]]></search>
+
+            <add position="before"><![CDATA[
+              <?php
+            if($discountprice_option_status==1)
+            {
+                  if ($product['special'])
+                  { ?>
+                        <div class="discount-sticker">
+                            <?php
+                            if($discountprice_option=="percent")
+                            {
+                            echo $product['percent'];
+                            }
+                            else if($discountprice_option=="price")
+                            {
+                            echo "-".$product['discountamount'];
+                            }?>
+                        </div>
+                 <?php }
+          }?>
+]]></add>
+        </operation>
+    </file>
+
+    <!-- PRODUCT PAGE -->
+    <!--special price in controller file-->
+    <file path="catalog/controller/product/product.php">
+        <operation>
+            <search><![CDATA[if ((float)$product_info['special']) {]]></search>
+
+            <add position="after"><![CDATA[
+            $data['percent'] = sprintf($this->language->get('text_percent'), (round((($product_info['price'] -  $product_info['special'])/$product_info['price'])*100 ,0)));
+$data['discountamount']=$this->currency->format(round($product_info['price'] -  $product_info['special']), $this->session->data['currency']);]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[$data['text_select'] = $this->language->get('text_select');]]></search>
+
+            <add position="after"><![CDATA[
+             $data['discountprice_option'] = $this->config->get('discountprice_option');
+             $data['discountprice_option_status'] = $this->config->get('discountprice_status');]]></add>
+        </operation>
+
+        <!--discount price in controller-->
+        <operation>
+
+            <search><![CDATA['price'    => $this->currency->format($this->tax->calculate($discount['price'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency'])]]></search>
+
+            <add position="replace"><![CDATA[
+            'price'    => $this->currency->format($this->tax->calculate($discount['price'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']),
+
+            'calculation'=> sprintf($this->language->get('text_percent'), (round((($product_info['price'] -  $discount['price'])/$product_info['price'])*100 ,0))),
+'discountamount'=>$this->currency->format(round($product_info['price'] -  $discount['price']), $this->session->data['currency'])
+]]></add>
+        </operation>
+    </file>
+
+    <!--special price in tpl file-->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation info="Main Product Description">
+            <search><![CDATA[<?php if ($thumb || $images) { ?>]]></search>
+            <add position="before"><![CDATA[
+            <div id="show_label">
+                    <?php if($discountprice_option_status==1){
+                    if($special) { ?>
+                         <div class="discount-sticker">
+                                <?php
+                                if($discountprice_option=="percent")
+                                  {
+                                  echo $percent;
+                                  }
+                                  else if($discountprice_option=="price")
+                                  {
+                                  echo "-".$discountamount;
+                                  }?>
+
+                         </div>
+                    <?php } }?>
+	       </div>
+	       ]]></add>
+        </operation>
+
+        <!--discount price in tpl-->
+
+        <operation>
+            <search><![CDATA[<?php foreach ($discounts as $discount) { ?>]]></search>
+            <add position="before"><![CDATA[
+            <input type="hidden" value="<?php print_r( $discounts);?>" >
+            ]]></add>
+        </operation>
+
+        <operation info="Related Products Tab">
+            <search><![CDATA[$(document).ready(function() {]]></search>
+            <add position="after"><![CDATA[
+            <?php if($discountprice_option_status==1){?>
+            $("#input-quantity").on("keyup",function(){
+
+            <?php if($special)
+            {?>
+            $("#show_label").html("<div class='discount-sticker'><?php
+                                if($discountprice_option=="percent")
+                                  {
+                                  echo $percent;
+                                  }
+                                  else if($discountprice_option=="price")
+                                  {
+                                  echo "-".$discountamount;
+                                  }?></div>")
+            <?php }
+            else
+            {?>
+            $("#show_label").html("");
+            <?php }?>
+
+                    var search = $("#input-quantity").val();
+                    search = parseInt(search);
+                    var js_array =JSON.parse('<?php echo json_encode($discounts)?>');
+                          $.each(js_array, function(key,val){
+                                if(search==val.quantity)
+                                {
+                                         <?php
+                                         if($discountprice_option=="percent")
+                                          {?>
+                                         $("#show_label").html("<div class='discount-sticker'>"+val.calculation+"</div>");
+                                         <?php }
+                                         else if($discountprice_option=="price")
+                                         {?>
+                                         $("#show_label").html("<div class='discount-sticker'>"+"-"+val.discountamount+"</div>");
+                                         <?php }?>
+                                }
+                                else if(search>val.quantity)
+                                {
+
+                                         <?php
+                                         if($discountprice_option=="percent")
+                                         {?>
+                                          $("#show_label").html("<div class='discount-sticker'>"+val.calculation+"</div>");
+                                         <?php }
+                                         else if($discountprice_option=="price")
+                                         {?>
+                                         $("#show_label").html("<div class='discount-sticker'>"+"-"+val.discountamount+"</div>");
+                                         <?php }?>
+
+                                }
+                                else if(search=="")
+                                {
+                                $("#show_label").html("");
+                                }
+                                });
+                    });
+                    <?php }?>
+                    ]]></add>
+        </operation>
+    </file>
+
+    <!--to add label color and text color in common file from catalog-->
+
+    <file path="catalog/controller/common/header.php">
+        <operation info="for Featured Module">
+            <search><![CDATA[$data['name'] = $this->config->get('config_name');]]></search>
+
+            <add position="after"><![CDATA[$data['discountprice_label_color'] = $this->config->get('discountprice_label_color');
+        $data['discountprice_label_text_color'] = $this->config->get('discountprice_label_text_color');]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation info="for Featured Module">
+            <search><![CDATA[</head>]]></search>
+            <add position="before"><![CDATA[
+            <style>
+.discount-sticker {
+    background-color: #<?php echo $discountprice_label_color;?>;
+    color:#<?php echo $discountprice_label_text_color;?>;
+    float: left;
+    font-size: 12pt;
+    font-weight: 700;
+    left: 0;
+    padding: 6px 8px 5px;
+    position: absolute;
+    text-align: center;
+    top: 5%;
+    z-index: 1;
+    left:15px;
+}
+.discount-sticker::before, .discount-sticker::after {
+    border-style: solid;
+    border-width: 9px 5px;
+    content: "";
+    height: 0;
+    position: absolute;
+    right: -8px;
+    width: 0;
+}
+.discount-sticker::before {
+    border-color: #<?php echo $discountprice_label_color;?> transparent transparent  #<?php echo $discountprice_label_color;?>;
+    top: 0;
+}
+.discount-sticker::after {
+    border-color: transparent transparent  #<?php echo $discountprice_label_color;?> #<?php echo $discountprice_label_color;?>;
+    bottom: 0;
+}
+
+</style>
+]]></add>
+        </operation>
+    </file>
+
+</modification>
+

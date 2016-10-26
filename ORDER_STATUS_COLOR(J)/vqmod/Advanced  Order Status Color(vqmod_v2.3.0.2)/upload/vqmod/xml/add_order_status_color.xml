@@ -1,0 +1,231 @@
+<modification>
+    <id>Order Status color</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRSSOFT</author>
+<!--admin-->
+<!--localisation-> order_status.php-->
+
+    <file path="admin/controller/localisation/order_status.php">
+        <operation>
+            <search position="after"><![CDATA[$data['order_statuses'][] = array(]]></search>
+            <add><![CDATA['order_status_color' =>  (isset($result['order_status_color']) ? $result['order_status_color'] : ""),]]></add>
+        </operation>
+
+       <operation>
+            <search position="before"><![CDATA[$this->response->setOutput($this->load->view('localisation/order_status_list', $data));]]></search>
+            <add><![CDATA[
+             $data['getdb_color_status'] = $this->config->get('order_status_color_status');]]></add>
+        </operation>
+
+
+        <operation>
+            <search position="before"><![CDATA[$this->response->setOutput($this->load->view('localisation/order_status_form', $data));]]></search>
+            <add><![CDATA[
+             $data['getdb_color_status'] = $this->config->get('order_status_color_status');]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/model/localisation/order_status.php">
+    <operation>
+        <search position="replace"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "order_status SET language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "'");]]></search>
+        <add><![CDATA[
+                if(isset($value['order_status_color']))
+                {
+				$this->db->query("INSERT INTO " . DB_PREFIX . "order_status SET language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "',order_status_color = '" . $this->db->escape($value['order_status_color']) . "'");
+                }
+                else{
+                    $this->db->query("INSERT INTO " . DB_PREFIX . "order_status SET language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "'");
+                }
+        ]]></add>
+    </operation>
+
+        <operation>
+            <search position="replace"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "order_status SET order_status_id = '" . (int)$order_status_id . "', language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "'");]]></search>
+            <add><![CDATA[
+                 if(isset($value['order_status_color']))
+                 {
+                $this->db->query("INSERT INTO " . DB_PREFIX . "order_status SET order_status_id = '" . (int)$order_status_id . "', language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "',order_status_color = '" . $this->db->escape($value['order_status_color']) . "'");
+                 }
+                 else{
+
+                $this->db->query("INSERT INTO " . DB_PREFIX . "order_status SET order_status_id = '" . (int)$order_status_id . "', language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "'");
+                }
+        ]]></add>
+        </operation>
+
+        <operation>
+            <search position="replace"><![CDATA[$order_status_data[$result['language_id']] = array('name' => $result['name']);]]></search>
+            <add><![CDATA[
+                $order_status_data[$result['language_id']] = array('name' => $result['name'],'order_status_color' =>  (isset($result['order_status_color']) ? $result['order_status_color'] : ""));
+        ]]></add>
+        </operation>
+
+
+        <operation>
+            <search position="before"><![CDATA[public function getTotalOrderStatuses() {]]></search>
+            <add><![CDATA[
+                public function getOrderstatuscolor($order_status_id)
+               {
+               $querycheck=$this->db->query("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '". DB_DATABASE. "' AND TABLE_NAME = '" . DB_PREFIX . "order_status' AND COLUMN_NAME='order_status_color'");
+               if($querycheck->row){
+               $query = $this->db->query("SELECT order_status_color FROM " . DB_PREFIX . "order_status WHERE order_status_id = '" . (int)$order_status_id . "' AND language_id = '" . (int)$this->config->get('config_language_id') . "'");
+               return $query->row['order_status_color'];
+               }
+               return "";
+               }
+        ]]></add>
+        </operation>
+    </file>
+
+
+    <file path="admin/view/template/localisation/order_status_form.tpl">
+    <operation>
+        <search position="before"><![CDATA[</form>]]></search>
+        <add><![CDATA[
+                 <?php if($getdb_color_status == 1) { ?>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="input-status" ><?php echo "Add color to a new status"; ?></label>
+                        <div class="col-sm-10">
+                            <input class="form-control color" type="text" value="<?php echo isset($order_status[$language['language_id']]) ? $order_status[$language['language_id']]['order_status_color'] : ''; ?>" name="order_status[<?php echo $language['language_id']; ?>][order_status_color]" placeholder="<?php echo "Choose Color"; ?>"  background-color: rgb(255, 255, 255);"/> (click the textbox to pick your own label text color)
+                        </div>
+                    </div>
+                    <?php } ?>
+        ]]></add>
+    </operation>
+
+        <operation>
+            <search position="after"><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[
+
+<script type="text/javascript" src="view/javascript/bootstrap/js/bootstrap-colorpicker.min.js"></script>
+<script type="text/javascript" src="view/javascript/bootstrap/js/bootstrap-colorpicker.js"></script>
+
+<script type="text/javascript">
+
+    $(document).ready(function(){
+        $('.color').colorpicker();
+    });
+</script>
+        ]]></add>
+        </operation>
+
+        <operation>
+            <search position="before"><![CDATA[<?php echo $header; ?><?php echo $column_left; ?>]]></search>
+            <add><![CDATA[
+<link type="text/css" href="view/javascript/bootstrap/css/bootstrap-colorpicker.css" rel="stylesheet" media="screen" />
+<link type="text/css" href="view/javascript/bootstrap/css/bootstrap-colorpicker.min.css" rel="stylesheet" media="screen" />
+        ]]></add>
+        </operation>
+
+</file>
+
+    <file path="admin/view/template/localisation/order_status_list.tpl">
+    <operation>
+        <search position="after" offset="1" ><![CDATA[<?php foreach ($order_statuses as $order_status) { ?>]]></search>
+        <add><![CDATA[
+                 <?php if($getdb_color_status == 1) { ?>
+                <tr style="background-color: <?php echo $order_status['order_status_color'];  ?>">
+                <?php } ?>
+        ]]></add>
+    </operation>
+    </file>
+
+
+
+    <!--sale -> order.php-->
+
+    <file path="admin/controller/sale/order.php">
+    <operation>
+        <search position="before"><![CDATA[$results = $this->model_sale_order->getOrders($filter_data);]]></search>
+        <add><![CDATA[
+
+        $this->load->model('localisation/order_status');
+        $data['getdb_color_status'] = $this->config->get('order_status_color_status');
+        ]]></add>
+    </operation>
+
+<operation>
+        <search position="after" offset="2"><![CDATA[$results = $this->model_sale_order->getOrders($filter_data);]]></search>
+        <add><![CDATA[
+
+        $order_status_id = $this->model_sale_order->getorderstatusidcolor($result['order_id']);
+        ]]></add>
+    </operation>
+
+        <operation>
+            <search position="before"><![CDATA['edit'          => $this->url->link('sale/order/edit', 'token=' . $this->session->data['token'] . '&order_id=' . $result['order_id'] . $url, true),]]></search>
+            <add><![CDATA[
+       'order_status_color'=> $this->model_localisation_order_status->getOrderstatuscolor($order_status_id),
+        ]]></add>
+        </operation>
+
+</file>
+    <file path="admin/model/sale/order.php">
+    <operation>
+        <search position="before"><![CDATA[public function getOrder($order_id) {]]></search>
+        <add><![CDATA[ 
+    public function getorderstatusidcolor($order_id)
+    {
+        $query = $this->db->query("SELECT order_status_id FROM " . DB_PREFIX . "order WHERE  order_id= '" . $order_id . "'");
+
+        if($query->row)
+            return $query->row['order_status_id'];
+        else
+            return 0;
+    }]]></add>
+    </operation>
+    </file>
+
+    <file path="admin/view/template/sale/order_list.tpl">
+        <operation>
+            <search position="after" offset="1"><![CDATA[<?php foreach ($orders as $order) { ?>]]></search>
+            <add><![CDATA[
+                 <?php if($getdb_color_status == 1) { ?>
+                <tr style="background-color: <?php echo $order['order_status_color'];  ?>">
+                    <?php } ?>
+        ]]></add>
+        </operation>
+    </file>
+
+
+    <!--dashboard -> recent.php-->
+    <file path="admin/controller/dashboard/recent.php">
+    <operation>
+        <search position="before"><![CDATA[$results = $this->model_sale_order->getOrders($filter_data);]]></search>
+        <add><![CDATA[
+       $this->load->model('localisation/order_status');
+        $data['getdb_color_status'] = $this->config->get('order_status_color_status');
+
+        ]]></add>
+    </operation>
+
+     <operation>
+        <search position="after" offset="2"><![CDATA[$results = $this->model_sale_order->getOrders($filter_data);]]></search>
+        <add><![CDATA[
+        $order_status_id = $this->model_sale_order->getorderstatusidcolor($result['order_id']);
+        ]]></add>
+    </operation>
+
+        <operation>
+            <search position="after"><![CDATA[$data['orders'][] = array(]]></search>
+            <add><![CDATA[
+      'order_status_color'=> $this->model_localisation_order_status->getOrderstatuscolor($order_status_id),
+        ]]></add>
+        </operation>
+
+    </file>
+
+    <file path="admin/view/template/dashboard/recent.tpl">
+        <operation>
+            <search position="after" offset="1" ><![CDATA[<?php foreach ($orders as $order) { ?>]]></search>
+            <add><![CDATA[
+                  <?php if($getdb_color_status == 1) { ?>
+<tr  style="background-color: <?php echo $order['order_status_color']; ?>">
+<?php } ?>
+        ]]></add>
+        </operation>
+    </file>
+
+</modification>
+

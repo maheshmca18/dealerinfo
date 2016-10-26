@@ -1,0 +1,1698 @@
+<modification>
+    <id>irs_order_tracker_import</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRSSOFT</author>
+    <!--admin-->  
+    <file path="admin/controller/common/menu.php">
+	<operation>
+            <search position="after"><![CDATA[$data['text_openbay_order_import'] = $this->language->get('text_openbay_order_import');]]></search>
+            <add><![CDATA[$data['text_ordertracking'] = $this->language->get('text_ordertracking');
+$data['ordertracking'] = $this->url->link('localisation/ordertracking', 'token=' . $this->session->data['token'], 'SSL');]]></add>
+        </operation> 
+    </file>
+   <file path="admin/view/template/common/menu.tpl">
+	<operation>
+            <search position="before"><![CDATA[<li><a href="<?php echo $location; ?>"><?php echo $text_location; ?></a></li>]]></search>
+            <add><![CDATA[<li><a href="<?php echo $ordertracking; ?>"><?php echo $text_ordertracking; ?></a></li>]]></add>
+        </operation> 
+    </file>
+    <file path="admin/language/english/common/menu.php">
+	<operation>
+            <search position="after"><![CDATA[// Text]]></search>
+            <add><![CDATA[$_['text_ordertracking']                   = 'Order Tracking';]]></add>
+        </operation> 
+    </file>
+
+    <file path="admin/controller/sale/order.php">
+<!--import tracker-->
+	 <operation>
+            <search position="after"><![CDATA[$data['invoice'] = $this->url->link('sale/order/invoice', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+            <add><![CDATA[$data['button_import'] = $this->language->get('button_import');
+                          $data['import'] = $this->url->link('sale/order/irsordertrackimport', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+        </operation>
+	 <operation>
+            <search position="after" offset="2"><![CDATA[$results = $this->model_sale_order->getOrders($filter_data);]]></search>
+            <add><![CDATA[$Trackerlink = $this->model_sale_order->getTrackerlink($result['courier_company']);]]></add>
+        </operation>
+<!--import tracker-->    
+        <operation>
+            <search position="before"><![CDATA['total'         => $this->currency->format($result['total'], $result['currency_code'], $result['currency_value']),]]></search>
+            <add><![CDATA['tracking_url'=>$Trackerlink,
+			  'tracking_code'      => $result['tracking_code'],
+			  'courier_company_name'=>$result['courier_company'],]]></add>
+        </operation>
+
+	<operation>
+            <search position="before"><![CDATA[$this->response->setOutput($this->load->view('sale/order_list.tpl', $data));]]></search>
+            <add><![CDATA[$data['text_Add_Tracker'] = $this->language->get('text_Add_Tracker');
+$data['ordertracker_status'] = $this->config->get('ordertracker_status');
+$data['tracker_arrays']=array();
+
+$data['tracker_infos']=$this->model_sale_order->getOrdertrackdetails();
+
+               foreach ($data['tracker_infos'] as $tracker_info) {
+			$data['tracker_arrays'][] = array(				
+				'ordertracking_id'              => $tracker_info['ordertracking_id'],
+				'courier_company_name'          => $tracker_info['courier_company_name'],
+				'tracking_url'                  => $tracker_info['tracking_url']				
+			);
+		}]]></add>
+        </operation>
+        <operation>
+            <search position="before"><![CDATA[public function getForm() {]]></search>
+            <add><![CDATA[public function ajaxupdateurl() {
+             $this->load->model('sale/order');
+             $data=$this->model_sale_order->updateordertracking($this->request->post);
+		
+             $this->response->addHeader('Content-Type: application/json');
+             $this->response->setOutput(json_encode($data));
+ }
+
+//order import
+        public function irsordertrackimport() {
+
+        $excel_field_error = 0;
+        $_SESSION['ordertrackerlist']=array();
+
+        $this->load->language('sale/order');
+        $this->load->model('sale/order');
+
+        $data['heading_title'] = "Import Order Tracker Data";
+
+        $data['entry_import'] = $this->language->get('Upload CSV File');
+
+        $data['entry_insertonly'] = $this->language->get('Insert Only');
+
+        $data['action'] = $this->url->link('sale/order/irsordertrackimport', 'token=' . $this->session->data['token'], 'SSL');
+
+        $data['importdataurl'] = $this->url->link('sale/order/importordertrackerdeatil', 'token=' . $this->session->data['token'], 'SSL');
+        $data['sampleexport'] = $this->url->link('sale/order/trackersampleexport', 'token=' . $this->session->data['token'], 'SSL');
+        $data['sample_export'] = $this->language->get('Sample Csv File');
+
+        $data['breadcrumbs'] = array();
+
+        $data['breadcrumbs'][] = array(
+            'text'      => $this->language->get('text_home'),
+            'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),
+            'separator' => false
+        );
+
+        $data['breadcrumbs'][] = array(
+            'text'      => $this->language->get('heading_title'),
+            'href'      => $this->url->link('sale/order', 'token=' . $this->session->data['token'], 'SSL'),
+            'separator' => ' :: '
+        );
+
+
+        if(isset($_POST['submit']))  {             
+ 
+            $insertonly=0;
+
+            if(isset($_POST['insertonly']) && $_POST['insertonly']==1)
+                $insertonly=1;
+
+            if($this->validateImport())
+            {  // import form validate start
+
+                if ((isset($this->request->files['file'])) && (is_uploaded_file($this->request->files['file']['tmp_name'])))
+                { //file upload start 		
+
+                    @set_time_limit(3600);
+                    if (substr(@ini_get("memory_limit"), 0, -1) < "512") {
+                        @ini_set("memory_limit", "512B");
+                    }
+                    ini_set("memory_limit", "512M");
+                    ini_set("max_execution_time", 180);
+                    ini_set('display_errors', 1);
+                    ini_set('log_errors', 1);
+                    error_reporting(E_ALL);
+                    //set_time_limit( 60 );
+
+                    $filename = $this->request->files['file']['tmp_name'];
+					
+					/*if(($this->request->files['file']['size']) > 50){
+						//echo $this->request->files['file']['size'];exit;
+						$excel_field_error = 1;
+					}*/
+
+                    //chdir('../system/library/PHPExcel'); // change directory to PHPExcel library
+                    //require_once( 'Classes/PHPExcel.php' );
+                    //chdir('../../../admin');
+
+                    require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+                    $inputFileType = PHPExcel_IOFactory::identify($filename);
+                    $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+                    //$objReader->setReadDataOnly(true);
+                    $reader = $objReader->load($filename);
+                    $reader = &$reader;
+                    //			$this->clearCache();
+
+                    $xldata = $reader->getSheet(0);
+
+                    $isFirstRow = TRUE;
+
+                    $i = 0;
+
+                    $temp=0;//declared
+                   
+                    $k = $xldata->getHighestRow();
+                    $order_array = array();
+
+                    $columns = PHPExcel_Cell::columnIndexFromString($xldata->getHighestColumn());
+
+                    if($columns == 3)
+                    {
+                        for ($i = 0; $i < $k; $i++) {  // Excel row loop start
+                            //Skip the header row
+                            if ($isFirstRow) {
+                                $isFirstRow = FALSE;
+                                continue;
+                            }
+
+                            $order_id = $this->getCell($xldata, $i, 1);
+
+                            $courier_company = $this->getCell($xldata, $i, 2); 						   
+						
+							$tracking_code = $this->getCell($xldata, $i, 3);                             
+
+                            if($order_id!=='') {//validation of empty fields...........
+                                $temp++;                              
+
+                                $order_array[$temp]['order_id'] = $order_id;
+                                $order_array[$temp]['courier_company_name'] = $courier_company;
+                                $order_array[$temp]['tracking_code'] = $tracking_code;                              
+                            
+                            }//validation of empty fields....                   
+                         
+                       } // Excel row loop end
+
+                          //print_r($order_array);exit;
+
+                        $order_list_data=$order_array;
+						//print_r($order_list_data);
+
+                    }
+                    else
+                    {
+                        $excel_field_error = 1;
+                    }
+
+
+                } //file upload end
+
+                if(!$excel_field_error)
+                {
+
+                      $data['sampletabledata']= $order_list_data;
+
+                     $_SESSION['ordertrackerlist'] = $order_list_data;
+                }
+
+            } // import form validate end
+
+        }
+
+     
+     //courier_company_name validation
+        $data['tracker_arrays']=array();
+
+        $data['tracker_infos']=$this->model_sale_order->getOrdertrack_Couriercompany();	
+
+        foreach ($data['tracker_infos'] as $tracker_info) {
+        	
+		   $data['tracker_arrays'][] =  $tracker_info['courier_company_name'];
+			
+		}
+		
+		//order_id validation
+		$data['getOrderid']=array();
+		
+		$data['getOrderidvalidation']=$this->model_sale_order->getOrderid();	
+
+        foreach ($data['getOrderidvalidation'] as $getOrderid_valid) {
+        	
+		   $data['getOrderid'][] =  $getOrderid_valid['order_id'];
+			
+		}
+		
+		//print_r($data['getOrderid']);
+		
+		$data['tracker_idvalid']=array();
+		
+		$getOrdertracker=$this->model_sale_order->getOrderidtracker();	
+
+        foreach ($getOrdertracker as $getOrdertracker1) {
+        	
+		   $data['tracker_idvalid'][] =array(
+		   'tracking_code'=>$getOrdertracker1['tracking_code'],
+		   'orderid'=>$getOrdertracker1['order_id']
+		   ) ; 
+			
+		}
+	//print_r($data['tracker_idvalid']);
+	
+	
+             
+        if (isset($this->error['error_filesize'])) {
+            $data['errorfilesize'] = $this->error['error_filesize'];
+        } else {
+            $data['errorfilesize'] = '';
+        }
+		
+	 
+        if (isset($this->error['warning'])) {
+            $data['error_warning'] = $this->error['warning'];
+        } else {
+            $data['error_warning'] = '';
+        }
+
+        if (isset($this->error['errorfile'])) {
+            $data['error_file'] = $this->error['errorfile'];
+        } else {
+            $data['error_file'] = '';
+        }
+
+        if (isset($this->error['errorfile_opcversion'])) {
+            $data['error_file_opcversion'] = $this->error['errorfile_opcversion'];
+        } else {
+            $data['error_file_opcversion'] = '';
+        }
+
+        if($excel_field_error)
+        {
+            $data['error_fields'] = 'Upload like our Sample Excel File';
+        }
+        else
+        {
+            $data['error_fields'] = '';
+        }    
+
+        $data['header']=$this->load->controller('common/header');
+        $data['footer']=$this->load->controller('common/footer');
+        $data['column_left']=$this->load->controller('common/column_left');
+		
+		$this->response->setOutput($this->load->view('sale/orderstracker_import.tpl',$data));
+		;
+
+    }
+
+    public function importordertrackerdeatil(){ 	
+				
+		 $this->load->model('sale/order');  
+						    
+	     foreach($_SESSION['ordertrackerlist'] as $data) {		
+
+			$Impot_ordertracker_values = $this->model_sale_order->addordertrackerdetail($data);	
+		
+	     }
+				 
+	        unset($_SESSION['ordertrackerlist']);
+	        $url = '';
+	        $this->response->redirect($this->url->link('sale/order', 'token=' . $this->session->data['token'] . $url, 'SSL'));
+	}
+
+    function getCell(&$worksheet, $row, $col, $default_val = '') {
+        $col -= 1; // we use 1-based, PHPExcel uses 0-based column index
+        $row += 1; // we use 0-based, PHPExcel used 1-based row index
+        return ($worksheet->cellExistsByColumnAndRow($col, $row)) ? $worksheet->getCellByColumnAndRow($col, $row)->getValue() : 	 $default_val;
+    }
+
+    public function trackersampleexport()
+    {
+        /* Include PHPExcel class */
+        //chdir('../system/library/PHPExcel');
+        //require_once( 'Classes/PHPExcel.php' );
+        //chdir('../../../admin');
+
+        require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+        // Instantiate a new PHPExcel object
+        $objPHPExcel = new PHPExcel();
+        // Set the active Excel worksheet to sheet 0
+        $objPHPExcel->setActiveSheetIndex(0);
+        // Initialise the Excel row number
+        $rowCount = 1;
+
+        /* Add Heading Row */
+
+        $objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Order_id');
+        $objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Courier Company');
+        $objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Tracking Code');
+
+        header("Content-Type: text/csv; charset=utf-8");
+        header('Content-Disposition: attachment;filename="ordertracker_list_'.date("Y m d G i s").'.csv"');
+        //header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        // Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+        //$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'CSV');
+        // Write the Excel file to filename some_excel_file.xlsx in the current directory
+        //$objWriter->save('some_excel_file.xlsx');
+
+        /* Download CsV file in downloads */
+        $objWriter->save('php://output');
+
+//        chdir('../../..');
+    }
+    protected function validateImport() {
+        /*if (!$this->user->hasPermission('modify', 'sale/customer')) {
+            $this->error['warning'] = $this->language->get('error_permission');
+        }*/    
+      
+        if (!$this->request->files['file']['tmp_name']) {
+            $this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+        }
+        elseif($_FILES["file"]["name"])
+        {
+            $allowedExts = array("csv", "xlsx", "xls");
+            $temp = explode(".", $_FILES["file"]["name"]);
+            $extension = end($temp);
+
+            if(!in_array($extension, $allowedExts))
+                $this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+        }
+		if(($this->request->files['file']['size']) > 50000){
+						//echo $this->request->files['file']['size'];exit;
+		$excel_field_error = 1;
+		$this->error['error_filesize']=$this->language->get('error_text_filesize');
+	    }
+
+        if (!$this->error) {
+            return true;
+        } else {
+            return false;
+        }
+    }]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[$data['shipping_code'] = $order_info['shipping_code'];]]></search>
+            <add><![CDATA[$data['courier_company'] = $order_info['courier_company'];
+			  $data['tracking_code'] = $order_info['tracking_code'];]]></add>
+        </operation>
+         <operation>
+            <search position="after"><![CDATA[$data['order_status_id'] = $this->config->get('config_order_status_id');]]></search>
+            <add><![CDATA[$data['courier_company'] = "";
+			  $data['tracking_code'] = "";]]></add>
+        </operation>
+	 <operation>
+            <search position="before"><![CDATA[$this->response->setOutput($this->load->view('sale/order_form.tpl', $data));]]></search>
+            <add><![CDATA[$data['text_courier_company'] = $this->language->get('text_courier_company');
+$data['text_trackingcode'] = $this->language->get('text_trackingcode');
+
+$data['tracker_arrays']=array();
+
+$data['tracker_infos']=$this->model_sale_order->getOrdertrackdetails();
+
+               foreach ($data['tracker_infos'] as $tracker_info) {
+			$data['tracker_arrays'][] = array(				
+				'ordertracking_id'              => $tracker_info['ordertracking_id'],
+				'courier_company_name'          => $tracker_info['courier_company_name'],
+				'tracking_url'                  => $tracker_info['tracking_url']				
+			);
+		}
+$data['ordertracker_status'] = $this->config->get('ordertracker_status');]]></add>
+        </operation>
+	<operation>
+            <search position="before"><![CDATA[$this->response->setOutput($this->load->view('sale/order_info.tpl', $data));]]></search>
+            <add><![CDATA[$Trackerlink = $this->model_sale_order->getTrackerlink($order_info['courier_company']);
+			$data['tracking_code'] = $order_info['tracking_code'];	
+			$data['courier_company'] = $order_info['courier_company'];			
+			$data['tracking_url'] = $Trackerlink;
+
+			$data['text_courier_company'] = $this->language->get('text_courier_company');
+			$data['text_trackingcode'] = $this->language->get('text_trackingcode');
+			$data['text_ClickButton'] = $this->language->get('text_ClickButton');
+			$data['text_Add_Order_Tracker_Detail'] = $this->language->get('text_Add_Order_Tracker_Detail');
+			$data['text_Add_Tracker'] = $this->language->get('text_Add_Tracker');
+
+	                $data['text_shipmenttracker_info'] = $this->language->get('text_shipmenttracker_info');
+			$data['text_deliveredby'] = $this->language->get('text_deliveredby');
+			$data['text_trackingtheorder'] = $this->language->get('text_trackingtheorder');
+
+			$data['ordertracker_status'] = $this->config->get('ordertracker_status');
+			$data['tracker_arrays']=array();
+
+			$data['tracker_infos']=$this->model_sale_order->getOrdertrackdetails();
+
+		        foreach ($data['tracker_infos'] as $tracker_info) {
+				$data['tracker_arrays'][] = array(				
+					'ordertracking_id'              => $tracker_info['ordertracking_id'],
+					'courier_company_name'          => $tracker_info['courier_company_name'],
+					'tracking_url'                  => $tracker_info['tracking_url']				
+				);
+			}]]></add>
+        </operation>
+    </file> 
+ <file path="admin/language/english/sale/order.php">
+        <operation>
+            <search position="after"><![CDATA[// Text]]></search>
+            <add><![CDATA[//Import
+$_['button_import']                       = 'Import';
+//Import
+$_['text_courier_company']                = 'Courier Company';
+$_['text_trackingcode']                   = 'Tracking Code';
+
+$_['text_ClickButton']                    = 'Order Tracker Details';
+$_['text_Add_Order_Tracker_Detail']       = 'Add Order Tracker Detail';
+$_['text_Add_Tracker']                    = 'Add Tracker';
+
+
+$_['text_shipmenttracker_info']           = 'Shipment Tracker Info ';
+$_['text_deliveredby']                    = 'Delivered By';
+$_['text_trackingtheorder']               = 'Tracking The Order To click the button   ';]]></add>
+        </operation>
+ </file> 
+
+ <file path="admin/model/sale/order.php">
+        <operation>
+            <search position="before"><![CDATA[public function getOrder($order_id) {]]></search>
+            <add><![CDATA[//Import
+ public function addordertrackerdetail($data) {		      
+		 $this->db->query("UPDATE `" . DB_PREFIX . "order` SET courier_company = '" . $data['courier_company_name'] . "',tracking_code = '" . $data['tracking_code'] . "' WHERE order_id = '" . $data['order_id'] . "'");
+
+
+//Mail function added start
+      $comment = ''; 
+      $notify = true;
+      $order_id = $data['order_id'];
+
+//once order tracker detail added update the status Shipped
+              $this->db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = 3 WHERE order_id = '" . $order_id . "'");
+
+ $order_info = $this->getOrder($order_id);
+
+ $order_status_id=$order_info['order_status_id'];
+     
+//order info update order status in history page
+	      $this->db->query("INSERT INTO " . DB_PREFIX . "order_history SET order_id = '" . (int)$order_id . "', order_status_id = '" . (int)$order_status_id . "', notify = 1, comment = '" . $this->db->escape($comment) . "', date_added = NOW()");
+
+//print_r($order_info['order_status_id']);exit;
+     // Load the language for any mails that might be required to be sent out
+     $language = new Language($order_info['language_directory']);
+     $language->load($order_info['language_directory']);
+     $language->load('mail/order');			
+
+     $subject = sprintf($language->get('text_new_subject'), html_entity_decode($order_info['store_name'], ENT_QUOTES, 'UTF-8'), $order_id);
+
+
+             $order_product_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_product WHERE order_id = '" . (int)$order_id . "'");
+
+             foreach ($order_product_query->rows as $order_product) {
+		// Check if there are any linked downloads
+	    $product_download_query = $this->db->query("SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "product_to_download` WHERE product_id = '" . (int)$order_product['product_id'] . "'");
+
+			if ($product_download_query->row['total']) {
+				$download_status = true;
+			}
+	      }
+
+    $download_status = true;
+
+    if ($download_status) {
+          $data['download'] = $order_info['store_url'] . 'index.php?route=account/download';
+    } else {
+	  $data['download'] = '';
+    }
+
+            $order_status_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_status WHERE order_status_id = '" . (int)$order_status_id . "' AND language_id = '" . (int)$order_info['language_id'] . "'");
+
+     if ($order_status_query->num_rows) {
+	 $order_status = $order_status_query->row['name'];
+     } else {
+	 $order_status = '';
+     }
+                              // HTML Mail
+				$data = array();
+
+				$data['title'] = sprintf($language->get('text_new_subject'), $order_info['store_name'], $order_id);
+
+				$data['text_greeting'] = sprintf($language->get('text_new_greeting'), $order_info['store_name']);
+				$data['text_link'] = $language->get('text_new_link');
+				$data['text_download'] = $language->get('text_new_download');
+				$data['text_order_detail'] = $language->get('text_new_order_detail');
+				$data['text_instruction'] = $language->get('text_new_instruction');
+				$data['text_order_id'] = $language->get('text_new_order_id');
+				$data['text_date_added'] = $language->get('text_new_date_added');
+				$data['text_payment_method'] = $language->get('text_new_payment_method');
+				$data['text_shipping_method'] = $language->get('text_new_shipping_method');
+				$data['text_email'] = $language->get('text_new_email');
+				$data['text_telephone'] = $language->get('text_new_telephone');
+				$data['text_ip'] = $language->get('text_new_ip');
+				$data['text_order_status'] = $language->get('text_new_order_status');
+				$data['text_payment_address'] = $language->get('text_new_payment_address');
+				$data['text_shipping_address'] = $language->get('text_new_shipping_address');
+				$data['text_product'] = $language->get('text_new_product');
+				$data['text_model'] = $language->get('text_new_model');
+				$data['text_quantity'] = $language->get('text_new_quantity');
+				$data['text_price'] = $language->get('text_new_price');
+				$data['text_total'] = $language->get('text_new_total');
+				$data['text_footer'] = $language->get('text_new_footer');
+
+				$data['logo'] = $this->config->get('config_url') . 'image/' . $this->config->get('config_logo');
+				$data['store_name'] = $order_info['store_name'];
+				$data['store_url'] = $order_info['store_url'];
+				$data['customer_id'] = $order_info['customer_id'];
+				$data['link'] = $order_info['store_url'] . 'index.php?route=account/order/info&order_id=' . $order_id;
+
+				if ($download_status) {
+					$data['download'] = $order_info['store_url'] . 'index.php?route=account/download';
+				} else {
+					$data['download'] = '';
+				}
+
+				$data['order_id'] = $order_id;
+				//**********************
+			        $data['tracking_url'] = $this->getTrackerlink($order_info['courier_company']);
+				$data['ordertracker_status'] = $this->config->get('ordertracker_status');
+				$data['courier_company'] = $order_info['courier_company'];
+							//print_r($Trackerlink);
+				$data['tracking_code'] = $order_info['tracking_code'];
+
+				//**********************
+				$data['date_added'] = date($language->get('date_format_short'), strtotime($order_info['date_added']));
+				$data['payment_method'] = $order_info['payment_method'];
+				$data['shipping_method'] = $order_info['shipping_method'];
+				$data['email'] = $order_info['email'];
+				$data['telephone'] = $order_info['telephone'];
+				$data['ip'] = $order_info['ip'];
+				$data['order_status'] = $order_status;
+
+				if ($comment && $notify) {
+					$data['comment'] = nl2br($comment);
+				} else {
+					$data['comment'] = '';
+				}
+
+				if ($order_info['payment_address_format']) {
+					$format = $order_info['payment_address_format'];
+				} else {
+					$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+				}
+
+				$find = array(
+					'{firstname}',
+					'{lastname}',
+					'{company}',
+					'{address_1}',
+					'{address_2}',
+					'{city}',
+					'{postcode}',
+					'{zone}',
+					'{zone_code}',
+					'{country}'
+				);
+
+				$replace = array(
+					'firstname' => $order_info['payment_firstname'],
+					'lastname'  => $order_info['payment_lastname'],
+					'company'   => $order_info['payment_company'],
+					'address_1' => $order_info['payment_address_1'],
+					'address_2' => $order_info['payment_address_2'],
+					'city'      => $order_info['payment_city'],
+					'postcode'  => $order_info['payment_postcode'],
+					'zone'      => $order_info['payment_zone'],
+					'zone_code' => $order_info['payment_zone_code'],
+					'country'   => $order_info['payment_country']
+				);
+
+				$data['payment_address'] = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+
+				if ($order_info['shipping_address_format']) {
+					$format = $order_info['shipping_address_format'];
+				} else {
+					$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+				}
+
+				$find = array(
+					'{firstname}',
+					'{lastname}',
+					'{company}',
+					'{address_1}',
+					'{address_2}',
+					'{city}',
+					'{postcode}',
+					'{zone}',
+					'{zone_code}',
+					'{country}'
+				);
+
+				$replace = array(
+					'firstname' => $order_info['shipping_firstname'],
+					'lastname'  => $order_info['shipping_lastname'],
+					'company'   => $order_info['shipping_company'],
+					'address_1' => $order_info['shipping_address_1'],
+					'address_2' => $order_info['shipping_address_2'],
+					'city'      => $order_info['shipping_city'],
+					'postcode'  => $order_info['shipping_postcode'],
+					'zone'      => $order_info['shipping_zone'],
+					'zone_code' => $order_info['shipping_zone_code'],
+					'country'   => $order_info['shipping_country']
+				);
+
+				$data['shipping_address'] = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+
+				$this->load->model('tool/upload');
+
+				// Products
+				$data['products'] = array();
+
+				foreach ($order_product_query->rows as $product) {
+					$option_data = array();
+
+					$order_option_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_option WHERE order_id = '" . (int)$order_id . "' AND order_product_id = '" . (int)$product['order_product_id'] . "'");
+
+					foreach ($order_option_query->rows as $option) {
+						if ($option['type'] != 'file') {
+							$value = $option['value'];
+						} else {
+							$upload_info = $this->model_tool_upload->getUploadByCode($option['value']);
+
+							if ($upload_info) {
+								$value = $upload_info['name'];
+							} else {
+								$value = '';
+							}
+						}
+
+						$option_data[] = array(
+							'name'  => $option['name'],
+							'value' => (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value)
+						);
+					}
+
+					$data['products'][] = array(
+						'name'     => $product['name'],
+						'model'    => $product['model'],
+						'option'   => $option_data,
+						'quantity' => $product['quantity'],
+						'price'    => $this->currency->format($product['price'] + ($this->config->get('config_tax') ? $product['tax'] : 0), $order_info['currency_code'], $order_info['currency_value']),
+						'total'    => $this->currency->format($product['total'] + ($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value'])
+					);
+				}
+
+				// Vouchers
+				$data['vouchers'] = array();
+
+				$order_voucher_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_voucher WHERE order_id = '" . (int)$order_id . "'");
+
+				foreach ($order_voucher_query->rows as $voucher) {
+					$data['vouchers'][] = array(
+						'description' => $voucher['description'],
+						'amount'      => $this->currency->format($voucher['amount'], $order_info['currency_code'], $order_info['currency_value']),
+					);
+				}
+
+				// Order Totals
+				$order_total_query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "order_total` WHERE order_id = '" . (int)$order_id . "' ORDER BY sort_order ASC");
+
+				foreach ($order_total_query->rows as $total) {
+					$data['totals'][] = array(
+						'title' => $total['title'],
+						'text'  => $this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']),
+					);
+				}
+
+				/*if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/mail/order.tpl')) {
+					$html = $this->load->view($this->config->get('config_template') . '/template/mail/order.tpl', $data);
+				} else {
+					$html = $this->load->view('mail/order.tpl', $data);
+				}*/
+				$html = $this->load->view('mail/order.tpl', $data);
+//print_r($html);exit;
+				// Can not send confirmation emails for CBA orders as email is unknown
+				//$this->load->model('payment/amazon_checkout');
+		
+				//if (!$this->model_payment_amazon_checkout->isAmazonOrder($order_info['order_id'])) {
+					// Text Mail
+					$text  = sprintf($language->get('text_new_greeting'), html_entity_decode($order_info['store_name'], ENT_QUOTES, 'UTF-8')) . "\n\n";
+					$text .= $language->get('text_new_order_id') . ' ' . $order_id . "\n";
+					$text .= $language->get('text_new_date_added') . ' ' . date($language->get('date_format_short'), strtotime($order_info['date_added'])) . "\n";
+					$text .= $language->get('text_new_order_status') . ' ' . $order_status . "\n\n";
+
+					if ($comment && $notify) {
+						$text .= $language->get('text_new_instruction') . "\n\n";
+						$text .= $comment . "\n\n";
+					}
+
+					// Products
+					$text .= $language->get('text_new_products') . "\n";
+
+					foreach ($order_product_query->rows as $product) {
+						$text .= $product['quantity'] . 'x ' . $product['name'] . ' (' . $product['model'] . ') ' . html_entity_decode($this->currency->format($product['total'] + ($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value']), ENT_NOQUOTES, 'UTF-8') . "\n";
+
+						$order_option_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_option WHERE order_id = '" . (int)$order_id . "' AND order_product_id = '" . $product['order_product_id'] . "'");
+
+						foreach ($order_option_query->rows as $option) {
+							if ($option['type'] != 'file') {
+								$value = $option['value'];
+							} else {
+								$upload_info = $this->model_tool_upload->getUploadByCode($option['value']);
+
+								if ($upload_info) {
+									$value = $upload_info['name'];
+								} else {
+									$value = '';
+								}
+							}
+
+							$text .= chr(9) . '-' . $option['name'] . ' ' . (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value) . "\n";
+						}
+					}
+
+					foreach ($order_voucher_query->rows as $voucher) {
+						$text .= '1x ' . $voucher['description'] . ' ' . $this->currency->format($voucher['amount'], $order_info['currency_code'], $order_info['currency_value']);
+					}
+
+					$text .= "\n";
+
+					$text .= $language->get('text_new_order_total') . "\n";
+
+					foreach ($order_total_query->rows as $total) {
+						$text .= $total['title'] . ': ' . html_entity_decode($this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']), ENT_NOQUOTES, 'UTF-8') . "\n";
+					}
+
+					$text .= "\n";
+
+					if ($order_info['customer_id']) {
+						$text .= $language->get('text_new_link') . "\n";
+						$text .= $order_info['store_url'] . 'index.php?route=account/order/info&order_id=' . $order_id . "\n\n";
+					}
+
+					if ($download_status) {
+						$text .= $language->get('text_new_download') . "\n";
+						$text .= $order_info['store_url'] . 'index.php?route=account/download' . "\n\n";
+					}
+
+					// Comment
+					if ($order_info['comment']) {
+						$text .= $language->get('text_new_comment') . "\n\n";
+						$text .= $order_info['comment'] . "\n\n";
+					}
+
+					$text .= $language->get('text_new_footer') . "\n\n";
+//print_r($order_info['email']);exit;
+					$mail = new Mail();
+					$mail->protocol = $this->config->get('config_mail_protocol');
+					$mail->parameter = $this->config->get('config_mail_parameter');
+					$mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+					$mail->smtp_username = $this->config->get('config_mail_smtp_username');
+					$mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+					$mail->smtp_port = $this->config->get('config_mail_smtp_port');
+					$mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+
+					$mail->setTo($order_info['email']);
+					$mail->setFrom($this->config->get('config_email'));
+					$mail->setSender(html_entity_decode($order_info['store_name'], ENT_QUOTES, 'UTF-8'));
+					$mail->setSubject(html_entity_decode($subject, ENT_QUOTES, 'UTF-8'));
+					$mail->setHtml($html);
+					$mail->setText($text);
+					$mail->send();
+//Mail function added end
+
+		    }
+
+
+
+ public function getOrdertrack_Couriercompany() {
+		$query = $this->db->query("SELECT courier_company_name FROM " . DB_PREFIX . "ordertrack");
+
+		return $query->rows;
+ }
+
+
+public function getOrderid() {
+		$query = $this->db->query("SELECT order_id FROM " . DB_PREFIX . "order");
+
+		return $query->rows;
+ }
+public function getOrderidtracker() {
+		$query = $this->db->query("SELECT tracking_code,order_id FROM " . DB_PREFIX . "order");
+
+		return $query->rows;
+ }
+//Import
+
+
+//**************
+        public function getOrdertrackdetails() {
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "ordertrack");
+
+		return $query->rows;
+        }
+
+       
+        public function getTrackerlink($courier_company_name) {
+        	//code LIKE '" . $currency . "'"
+		$query = $this->db->query("SELECT tracking_url FROM " . DB_PREFIX . "ordertrack where courier_company_name  LIKE '" . $courier_company_name . "'");
+			if(!empty($query->row)){
+				return $query->row['tracking_url'];
+			}
+			else{
+				return "";
+			}
+		
+        }
+		
+	public function updateordertracking($data) { //print_r($data);exit;
+		
+                $this->db->query("UPDATE `" . DB_PREFIX . "order` SET courier_company = '" . $data['company'] . "', tracking_code = '" . $data['code'] . "' WHERE order_id = '" . $data['orderid'] . "'");
+		
+		$query = $this->db->query("SELECT courier_company,tracking_code FROM `" . DB_PREFIX . "order` WHERE order_id = '" . $data['orderid'] . "'");
+		
+
+//Mail function added start
+      $comment = ''; 
+      $notify = false;
+      $order_id = $data['orderid'];
+
+
+     // $order_info = $this->getOrder($order_id);
+
+     // $order_status_id=$order_info['order_status_id'];
+
+//once order tracker detail added update the status Shipped
+              $this->db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = 3 WHERE order_id = '" . $order_id . "'");
+
+ $order_info = $this->getOrder($order_id);
+
+ $order_status_id=$order_info['order_status_id'];
+
+
+//order info update order status in history page
+	     $this->db->query("INSERT INTO " . DB_PREFIX . "order_history SET order_id = '" . (int)$order_id . "', order_status_id = '" . (int)$order_status_id . "', notify = 1, comment = '" . $this->db->escape($comment) . "', date_added = NOW()");
+
+//print_r($order_info['order_status_id']);exit;
+     // Load the language for any mails that might be required to be sent out
+     $language = new Language($order_info['language_directory']);
+     $language->load($order_info['language_directory']);
+     $language->load('mail/order');			
+
+       $subject = sprintf($language->get('text_new_subject'), html_entity_decode($order_info['store_name'], ENT_QUOTES, 'UTF-8'), $order_id);
+
+
+        $order_product_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_product WHERE order_id = '" . (int)$order_id . "'");
+
+             foreach ($order_product_query->rows as $order_product) {
+		// Check if there are any linked downloads
+		$product_download_query = $this->db->query("SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "product_to_download` WHERE product_id = '" . (int)$order_product['product_id'] . "'");
+
+			if ($product_download_query->row['total']) {
+				$download_status = true;
+			}
+	      }
+
+    $download_status = true;
+
+    if ($download_status) {
+          $data['download'] = $order_info['store_url'] . 'index.php?route=account/download';
+    } else {
+	  $data['download'] = '';
+    }
+
+
+     $order_status_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_status WHERE order_status_id = '" . (int)$order_status_id . "' AND language_id = '" . (int)$order_info['language_id'] . "'");
+
+     if ($order_status_query->num_rows) {
+	 $order_status = $order_status_query->row['name'];
+     } else {
+	 $order_status = '';
+     }
+                              // HTML Mail
+				$data = array();
+
+				$data['title'] = sprintf($language->get('text_new_subject'), $order_info['store_name'], $order_id);
+
+				$data['text_greeting'] = sprintf($language->get('text_new_greeting'), $order_info['store_name']);
+				$data['text_link'] = $language->get('text_new_link');
+				$data['text_download'] = $language->get('text_new_download');
+				$data['text_order_detail'] = $language->get('text_new_order_detail');
+				$data['text_instruction'] = $language->get('text_new_instruction');
+				$data['text_order_id'] = $language->get('text_new_order_id');
+				$data['text_date_added'] = $language->get('text_new_date_added');
+				$data['text_payment_method'] = $language->get('text_new_payment_method');
+				$data['text_shipping_method'] = $language->get('text_new_shipping_method');
+				$data['text_email'] = $language->get('text_new_email');
+				$data['text_telephone'] = $language->get('text_new_telephone');
+				$data['text_ip'] = $language->get('text_new_ip');
+				$data['text_order_status'] = $language->get('text_new_order_status');
+				$data['text_payment_address'] = $language->get('text_new_payment_address');
+				$data['text_shipping_address'] = $language->get('text_new_shipping_address');
+				$data['text_product'] = $language->get('text_new_product');
+				$data['text_model'] = $language->get('text_new_model');
+				$data['text_quantity'] = $language->get('text_new_quantity');
+				$data['text_price'] = $language->get('text_new_price');
+				$data['text_total'] = $language->get('text_new_total');
+				$data['text_footer'] = $language->get('text_new_footer');
+
+				$data['logo'] = $this->config->get('config_url') . 'image/' . $this->config->get('config_logo');
+				$data['store_name'] = $order_info['store_name'];
+				$data['store_url'] = $order_info['store_url'];
+				$data['customer_id'] = $order_info['customer_id'];
+				$data['link'] = $order_info['store_url'] . 'index.php?route=account/order/info&order_id=' . $order_id;
+
+				if ($download_status) {
+					$data['download'] = $order_info['store_url'] . 'index.php?route=account/download';
+				} else {
+					$data['download'] = '';
+				}
+
+				$data['order_id'] = $order_id;
+				//**********************
+				$data['tracking_url'] = $this->getTrackerlink($order_info['courier_company']);
+				$data['ordertracker_status'] = $this->config->get('ordertracker_status');
+				$data['courier_company'] = $order_info['courier_company'];
+							//print_r($Trackerlink);
+				$data['tracking_code'] = $order_info['tracking_code'];
+
+				//**********************
+				$data['date_added'] = date($language->get('date_format_short'), strtotime($order_info['date_added']));
+				$data['payment_method'] = $order_info['payment_method'];
+				$data['shipping_method'] = $order_info['shipping_method'];
+				$data['email'] = $order_info['email'];
+				$data['telephone'] = $order_info['telephone'];
+				$data['ip'] = $order_info['ip'];
+				$data['order_status'] = $order_status;
+
+				if ($comment && $notify) {
+					$data['comment'] = nl2br($comment);
+				} else {
+					$data['comment'] = '';
+				}
+
+				if ($order_info['payment_address_format']) {
+					$format = $order_info['payment_address_format'];
+				} else {
+					$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+				}
+
+				$find = array(
+					'{firstname}',
+					'{lastname}',
+					'{company}',
+					'{address_1}',
+					'{address_2}',
+					'{city}',
+					'{postcode}',
+					'{zone}',
+					'{zone_code}',
+					'{country}'
+				);
+
+				$replace = array(
+					'firstname' => $order_info['payment_firstname'],
+					'lastname'  => $order_info['payment_lastname'],
+					'company'   => $order_info['payment_company'],
+					'address_1' => $order_info['payment_address_1'],
+					'address_2' => $order_info['payment_address_2'],
+					'city'      => $order_info['payment_city'],
+					'postcode'  => $order_info['payment_postcode'],
+					'zone'      => $order_info['payment_zone'],
+					'zone_code' => $order_info['payment_zone_code'],
+					'country'   => $order_info['payment_country']
+				);
+
+				$data['payment_address'] = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+
+				if ($order_info['shipping_address_format']) {
+					$format = $order_info['shipping_address_format'];
+				} else {
+					$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+				}
+
+				$find = array(
+					'{firstname}',
+					'{lastname}',
+					'{company}',
+					'{address_1}',
+					'{address_2}',
+					'{city}',
+					'{postcode}',
+					'{zone}',
+					'{zone_code}',
+					'{country}'
+				);
+
+				$replace = array(
+					'firstname' => $order_info['shipping_firstname'],
+					'lastname'  => $order_info['shipping_lastname'],
+					'company'   => $order_info['shipping_company'],
+					'address_1' => $order_info['shipping_address_1'],
+					'address_2' => $order_info['shipping_address_2'],
+					'city'      => $order_info['shipping_city'],
+					'postcode'  => $order_info['shipping_postcode'],
+					'zone'      => $order_info['shipping_zone'],
+					'zone_code' => $order_info['shipping_zone_code'],
+					'country'   => $order_info['shipping_country']
+				);
+
+				$data['shipping_address'] = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+
+				$this->load->model('tool/upload');
+
+				// Products
+				$data['products'] = array();
+
+				foreach ($order_product_query->rows as $product) {
+					$option_data = array();
+
+					$order_option_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_option WHERE order_id = '" . (int)$order_id . "' AND order_product_id = '" . (int)$product['order_product_id'] . "'");
+
+					foreach ($order_option_query->rows as $option) {
+						if ($option['type'] != 'file') {
+							$value = $option['value'];
+						} else {
+							$upload_info = $this->model_tool_upload->getUploadByCode($option['value']);
+
+							if ($upload_info) {
+								$value = $upload_info['name'];
+							} else {
+								$value = '';
+							}
+						}
+
+						$option_data[] = array(
+							'name'  => $option['name'],
+							'value' => (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value)
+						);
+					}
+
+					$data['products'][] = array(
+						'name'     => $product['name'],
+						'model'    => $product['model'],
+						'option'   => $option_data,
+						'quantity' => $product['quantity'],
+						'price'    => $this->currency->format($product['price'] + ($this->config->get('config_tax') ? $product['tax'] : 0), $order_info['currency_code'], $order_info['currency_value']),
+						'total'    => $this->currency->format($product['total'] + ($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value'])
+					);
+				}
+
+				// Vouchers
+				$data['vouchers'] = array();
+
+				$order_voucher_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_voucher WHERE order_id = '" . (int)$order_id . "'");
+
+				foreach ($order_voucher_query->rows as $voucher) {
+					$data['vouchers'][] = array(
+						'description' => $voucher['description'],
+						'amount'      => $this->currency->format($voucher['amount'], $order_info['currency_code'], $order_info['currency_value']),
+					);
+				}
+
+				// Order Totals
+				$order_total_query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "order_total` WHERE order_id = '" . (int)$order_id . "' ORDER BY sort_order ASC");
+
+				foreach ($order_total_query->rows as $total) {
+					$data['totals'][] = array(
+						'title' => $total['title'],
+						'text'  => $this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']),
+					);
+				}
+
+				/*if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/mail/order.tpl')) {
+					$html = $this->load->view($this->config->get('config_template') . '/template/mail/order.tpl', $data);
+				} else {
+					$html = $this->load->view('mail/order.tpl', $data);
+				}*/
+				$html = $this->load->view('mail/order.tpl', $data);
+//print_r($html);exit;
+				// Can not send confirmation emails for CBA orders as email is unknown
+				$this->load->model('payment/amazon_checkout');
+		
+				//if (!$this->model_payment_amazon_checkout->isAmazonOrder($order_info['order_id'])) {
+					// Text Mail
+					$text  = sprintf($language->get('text_new_greeting'), html_entity_decode($order_info['store_name'], ENT_QUOTES, 'UTF-8')) . "\n\n";
+					$text .= $language->get('text_new_order_id') . ' ' . $order_id . "\n";
+					$text .= $language->get('text_new_date_added') . ' ' . date($language->get('date_format_short'), strtotime($order_info['date_added'])) . "\n";
+					$text .= $language->get('text_new_order_status') . ' ' . $order_status . "\n\n";
+
+					if ($comment && $notify) {
+						$text .= $language->get('text_new_instruction') . "\n\n";
+						$text .= $comment . "\n\n";
+					}
+
+					// Products
+					$text .= $language->get('text_new_products') . "\n";
+
+					foreach ($order_product_query->rows as $product) {
+						$text .= $product['quantity'] . 'x ' . $product['name'] . ' (' . $product['model'] . ') ' . html_entity_decode($this->currency->format($product['total'] + ($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value']), ENT_NOQUOTES, 'UTF-8') . "\n";
+
+						$order_option_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_option WHERE order_id = '" . (int)$order_id . "' AND order_product_id = '" . $product['order_product_id'] . "'");
+
+						foreach ($order_option_query->rows as $option) {
+							if ($option['type'] != 'file') {
+								$value = $option['value'];
+							} else {
+								$upload_info = $this->model_tool_upload->getUploadByCode($option['value']);
+
+								if ($upload_info) {
+									$value = $upload_info['name'];
+								} else {
+									$value = '';
+								}
+							}
+
+							$text .= chr(9) . '-' . $option['name'] . ' ' . (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value) . "\n";
+						}
+					}
+
+					foreach ($order_voucher_query->rows as $voucher) {
+						$text .= '1x ' . $voucher['description'] . ' ' . $this->currency->format($voucher['amount'], $order_info['currency_code'], $order_info['currency_value']);
+					}
+
+					$text .= "\n";
+
+					$text .= $language->get('text_new_order_total') . "\n";
+
+					foreach ($order_total_query->rows as $total) {
+						$text .= $total['title'] . ': ' . html_entity_decode($this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']), ENT_NOQUOTES, 'UTF-8') . "\n";
+					}
+
+					$text .= "\n";
+
+					if ($order_info['customer_id']) {
+						$text .= $language->get('text_new_link') . "\n";
+						$text .= $order_info['store_url'] . 'index.php?route=account/order/info&order_id=' . $order_id . "\n\n";
+					}
+
+					if ($download_status) {
+						$text .= $language->get('text_new_download') . "\n";
+						$text .= $order_info['store_url'] . 'index.php?route=account/download' . "\n\n";
+					}
+
+					// Comment
+					if ($order_info['comment']) {
+						$text .= $language->get('text_new_comment') . "\n\n";
+						$text .= $order_info['comment'] . "\n\n";
+					}
+
+					$text .= $language->get('text_new_footer') . "\n\n";
+//print_r($order_info['email']);exit;
+					$mail = new Mail();
+					$mail->protocol = $this->config->get('config_mail_protocol');
+					$mail->parameter = $this->config->get('config_mail_parameter');
+					$mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+					$mail->smtp_username = $this->config->get('config_mail_smtp_username');
+					$mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+					$mail->smtp_port = $this->config->get('config_mail_smtp_port');
+					$mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+
+					$mail->setTo($order_info['email']);
+					$mail->setFrom($this->config->get('config_email'));
+					$mail->setSender(html_entity_decode($order_info['store_name'], ENT_QUOTES, 'UTF-8'));
+					$mail->setSubject(html_entity_decode($subject, ENT_QUOTES, 'UTF-8'));
+					$mail->setHtml($html);
+					$mail->setText($text);
+					$mail->send();
+//Mail function added end
+		return $query->row;
+		
+        }]]></add>
+        </operation>
+         <operation>
+            <search position="before"><![CDATA['date_modified'           => $order_query->row['date_modified']]]></search>
+            <add><![CDATA['courier_company'         => $order_query->row['courier_company'],
+			  'tracking_code'              => $order_query->row['tracking_code'],]]></add>
+        </operation>
+       <operation>
+            <search position="replace"><![CDATA[$sql = "SELECT o.order_id, CONCAT(o.firstname, ' ', o.lastname) AS customer, (SELECT os.name FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS status, o.shipping_code, o.total, o.currency_code, o.currency_value, o.date_added, o.date_modified FROM `" . DB_PREFIX . "order` o";]]></search>
+            <add><![CDATA[$sql = "SELECT o.order_id, CONCAT(o.firstname, ' ', o.lastname) AS customer, (SELECT os.name FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS status, o.shipping_code, o.total, o.currency_code, o.currency_value, o.date_added, o.tracking_code,o.courier_company, o.date_modified FROM `" . DB_PREFIX . "order` o";]]></add>
+        </operation>
+ </file> 
+
+ <file path="admin/view/template/sale/order_form.tpl">
+        <operation>
+            <search position="after" offset="5"><![CDATA[<label class="col-sm-2 control-label" for="input-shipping-zone"><?php echo $entry_zone; ?></label>]]></search>
+            <add><![CDATA[<?php if($ordertracker_status==1) { ?>
+	    <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-payment-zone"><?php echo $text_courier_company; ?></label>
+                <div class="col-sm-10">
+              <select name="courier_company" id="input-payment-zone" class="form-control" value="<?php //echo $courier_company;?>">
+            	<option value="">---Select Courier Company---</option>
+		<?php foreach($tracker_arrays as $tracker_array) { ?>
+		       <option  <?php echo ($courier_company==$tracker_array['courier_company_name'] ? 'selected=selected' : ''); ?> value="<?php echo $tracker_array['courier_company_name']; ?>"><?php echo $tracker_array['courier_company_name']; ?></option>
+
+		<?php } ?>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-payment-zone"><?php echo $text_trackingcode; ?></label>
+                <div class="col-sm-10">
+                  <input type="text" name="tracking_code" placeholder="Enter Tracking Code" id="input-payment-zone" class="form-control" value="<?php echo $tracking_code;?>"/>                  
+                </div>
+              </div>
+<?php } ?>]]></add>
+        </operation>
+ </file> 
+ <file path="admin/view/template/sale/order_list.tpl">
+        <operation>
+            <search position="before"><![CDATA[<td class="text-left"><?php if ($sort == 'o.date_added') { ?>]]></search>
+            <add><![CDATA[<?php if($ordertracker_status==1) { ?>
+		    <td class="text-center">                
+                    <a href="<?php //echo $sort_total; ?>"><?php echo "Tracking Code"; ?></a>
+                    </td>
+		<?php } ?>]]></add>
+        </operation>
+         <operation>
+            <search position="after"><![CDATA[<td class="text-right"><?php echo $order['total']; ?></td>]]></search>
+            <add><![CDATA[<?php if($ordertracker_status==1) { ?>	       
+	<?php if($order['tracking_code']){ ?>
+
+	<td><span style="width:100%;padding:0;margin-top:16px;height:20px;" class="btn btn-primary">
+	<?php echo $order['courier_company_name']; ?></span> 
+
+		<span style="width:100%;padding:0;margin-top:16px;height:20px;background-color: #75A74D;" class="btn btn-primary" data-toggle="modal" data-target="#<?php echo $order['order_id']; ?>">
+	<?php echo $order['tracking_code']; ?></span></td> 
+
+        </div>
+         
+<?php } else { ?>
+                <td><div class="codes<?php echo $order['order_id']; ?>">
+               <select name="courier_company"  class="form-control" id="courier<?php echo $order['order_id']; ?>" value="<?php //echo $courier_company;?>">
+            	<option value="">---Select Courier Company--- </option>
+		<?php foreach($tracker_arrays as $tracker_array) { ?>
+		       <option  value="<?php echo $tracker_array['courier_company_name']; ?>"><?php echo $tracker_array['courier_company_name']; ?></option>
+
+		<?php } ?>
+	      </select>
+             <input type="text" name="tracking_code" id="trackingcode<?php echo $order['order_id']; ?>" placeholder="Enter Tracking Code"  class="form-control" />
+              <button style="height: 22px;padding: 0px;width: 117px;margin-left: 44px;background-color: #75A74D"  orderid=<?php echo $order['order_id']; ?> id="btnupdate<?php echo $order['order_id']; ?>" type="button" class="btn btn-block btn-lg btn-primary"><?php echo $text_Add_Tracker; ?></button> 
+	      </div><div id="error<?php echo $order['order_id']; ?>"  class="alert-danger"></div> </td>
+<?php } ?>
+
+
+<!-- Modal -->
+<div class="modal fade" id="<?php echo $order['order_id']; ?>" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Track Order</h4>
+      </div>
+
+       <div class="modal-body">
+          <iframe src="<?php echo $order['tracking_url'].$order['tracking_code']; ?>" width="100%" height="500px" frameborder="0" allowtransparency="true"></iframe>  
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default"  data-dismiss="modal">Close</button>   
+      </div>
+    </div>
+    <!-- /.modal-content -->
+  </div>
+  <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+<?php } ?>]]></add>
+        </operation>
+	<operation>
+            <search position="before"><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[<script>
+$(document).ready(function(){
+ <?php foreach ($orders as $order) { ?>
+ $("#btnupdate<?php echo $order['order_id']; ?>").click(function(){
+console.log("<?php echo $order['order_id']; ?>");
+
+	var code=$("#trackingcode<?php echo $order['order_id']; ?>").val();
+	var company=$("#courier<?php echo $order['order_id']; ?>").val();
+	var orderid="<?php echo $order['order_id']; ?>";
+
+	                    if(code==""){
+			       var result = "Please Enter Tracking code";
+
+			       $("#error<?php echo $order['order_id']; ?>").html(result);
+			    }
+	                    else if(company==""){
+			       var result = "Please select company";
+
+			       $("#error<?php echo $order['order_id']; ?>").html(result);
+			    }
+else{
+       $.ajax({
+                type:'POST',
+                datatype:'json',
+                async:false,
+                data: {code: code,company: company,orderid: orderid},
+                url:"index.php?route=sale/order/ajaxupdateurl&token=<?php echo $token; ?>",
+                success:function(data) {
+			/*if(code!="" && company!=""){
+				//console.log(data.courier_company);
+			    var result = "<span class='btn btn-primary' data-toggle='modal' data-target='#"+orderid+"'>";
+		                result += data.tracking_code;
+		                result +="</span>";
+			$codes=".codes"+orderid;
+			$($codes).html(result);*/
+			window.location.href=window.location.href;
+                       // }             
+			
+		}		
+          });   
+
+   }
+
+});
+<?php } ?>
+});
+</script>]]></add>
+        </operation>
+<!--import tracker xl-->
+	<operation>
+            <search position="after"><![CDATA[<div class="pull-right">]]></search>
+            <add><![CDATA[<a href="<?php echo $import; ?>" data-toggle="tooltip" title="<?php echo $button_import; ?>" class="btn btn-success"><i class="fa fa-arrow-down"></i></a>]]></add>
+        </operation>
+ </file> 
+ <file path="admin/view/template/sale/order_info.tpl">
+        <operation>
+            <search position="after" offset="1"><![CDATA[<div id="history"></div>]]></search>
+            <add><![CDATA[<?php if($ordertracker_status==1) { ?>	    
+	<?php if($tracking_code){ ?>
+       <fieldset><legend><?php echo $text_ClickButton; ?></legend>   
+
+                <div class="form-group">
+                  <label class="col-sm-4 control-label" for="input-notify"><?php echo "Notify Mail Tracker Status "; ?></label>
+                  <div class="col-sm-8">
+                    <input type="checkbox" name="notify_tracker_status" checked="checked" value="1"><br>
+                  </div>
+                </div></br>
+               <div class="form-group">
+                  <label class="col-sm-4 control-label" for="input-notify"><?php echo $text_deliveredby; ?></label>
+                  <div class="col-sm-8">
+                     <?php echo $courier_company; ?>
+                  </div>
+                </div></br>
+               <div class="form-group">
+                  <label class="col-sm-4 control-label" for="input-notify"><?php echo $text_trackingtheorder; ?></label>
+                  <div class="col-sm-8">
+                  <span  class="btn btn-primary" data-toggle="modal" data-target="#<?php echo $order_id; ?>">
+	           <?php echo $tracking_code; ?>
+	        </span> 	
+                  </div>
+                </div></br>
+   <br/>   
+<?php } else { ?>
+            <fieldset>
+              <legend><?php echo $text_Add_Order_Tracker_Detail; ?></legend>
+
+                 <div class="form-group">
+                  <label class="col-sm-2 control-label" for="input-order-status"><?php echo $text_courier_company; ?></label>
+                   <div class="col-sm-10">
+                    <select name="courier_company"  class="form-control" id="courier"  value="<?php //echo $courier_company;?>">
+                   	<option value="">---Select Courier Company--- </option>
+		<?php foreach($tracker_arrays as $tracker_array) { ?>
+		        <option  value="<?php echo $tracker_array['courier_company_name']; ?>"><?php echo $tracker_array['courier_company_name']; ?></option>
+
+		<?php } ?>
+	           </select>
+                  </div>
+                </div>
+
+		<div class="form-group">
+                  <label class="col-sm-2 control-label" for="input-notify"><?php echo $text_trackingcode; ?></label>
+                  <div class="col-sm-10">
+                    <input type="text" name="tracking_code" id="trackingcode" placeholder="Enter Tracking Code"  class="form-control" />
+                  </div>
+                </div>
+
+                <button style="height: 30px;padding: 3px;width: 117px;margin-left: 371px;"  orderid=<?php echo $order_id; ?> id="btnupdate"type="button" class="btn btn-block btn-lg btn-primary"><?php echo $text_Add_Tracker; ?></button> 
+<p style="text-align: center;color:#1872A2" >[ Note:- Click the button to add order track link to the order and mail sent to customer ]</p>
+	      </div><div id="error"  class="alert-danger"></div>
+<?php } ?>
+<!-- Modal-->
+<div class="modal fade" id="<?php echo $order_id; ?>" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Track Order</h4>
+      </div>
+
+       <div class="modal-body">
+          <iframe src="<?php echo $tracking_url.$tracking_code; ?>" width="100%" height="500px" frameborder="0" allowtransparency="true"></iframe>  
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default"  data-dismiss="modal">Close</button>   
+      </div>
+    </div>   
+  </div> 
+</div>
+<!-- Modal-->
+<?php } ?>]]></add>
+        </operation>
+<operation>
+            <search position="before"><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[<script>
+$(document).ready(function(){
+
+    $("#btnupdate").click(function(){
+	var code=$("#trackingcode").val();
+	var company=$("#courier").val();
+	var orderid=$("#btnupdate").attr('orderid');
+                         if(code==""){
+			       var result = "Please Enter Tracking code";
+
+			       $("#error").html(result);
+			    }
+	                    else if(company==""){
+			       var result = "Please select company";
+
+			       $("#error").html(result);
+			    }
+else{
+$.ajax({
+                type:'POST',
+                datatype:'json',
+                async:false,
+                data: {code: code,company: company,orderid: orderid},
+                url:"index.php?route=sale/order/ajaxupdateurl&token=<?php echo $token; ?>",
+                success:function(data) {
+		if(code!="" && company!=""){
+			//console.log(data.courier_company);
+		    var result = "<span class='btn btn-primary' data-toggle='modal' data-target='#"+orderid+"'>";
+                        result += data.tracking_code;
+                        result +="</span>";
+		$codes=".codes"+orderid;
+		$($codes).html(result);
+		window.location.href=window.location.href;
+
+			}
+                    
+		}
+
+		
+          }); 
+}  
+     });
+});
+</script>]]></add>
+        </operation>
+</file> 
+<!--frondend-->
+ <file path="catalog/controller/api/order.php">
+        <operation>
+            <search position="before"><![CDATA[$order_data['payment_firstname'] = $this->session->data['payment_address']['firstname'];]]></search>
+            <add><![CDATA[$order_data['courier_company'] = $this->session->data['shipping_address']['courier_company'];
+$order_data['tracking_code'] = $this->session->data['shipping_address']['tracking_code'];]]></add>
+        </operation>
+ </file> 
+ <file path="catalog/controller/api/shipping.php">
+        <operation>
+            <search position="after"><![CDATA[$this->session->data['shipping_address'] = array(]]></search>
+            <add><![CDATA['courier_company'=>($this->config->get('ordertracker_status') == 1 ? $this->request->post['courier_company'] : ""),
+ 'tracking_code'=>($this->config->get('ordertracker_status') == 1 ? $this->request->post['tracking_code'] : ""),]]></add>
+        </operation>
+ </file> 
+ <file path="catalog/model/checkout/order.php">
+         <operation>
+            <search position="replace"><![CDATA[$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? json_encode($data['custom_field']) : '') . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(isset($data['payment_custom_field']) ? json_encode($data['payment_custom_field']) : '') . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(isset($data['shipping_custom_field']) ? json_encode($data['shipping_custom_field']) : '') . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', marketing_id = '" . (int)$data['marketing_id'] . "', tracking = '" . $this->db->escape($data['tracking']) . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");]]></search>
+            <add><![CDATA[if(isset($data['courier_company'])) {
+$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET courier_company = '" . $this->db->escape($data['courier_company']) . "',tracking_code = '" . $this->db->escape($data['tracking_code']) . "',invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? json_encode($data['custom_field']) : '') . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(isset($data['payment_custom_field']) ? json_encode($data['payment_custom_field']) : '') . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(isset($data['shipping_custom_field']) ? json_encode($data['shipping_custom_field']) : '') . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', marketing_id = '" . (int)$data['marketing_id'] . "', tracking = '" . $this->db->escape($data['tracking']) . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");
+} else {
+$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? json_encode($data['custom_field']) : '') . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(isset($data['payment_custom_field']) ? json_encode($data['payment_custom_field']) : '') . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(isset($data['shipping_custom_field']) ? json_encode($data['shipping_custom_field']) : '') . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', marketing_id = '" . (int)$data['marketing_id'] . "', tracking = '" . $this->db->escape($data['tracking']) . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");
+}]]></add>
+        </operation>
+        <operation>
+            <search position="replace"><![CDATA[$this->db->query("UPDATE `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(json_encode($data['custom_field'])) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(json_encode($data['payment_custom_field'])) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(json_encode($data['shipping_custom_field'])) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");]]></search>
+            <add><![CDATA[if(isset($data['courier_company'])) { 
+$this->db->query("UPDATE `" . DB_PREFIX . "order` SET courier_company = '" . $this->db->escape($data['courier_company']) . "',tracking_code = '" . $this->db->escape($data['tracking_code']) . "',invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(json_encode($data['custom_field'])) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(json_encode($data['payment_custom_field'])) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(json_encode($data['shipping_custom_field'])) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+} else {
+$this->db->query("UPDATE `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(json_encode($data['custom_field'])) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_custom_field = '" . $this->db->escape(json_encode($data['payment_custom_field'])) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_custom_field = '" . $this->db->escape(json_encode($data['shipping_custom_field'])) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+}]]></add>
+        </operation>
+	<operation>
+            <search position="before"><![CDATA[public function editOrder($order_id, $data) {]]></search>
+            <add><![CDATA[public function getTrackerlink($courier_company_name) {
+        	//code LIKE '" . $currency . "'"
+		$query = $this->db->query("SELECT tracking_url FROM " . DB_PREFIX . "ordertrack where courier_company_name  LIKE '" . $courier_company_name . "'");
+			if(!empty($query->row)){
+				return $query->row['tracking_url'];
+			}
+			else{
+				return "";
+			}
+		
+        }]]></add>
+        </operation>
+	<operation>
+            <search position="after"><![CDATA['date_modified'           => $order_query->row['date_modified'],]]></search>
+            <add><![CDATA['courier_company'              => $order_query->row['courier_company'],
+'tracking_code'              => $order_query->row['tracking_code'],]]></add>
+        </operation>
+	<operation>
+            <search position="before"><![CDATA[$data['date_added'] = date($language->get('date_format_short'), strtotime($order_info['date_added']));]]></search>
+            <add><![CDATA[$data['tracking_url'] = $this->getTrackerlink($order_info['courier_company']);	
+                $data['ordertracker_status'] = $this->config->get('ordertracker_status');
+                $data['courier_company'] = $order_info['courier_company'];			
+                $data['tracking_code'] = $order_info['tracking_code'];]]></add>
+        </operation>
+ </file> 
+ <file path="catalog/controller/account/order.php">
+        <operation>
+            <search position="before"><![CDATA[$product_total = $this->model_account_order->getTotalOrderProductsByOrderId($result['order_id']);]]></search>
+            <add><![CDATA[$Trackerlink = $this->model_account_order->getTrackerlink($result['courier_company']);]]></add>
+        </operation>
+	<operation>
+            <search position="after"><![CDATA[$data['orders'][] = array(]]></search>
+            <add><![CDATA['tracking_url'=>$Trackerlink,
+			  'tracking_code'      => $result['tracking_code'],]]></add>
+        </operation>
+	<operation>
+            <search position="after"><![CDATA[$pagination = new Pagination();]]></search>
+            <add><![CDATA[$data['ordertracker_status'] = $this->config->get('ordertracker_status');]]></add>
+        </operation>
+<operation>
+            <search position="before"><![CDATA[$data['date_added'] = date($this->language->get('date_format_short'), strtotime($order_info['date_added']));]]></search>
+            <add><![CDATA[$data['ordertracker_status'] = $this->config->get('ordertracker_status');
+	        $data['courier_company'] = $order_info['courier_company'];
+                $data['Trackerlink'] = $this->model_account_order->getTrackerlink($order_info['courier_company']);
+			
+                $data['tracking_code'] = $order_info['tracking_code'];]]></add>
+        </operation>
+ </file> 
+
+ <file path="catalog/model/account/order.php">
+        <operation>
+            <search position="before"><![CDATA['date_added'              => $order_query->row['date_added'],]]></search>
+            <add><![CDATA['courier_company'              => $order_query->row['courier_company'],
+		         'tracking_code'              => $order_query->row['tracking_code'],]]></add>
+        </operation>
+	<operation>
+            <search position="before"><![CDATA[public function getOrders($start = 0, $limit = 20) {]]></search>
+            <add><![CDATA[ public function getTrackerlink($courier_company_name) {        	
+		$query = $this->db->query("SELECT tracking_url FROM " . DB_PREFIX . "ordertrack where courier_company_name  LIKE '" . $courier_company_name . "'");
+			if(!empty($query->row)){
+				return $query->row['tracking_url'];
+			}
+			else{
+				return "";
+			}
+		
+        }]]></add>
+        </operation>
+	<operation>
+            <search position="replace"><![CDATA[$query = $this->db->query("SELECT o.order_id, o.firstname, o.lastname, os.name as status, o.date_added, o.total, o.currency_code, o.currency_value FROM `" . DB_PREFIX . "order` o LEFT JOIN " . DB_PREFIX . "order_status os ON (o.order_status_id = os.order_status_id) WHERE o.customer_id = '" . (int)$this->customer->getId() . "' AND o.order_status_id > '0' AND o.store_id = '" . (int)$this->config->get('config_store_id') . "' AND os.language_id = '" . (int)$this->config->get('config_language_id') . "' ORDER BY o.order_id DESC LIMIT " . (int)$start . "," . (int)$limit);]]></search>
+            <add><![CDATA[$query = $this->db->query("SELECT o.tracking_code,o.courier_company,o.order_id, o.firstname, o.lastname, os.name as status, o.date_added, o.total, o.currency_code, o.currency_value FROM `" . DB_PREFIX . "order` o LEFT JOIN " . DB_PREFIX . "order_status os ON (o.order_status_id = os.order_status_id) WHERE o.customer_id = '" . (int)$this->customer->getId() . "' AND o.order_status_id > '0' AND o.store_id = '" . (int)$this->config->get('config_store_id') . "' AND os.language_id = '" . (int)$this->config->get('config_language_id') . "' ORDER BY o.order_id DESC LIMIT " . (int)$start . "," . (int)$limit);]]></add>
+        </operation>
+</file> 
+<file path="catalog/view/theme/*/template/account/order_list.tpl">
+	<operation>
+            <search position="after"><![CDATA[<td class="text-right"><?php echo $column_product; ?></td>]]></search>
+            <add><![CDATA[<?php if($ordertracker_status==1) { ?>
+<td class="text-right"><?php echo "Tracking Code"; ?></td>
+<?php } ?>]]></add>
+        </operation>
+	<operation>
+            <search position="after"><![CDATA[<td class="text-right"><?php echo $order['products']; ?></td>]]></search>
+            <add><![CDATA[<?php if($ordertracker_status==1) { ?>
+<?php if($order['tracking_code']){ ?>
+              <td><span style="width:100%;" class="btn btn-primary" data-toggle="modal" data-target="#<?php echo $order['order_id']; ?>">
+<?php echo $order['tracking_code']; ?></span></td>
+         
+<?php } else { ?>
+              <td class="text-left"><?php echo $order['tracking_code']; ?></td> 
+<?php } ?>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="<?php echo $order['order_id']; ?>" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Track Order</h4>
+      </div>
+
+       <div class="modal-body">
+          <iframe src="<?php echo $order['tracking_url'].$order['tracking_code']; ?>" width="100%" height="500px" frameborder="0" allowtransparency="true"></iframe>  
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>   
+      </div>
+    </div>
+    <!-- /.modal-content -->
+  </div>
+  <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+<?php } ?>]]></add>
+        </operation>
+</file> 
+<file path="catalog/view/theme/*/template/account/order_info.tpl">
+	<operation>
+            <search position="replace"><![CDATA[<b><?php echo $text_shipping_method; ?></b> <?php echo $shipping_method; ?>]]></search>
+            <add><![CDATA[<b><?php echo $text_shipping_method; ?></b> <?php echo $shipping_method; ?>
+<?php } ?>
+<?php if($ordertracker_status==1) { ?>
+<?php if($tracking_code){ ?>
+     </br><b><?php echo "Shipment Tracker Info"; ?></b> <br />
+      -----------------------------------<br /> 
+     <b><?php echo "Delivered By  : "; ?></b>
+     <?php echo $courier_company; ?><br /> 
+     <b><?php echo "Track Order  "; ?></b> 
+              <span style="height: 20px;padding: 0px;" class="btn btn-primary" data-toggle="modal" data-target="#<?php echo $order_id; ?>"><?php echo $tracking_code; ?></span>         
+    <?php } ?>
+
+
+<!-- Modal -->
+<div class="modal fade" id="<?php echo $order_id; ?>" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Track Order</h4>
+      </div>
+
+       <div class="modal-body">
+          <iframe src="<?php echo $Trackerlink.$tracking_code; ?>" width="100%" height="500px" frameborder="0" allowtransparency="true"></iframe>  
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>   
+      </div>
+    </div>
+    <!-- /.modal-content -->
+  </div>
+  <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->]]></add>
+        </operation>	
+</file> 
+<file path="catalog/view/theme/*/template/mail/order.tpl">
+	<operation>
+            <search position="replace"><![CDATA[<b><?php echo $text_order_status; ?></b> <?php echo $order_status; ?><br />]]></search>
+            <add><![CDATA[<b><?php echo $text_order_status; ?></b> <?php echo $order_status; ?><br />
+<?php if($ordertracker_status==1) { 
+ if($tracking_code) { ?>
+	<b><?php echo "Shipment Tracker Info"; ?></b> <br />
+	-------------------------------<br /> 
+	<b><?php echo "Delivered By  : "; ?></b>
+	<?php echo $courier_company; ?><br /> 
+	<b><?php echo "Track Order  "; ?></b>              
+	<a href="<?php echo $tracking_url.$tracking_code; ?>" target="_blank"><button  style="background-color: #F9EDBE;"><?php echo $tracking_code; ?></button></a>        
+	<br />
+<?php } } ?>]]></add>
+        </operation>	
+</file> 
+</modification>	

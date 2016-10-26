@@ -1,0 +1,492 @@
+<modification>
+    <name>irs_import_export_categories</name>
+    <version>1.1</version>
+    <author>IRSSOFT</author>
+    <code>irs_import_export_categories</code>
+    <link>www.irssoft.com</link>
+
+<!--Category Import-->
+<file path="admin/language/english/catalog/category.php">
+        <operation>
+            <search><![CDATA[$_['heading_title']          = 'Categories';]]></search>
+            <add position="after"><![CDATA[$_['button_import']                = 'Import';
+			  $_['button_export']                = 'Export';]]></add>
+        </operation>
+    </file>
+
+<file path="admin/controller/catalog/category.php">
+        <operation>
+            <search><![CDATA[$data['add'] = $this->url->link('catalog/category/add', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></search>
+            <add position="before"><![CDATA[$data['button_import'] = $this->language->get('button_import');
+        $data['import'] = $this->url->link('catalog/category/import', 'token=' . $this->session->data['token'] . $url, 'SSL');
+	$data['button_export'] = $this->language->get('button_export');
+	$data['export'] = $this->url->link('catalog/category/category_export', 'token=' . $this->session->data['token']. $url, 'SSL');
+]]></add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[protected function getForm() {]]></search>
+            <add position="before"><![CDATA[ public function import() {
+
+        $excel_field_error = 0;
+		
+        $_SESSION['categorylist']=array();
+
+        $this->load->language('sale/customer');
+        //$this->load->model('sale/order');
+
+        $data['heading_title'] = "Import Category Data";
+
+        $data['entry_import'] = $this->language->get('Upload CSV File');
+
+        $data['entry_insertonly'] = $this->language->get('Insert Only');
+
+        $data['action'] = $this->url->link('catalog/category/import', 'token=' . $this->session->data['token'], 'SSL');
+
+        $data['importdataurl'] = $this->url->link('catalog/category/importcategory', 'token=' . $this->session->data['token'], 'SSL');
+        $data['sampleexport'] = $this->url->link('catalog/category/categorysampleexport', 'token=' . $this->session->data['token'], 'SSL');
+        $data['sample_export'] = $this->language->get('Sample Csv File');
+
+        $data['breadcrumbs'] = array();
+
+        $data['breadcrumbs'][] = array(
+            'text'      => $this->language->get('text_home'),
+            'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),
+            'separator' => false
+        );
+
+        $data['breadcrumbs'][] = array(
+            'text'      => $this->language->get('heading_title'),
+            'href'      => $this->url->link('catalog/category', 'token=' . $this->session->data['token'], 'SSL'),
+            'separator' => ' :: '
+        );
+
+
+        if(isset($_POST['submit']))
+        {
+
+	    $version_check=$_POST['opcversion'];	
+            $insertonly=0;
+
+            if(isset($_POST['insertonly']) && $_POST['insertonly']==1)
+                $insertonly=1;
+
+            if($this->validateImport())
+            {  // import form validate start
+
+                if ((isset($this->request->files['file'])) && (is_uploaded_file($this->request->files['file']['tmp_name'])))
+                { //file upload start
+			if($version_check=="opc2101" || $version_check=="opc2031" || $version_check=="opc2020" || $version_check=="opc2011" || $version_check=="opc2010")
+						{ //opc version check start
+
+                    @set_time_limit(3600);
+                    if (substr(@ini_get("memory_limit"), 0, -1) < "512") {
+                        @ini_set("memory_limit", "512M");
+                    }
+                    ini_set("memory_limit", "512M");
+                    ini_set("max_execution_time", 180);
+                    ini_set('display_errors', 1);
+                    ini_set('log_errors', 1);
+                    error_reporting(E_ALL);
+                    //set_time_limit( 60 );
+
+                    $filename = $this->request->files['file']['tmp_name'];
+
+                    //chdir('../system/library/PHPExcel'); // change directory to PHPExcel library
+                    //require_once( 'Classes/PHPExcel.php' );
+                    //chdir('../../../admin');
+
+                    require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+                    $inputFileType = PHPExcel_IOFactory::identify($filename);
+                    $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+                    //$objReader->setReadDataOnly(true);
+                    $reader = $objReader->load($filename);
+                    $reader = &$reader;
+                    //			$this->clearCache();
+
+                    $xldata = $reader->getSheet(0);
+
+                    $isFirstRow = TRUE;
+
+                    $i = 0;                
+                   
+
+                    $k = $xldata->getHighestRow();
+					
+                    $category_array = array();
+					$temp=0;
+					
+                    $columns = PHPExcel_Cell::columnIndexFromString($xldata->getHighestColumn());
+
+                    if($columns == 11)
+                    {
+                        for ($i = 0; $i < $k; $i++) {  // Excel row loop start
+                            //Skip the header row
+                            if ($isFirstRow) {
+                                $isFirstRow = FALSE;
+                                continue;
+                            }
+
+                            $category_name = $this->getCell($xldata, $i, 1);
+                            $description = $this->getCell($xldata, $i, 2);                            
+                            $meta_description = $this->getCell($xldata, $i, 3);                           
+                            $meta_keyword = $this->getCell($xldata, $i, 4); 
+							                          
+                            $parent_ID = $this->getCell($xldata, $i, 5);
+                            $image = $this->getCell($xldata, $i, 6);	
+							
+							$array1=explode("/",$image);
+							$array2 = array_shift($array1);							
+							array_unshift($array1,"catalog");							
+							$array_image=implode("/",$array1);
+							///print_r($array_image);
+													
+                            $top = $this->getCell($xldata, $i, 7);						
+                            $store_id = $this->getCell($xldata, $i, 8);	
+							$store_id_array=array();
+							$store_id_array[]=$store_id;
+							
+					
+							$column = $this->getCell($xldata, $i, 9);
+									
+							$sort_order = $this->getCell($xldata, $i, 10);
+							$status = $this->getCell($xldata, $i, 11);
+               		
+		                    $custom_language_id=is_numeric($this->config->get('config_language_id'))?$this->config->get('config_language_id'):1;
+						
+                                $category_description[$custom_language_id]['name'] = $category_name;
+                                $category_description[$custom_language_id]['description'] = $description;
+                                $category_description[$custom_language_id]['meta_title'] = '';
+                                $category_description[$custom_language_id]['meta_description'] = $meta_description;
+                                $category_description[$custom_language_id]['meta_keyword'] = $meta_keyword;
+								
+								$category_array[$temp]['category_description'] = $category_description;
+								
+								$category_array[$temp]['language_id'] = 1;					
+                                $category_array[$temp]['parent_id'] = $parent_ID;
+								$category_array[$temp]['image'] = $array_image;
+								$category_array[$temp]['top'] = $top;
+								$category_array[$temp]['category_store'] = $store_id_array;	
+								$category_array[$temp]['column'] = $column;
+								$category_array[$temp]['sort_order'] = $sort_order;
+								$category_array[$temp]['status'] = ($status == "Enable" ? 1 : 0);
+								
+							    $temp++;
+
+                            } // Excel row loop end
+    
+
+                        $category_list_data=$category_array;
+						//print_r($category_list_data);exit;
+
+                    }
+                    else
+                    {
+                        $excel_field_error = 1;
+                    }
+
+			 }//opc version check end
+
+                } //file upload end
+
+                if(!$excel_field_error)
+                {
+
+                    $data['sampletabledata']= $category_list_data;
+
+                    $_SESSION['categorylist'] = $category_list_data;
+                }
+
+            } // import form validate end
+
+        }
+
+        if (isset($this->error['warning'])) {
+            $data['error_warning'] = $this->error['warning'];
+        } else {
+            $data['error_warning'] = '';
+        }
+
+        if (isset($this->error['errorfile'])) {
+            $data['error_file'] = $this->error['errorfile'];
+        } else {
+            $data['error_file'] = '';
+        }
+	if (isset($this->error['errorfile_opcversion'])) {
+            $data['error_file_opcversion'] = $this->error['errorfile_opcversion'];
+        } else {
+            $data['error_file_opcversion'] = '';
+        }
+
+        if($excel_field_error)
+        {
+            $data['error_fields'] = 'Upload like our Sample Excel File';
+        }
+        else
+        {
+            $data['error_fields'] = '';
+        }
+
+        /* $this->load->model('design/layout');
+       $data['layouts']=$this->model_design_layout->getLayouts();*/
+
+        $data['header']=$this->load->controller('common/header');
+        $data['footer']=$this->load->controller('common/footer');
+        $data['column_left']=$this->load->controller('common/column_left');
+
+        if (isset($this->request->server['HTTPS']) && (($this->request->server['HTTPS'] == 'on') || ($this->request->server['HTTPS'] == '1'))) {
+            $data['base'] = $this->config->get('config_ssl');
+        } else {
+            $data['base'] = $this->config->get('config_url');
+        }
+
+        $this->response->setOutput($this->load->view('catalog/category_import.tpl',$data));//print_r($_SESSION['categorylist']);exit;
+
+    }
+
+
+
+    public function importcategory()
+	{
+	$this->load->model('catalog/category');
+	if(isset($_SESSION['categorylist']) && is_array($_SESSION['categorylist']))
+	{
+		//print_r($_SESSION['categorylist']);
+		
+						foreach($_SESSION['categorylist'] as $categorydata)
+						{                            
+                                $productexist = $this->model_catalog_category->addCategory($categorydata);                                
+                           
+                        } 
+					
+			unset($_SESSION['categorylist']);
+			$url = '';			
+			$this->response->redirect($this->url->link('catalog/category', 'token=' . $this->session->data['token'] . $url, 'SSL'));	
+	
+	}
+	
+	//exit;
+	}
+
+    function getCell(&$worksheet, $row, $col, $default_val = '') {
+        $col -= 1; // we use 1-based, PHPExcel uses 0-based column index
+        $row += 1; // we use 0-based, PHPExcel used 1-based row index
+        return ($worksheet->cellExistsByColumnAndRow($col, $row)) ? $worksheet->getCellByColumnAndRow($col, $row)->getValue() : $default_val;
+    }
+
+    public function categorysampleexport()
+    {
+        /* Include PHPExcel class */
+        //chdir('../system/library/PHPExcel');
+        //require_once( 'Classes/PHPExcel.php' );
+        //chdir('../../../admin');
+
+        require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+        // Instantiate a new PHPExcel object
+        $objPHPExcel = new PHPExcel();
+        // Set the active Excel worksheet to sheet 0
+        $objPHPExcel->setActiveSheetIndex(0);
+        // Initialise the Excel row number
+        $rowCount = 1;
+		
+       //customer field
+        $objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Category Name');
+        $objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Description');
+        $objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Meta_description');
+        $objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Meta_keyword');
+        $objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, 'Parent ID');
+        $objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, 'Image');
+        $objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, 'Top');
+		$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, 'Store_id');	
+        $objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, 'Column');
+        $objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, 'Sort Order');
+        $objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, 'Status');
+
+       
+
+        header("Content-Type: text/csv; charset=utf-8");
+        header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.csv"');
+        //header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        // Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+        //$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'CSV');
+        // Write the Excel file to filename some_excel_file.xlsx in the current directory
+        //$objWriter->save('some_excel_file.xlsx');
+
+        /* Download CsV file in downloads */
+        $objWriter->save('php://output');
+
+//        chdir('../../..');
+    }
+    protected function validateImport() {
+        /*if (!$this->user->hasPermission('modify', 'sale/customer')) {
+            $this->error['warning'] = $this->language->get('error_permission');
+        }*/
+	if(!$_POST['opcversion']){
+	     $this->error['errorfile_opcversion'] = $this->language->get('Please Select upload version');
+        }
+
+        if (!$this->request->files['file']['tmp_name']) {
+            $this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+        }
+        elseif($_FILES["file"]["name"])
+        {
+            $allowedExts = array("csv", "xlsx", "xls");
+            $temp = explode(".", $_FILES["file"]["name"]);
+            $extension = end($temp);
+
+            if(!in_array($extension, $allowedExts))
+                $this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+        }
+
+        if (!$this->error) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+//export category
+public function category_export(){      
+      
+		$temp_count = 1;		 
+		$this->load->model('catalog/category');
+		$results=array();
+        $results_description = $this->model_catalog_category->ExportgetCategoryDescriptions(); //print_r($results_description);exit;        
+        
+        foreach ($results_description as $result) { //print_r($result['name']);exit;
+        	//customer table
+        	$category_list[$temp_count]['name']        					= $result['name'];
+            $category_list[$temp_count]['description']        			= $this->cleanString($result['description']);
+			$category_list[$temp_count]['meta_description']        		= $result['meta_description'];
+			$category_list[$temp_count]['meta_keyword']        			= $result['meta_keyword'];
+			
+			$category_list[$temp_count]['parent_id']        			= $result['parent_id'];
+			$category_list[$temp_count]['image']        				= $result['image'];
+			$category_list[$temp_count]['top']        					= $result['top'];
+			$category_list[$temp_count]['store_id']        				= $result['store_id'];
+			$category_list[$temp_count]['column']        				= $result['column'];
+			$category_list[$temp_count]['sort_order']        			= $result['sort_order'];
+			$category_list[$temp_count]['status']        				= ($result['status'] == 1 ? 'Enable' : 'Disable');			
+			
+            $temp_count++;
+        }  
+	   
+        
+        $category = array();
+        
+        $category_column=array();        
+		        
+        $category_column = array('Category Name','Description','Meta_description','Meta_keyword','Parent ID','Image','Top','Store_id','Column','Sort Order','Status');
+            
+        $category[0] = $category_column;          
+  
+        foreach($category_list as $category_row)
+        {
+            $category[]=$category_row;
+        }
+     
+                        header( 'Content-Type: text/csv' );
+				        header( 'Content-Disposition: attachment;filename="Category_List_'.date("Y m d G i s").'.csv"');
+						$out = fopen('php://output', 'w');
+				
+						foreach ($category as $fields) {
+						    fputcsv($out, $fields);
+						}
+						
+						fclose($out);
+	}
+public function cleanString($text) {
+						// 1) convert á ô => a o
+						$text = preg_replace("/[áàâãªä]/u","a",$text);
+						$text = preg_replace("/[ÁÀÂÃÄ]/u","A",$text);
+						$text = preg_replace("/[ÍÌÎÏ]/u","I",$text);
+						$text = preg_replace("/[íìîï]/u","i",$text);
+						$text = preg_replace("/[éèêë]/u","e",$text);
+						$text = preg_replace("/[ÉÈÊË]/u","E",$text);
+						$text = preg_replace("/[óòôõºö]/u","o",$text);
+						$text = preg_replace("/[ÓÒÔÕÖ]/u","O",$text);
+						$text = preg_replace("/[úùûü]/u","u",$text);
+						$text = preg_replace("/[ÚÙÛÜ]/u","U",$text);
+						$text = preg_replace("/[’‘‹›‚]/u","'",$text);
+						$text = preg_replace("/[“”«»„]/u",'"',$text);
+						$text = str_replace("–","-",$text);
+						$text = str_replace(" "," ",$text);
+						$text = str_replace("ç","c",$text);
+						$text = str_replace("Ç","C",$text);
+						$text = str_replace("ñ","n",$text);
+						$text = str_replace("Ñ","N",$text);
+					 
+						//2) Translation CP1252. &ndash; => -
+						$trans = get_html_translation_table(HTML_ENTITIES); 
+						$trans[chr(130)] = '&sbquo;';    // Single Low-9 Quotation Mark 
+						$trans[chr(131)] = '&fnof;';    // Latin Small Letter F With Hook 
+						$trans[chr(132)] = '&bdquo;';    // Double Low-9 Quotation Mark 
+						$trans[chr(133)] = '&hellip;';    // Horizontal Ellipsis 
+						$trans[chr(134)] = '&dagger;';    // Dagger 
+						$trans[chr(135)] = '&Dagger;';    // Double Dagger 
+						$trans[chr(136)] = '&circ;';    // Modifier Letter Circumflex Accent 
+						$trans[chr(137)] = '&permil;';    // Per Mille Sign 
+						$trans[chr(138)] = '&Scaron;';    // Latin Capital Letter S With Caron 
+						$trans[chr(139)] = '&lsaquo;';    // Single Left-Pointing Angle Quotation Mark 
+						$trans[chr(140)] = '&OElig;';    // Latin Capital Ligature OE 
+						$trans[chr(145)] = '&lsquo;';    // Left Single Quotation Mark 
+						$trans[chr(146)] = '&rsquo;';    // Right Single Quotation Mark 
+						$trans[chr(147)] = '&ldquo;';    // Left Double Quotation Mark 
+						$trans[chr(148)] = '&rdquo;';    // Right Double Quotation Mark 
+						$trans[chr(149)] = '&bull;';    // Bullet 
+						$trans[chr(150)] = '&ndash;';    // En Dash 
+						$trans[chr(151)] = '&mdash;';    // Em Dash 
+						$trans[chr(152)] = '&tilde;';    // Small Tilde 
+						$trans[chr(153)] = '&trade;';    // Trade Mark Sign 
+						$trans[chr(154)] = '&scaron;';    // Latin Small Letter S With Caron 
+						$trans[chr(155)] = '&rsaquo;';    // Single Right-Pointing Angle Quotation Mark 
+						$trans[chr(156)] = '&oelig;';    // Latin Small Ligature OE 
+						$trans[chr(159)] = '&Yuml;';    // Latin Capital Letter Y With Diaeresis 
+						$trans['euro'] = '&euro;';    // euro currency symbol 
+						ksort($trans); 
+						 
+						foreach ($trans as $k => $v) {
+							$text = str_replace($v, $k, $text);
+						}
+					 
+						// 3) remove <p>, <br/> ...
+						$text = strip_tags($text); 
+						 
+						// 4) &amp; => & &quot; => '
+						$text = html_entity_decode($text);
+						 
+						// 5) remove Windows-1252 symbols like "TradeMark", "Euro"...
+						$text = preg_replace('/[^(\x20-\x7F)]*/','', $text); 
+						 
+						$targets=array('\r\n','\n','\r','\t');
+						$results=array(" "," "," ","");
+						$text = str_replace($targets,$results,$text);	
+						return ($text);
+					}
+
+
+]]></add>
+        </operation>
+    </file>
+<file path="admin/model/catalog/category.php">
+        <operation>
+            <search><![CDATA[public function editCategory($category_id, $data) {]]></search>
+            <add position="before"><![CDATA[public function ExportgetCategoryDescriptions() {
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "category c LEFT JOIN " . DB_PREFIX . "category_description cd ON (c.category_id = cd.category_id) LEFT JOIN " . DB_PREFIX . "category_to_store cto ON (c.category_id=cto.category_id)");
+
+		return $query->rows;
+		}]]></add>
+        </operation>
+    </file>
+<file path="admin/view/template/catalog/category_list.tpl">
+        <operation>
+            <search><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+            <add position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $import; ?>" data-toggle="tooltip" title="<?php echo $button_import; ?>" class="btn btn-success"><i class="fa fa-arrow-down"></i></a><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo "Export"; ?>" class="btn btn-success"><i class="fa fa-arrow-up"></i></a><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+        </operation>
+</file>
+</modification>

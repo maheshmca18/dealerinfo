@@ -1,0 +1,22 @@
+
+.mainRunner
+{
+
+    position: relative;
+}
+
+.img1
+{
+
+    position: relative;
+    right: -15px;
+    opacity: 0.6;
+
+}
+
+.img2 {
+    position: relative;
+    z-index: 1;
+    top: -1px;
+    right: 150px;
+}

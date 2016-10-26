@@ -1,0 +1,62 @@
+---------------------------------------------------------------------------------------------
+ Product video 
+---------------------------------------------------------------------------------------------
+This extension has displays video on product detail page's video tab.
+
+It has shows videos from youtube,vimeo and etc..
+
+And also the video has displays in ligtbox.
+
+Main feature:
+
+The product video allows the admin user to add or change video link in Edit Product "Videos" tab.
+
+And it display on yourstore front product detailpage .
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because add a new files and new table.
+
+		The new database table are :
+			(i)  video_link
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Go to admin page and ,
+             Extensions -> extension installer ->upload your (filename.ocmod.xml) ocmod file.
+
+4. View upload file your Modification,and click refresh button.
+
+5. Go to the Admin dashboard
+
+	(i) Go to Modules page [ Extensions -> Modules ]
+		
+		=> Find the "Product video" module and click install
+      
+        (ii) Go to the Products list page [Catalog -> Products]
+		
+	(iii) Click Edit button on the Products list.
+
+	(iv) Click the Video Tab	
+
+	(v) Then enter the following Video details 
+
+		=> Label [Enter valid name for your product video]
+
+		=> Url [Enter valid Embed URL from Youtube/Vimeo,..]
+		       [ Vimeo : https://player.vimeo.com/video/xxxxxxxx]
+		       [ Youtube : https://www.youtube.com/embed/yyyyyyyyy]
+
+		=> Image [Related image for product video]
+
+		=> Status [Select Enable/Disable]
+
+	(vi) And Click the save button.
+	
+		 
+6. Go to your site front end and check product detail page.
+
+	=> Find the video tab, Then click the video image to view your videos on screen popup.        

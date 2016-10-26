@@ -1,0 +1,84 @@
+---------------------------------------------------------------------------------------------
+         Module : Product Labels
+---------------------------------------------------------------------------------------------
+This Plugin requires "vQmod".
+
+The Product Labels module has allows the store admin customize labels (New, Discount, Shipping and OutofStock) and it displays in storefront.
+
+Main Feature :-
+=> The admin user can customize Labels (Text,Color,position)
+=> Label preview also available for easily check where it appears.
+
+This Extension has works in following pages:- 
+Product Detail Page,
+Category page,
+Search page,
+Feature Product Widget,
+Related product Widget.
+
+Using install/uninstall like others modules.
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because add a new files .
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin Dashboard
+ 
+		Extensions -> Module ->  Product Labels -> Then  Click [install] link to install this Plugin.
+		 
+4.Go to 
+        System -> Users -> User Groups
+
+	Select Top Administrator -> Edit
+		  
+		  Enable the following checkbox,
+		  
+        		 Access Permission : localisation/product_Labels
+                                             
+			 Modify Permission : localisation/product_Labels
+                                              
+			 
+		  Then Click the Save button.
+
+5.Go to the Product Labels page [System -> Localisation ->Product Labels]
+   
+         step 1 : Add New Product's Label
+		      -> Enter New Product Label Text, 
+		      -> Pick Label color, 
+		      -> Pick Label Text Color, 
+		      -> Enter Duration Days (Simply set the period how long the label has to be visible ),
+		      -> Select label position,
+		      -> Select status (Enable -Shows at front end)
+
+         step 2 : Add Discount Product's Label
+		      -> Enter Discount Product Label Text, 
+		      -> Pick Label color, 
+		      -> Pick Label Text Color, 
+		      -> Enter Minimum Percentage (Label will show  above this Minimum percentage),
+		      -> Select label position,
+		      -> Select status (Enable -Shows at front end) 
+
+         step 3 : Add Discount Product's Label
+		      -> Enter Shipping Product Label Text, 
+		      -> Pick Label color, 
+		      -> Pick Label Text Color,
+		      -> Select label position,
+		      -> Select status (Enable -Shows at front end) 
+
+	 step 4 : Add OutofStock Product's Label
+		      -> Enter OutofStock Product Label Text, 
+		      -> Pick Label color, 
+		      -> Pick Label Text Color,
+		      -> Select label position,
+		      -> Select status (Enable -Shows at front end) 
+		
+6.Go to Your Store Front Label Show Your Product Detail page, category Page, Search page, Related Products Widget from Product Detail page  and Featured Widget.
+
+

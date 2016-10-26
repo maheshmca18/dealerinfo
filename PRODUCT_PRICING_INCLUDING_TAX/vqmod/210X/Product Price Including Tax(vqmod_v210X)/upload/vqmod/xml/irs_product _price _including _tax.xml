@@ -1,0 +1,601 @@
+<modification>
+    <id>irs_product _price _including _tax</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRSSOFT</author>
+    <!--Frontend-->
+     <file path="catalog/controller/product/product.php">
+        <operation>
+            <search position="after"><![CDATA[public function index() {]]></search>
+            <add><![CDATA[$data['tax_status'] = $this->config->get('productpriceincludingtax_status');]]></add>
+        </operation>
+    </file>
+       <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<li><?php echo $text_tax; ?> <?php echo $tax; ?></li>]]></search>
+            <add><![CDATA[<?php if($tax_status==1) { ?>
+<!--irscode mahesh code level end-->
+            <?php echo '( Including of All Taxes )'; ?>
+            <!--irscode mahesh code level end-->
+<?php } else { ?>
+<li><?php echo $text_tax; ?> <?php echo $tax; ?></li>
+<?php } ?>]]></add>
+        </operation>
+        <operation>
+            <search position="replace"><![CDATA[<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>]]></search>
+            <add><![CDATA[
+<?php if($tax_status==1) { ?>
+           <!--irscode mahesh code level end-->
+            <!--<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>-->
+            <!--irscode mahesh code level end-->
+<?php } else { ?>
+<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>
+<?php } ?>]]></add>
+        </operation>
+    </file>
+
+ <file path="catalog/controller/product/category.php">
+        <operation>
+            <search position="after"><![CDATA[public function index() {]]></search>
+            <add><![CDATA[$data['tax_status'] = $this->config->get('productpriceincludingtax_status');]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/product/category.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>]]></search>
+            <add><![CDATA[<?php if($tax_status==1) { ?>
+<!--irscode mahesh code level end-->
+             <!--<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>-->
+            <!--irscode mahesh code level end-->
+<?php } else { ?>
+<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>
+<?php } ?>]]></add>
+        </operation>
+    </file>
+
+
+ <file path="catalog/controller/product/search.php">
+        <operation>
+            <search position="after"><![CDATA[public function index() {]]></search>
+            <add><![CDATA[$data['tax_status'] = $this->config->get('productpriceincludingtax_status');]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/product/search.tpl">
+       <operation>
+            <search position="replace"><![CDATA[<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>]]></search>
+            <add><![CDATA[<?php if($tax_status==1) { ?>
+<!--irscode mahesh code level end-->
+             <!--<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>-->
+            <!--irscode mahesh code level end-->
+<?php } else { ?>
+<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>
+<?php } ?>]]></add>
+        </operation>
+    </file>
+
+ <file path="catalog/controller/module/featured.php">
+        <operation>
+            <search position="after"><![CDATA[public function index($setting) {]]></search>
+            <add><![CDATA[$data['tax_status'] = $this->config->get('productpriceincludingtax_status');]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/module/featured.tpl">
+       <operation>
+            <search position="replace"><![CDATA[<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>]]></search>
+            <add><![CDATA[<?php if($tax_status==1) { ?>
+<!--irscode mahesh code level end-->
+             <!--<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>-->
+            <!--irscode mahesh code level end-->
+<?php } else { ?>
+<span class="price-tax"><?php echo $text_tax; ?> <?php echo $product['tax']; ?></span>
+<?php } ?>]]></add>
+        </operation>
+    </file>
+    <file path="catalog/controller/checkout/confirm.php">
+        <operation>
+            <search position="after"><![CDATA[$data['totals'] = array();]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+			$tax_status = $this->config->get('productpriceincludingtax_status');
+			if($tax_status) {
+
+				$Overaltotal = $total;
+
+				foreach ($order_data['totals'] as $total) {
+					if ($total['title'] == "Flat Shipping Rate") {
+						$flatshippingrate_includingtax = $this->tax->calculate($total['value'], $product['tax_class_id'], $this->config->get('config_tax'));
+					}
+				}
+				$subtotal = $Overaltotal - $flatshippingrate_includingtax;
+
+				foreach ($order_data['totals'] as $total) {
+
+					if ($total['title'] == "Total" || $total['title'] == "Sub-Total" || $total['title'] == "Flat Shipping Rate") {
+						if ($total['title'] == "Flat Shipping Rate") {
+
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($this->tax->calculate($total['value'], $product['tax_class_id'], $this->config->get('config_tax'))),
+							);
+						}
+						if ($total['title'] == "Sub-Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($subtotal),
+							);
+						}
+						if ($total['title'] == "Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($total['value']),
+							);
+						}
+					}
+				}
+			}
+			else{
+			/*irscode mahesh code level end*/]]></add>
+        </operation>
+        <operation>
+            <search position="before"><![CDATA[$data['payment'] = $this->load->controller('payment/' . $this->session->data['payment_method']['code']);]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+            }
+            /*irscode mahesh code level end*/]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/cart.php">
+        <operation>
+            <search position="after"><![CDATA[$data['totals'] = array();]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+			$tax_status = $this->config->get('productpriceincludingtax_status');
+			if($tax_status) {
+
+			$flatshipping="";
+
+			foreach ($total_data as $total) {
+				if ($total['title'] == "Total") {
+					$subtotal_includingtax =  $total['value'];
+				}
+				if ($total['title'] == "Flat Shipping Rate") {
+						$flatshipping= $total['value'];
+				}
+			}
+			$flatshipping_addingtax=$this->tax->calculate($flatshipping, $product['tax_class_id'], $this->config->get('config_tax'));
+
+			$subtotal=$subtotal_includingtax - $flatshipping_addingtax;
+
+			if($flatshipping!="") {
+				foreach ($total_data as $total) {
+					if ($total['title'] == "Total" || $total['title'] == "Sub-Total" || $total['title'] == "Flat Shipping Rate") {
+						if ($total['title'] == "Sub-Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($subtotal),
+							);
+						}
+						if ($total['title'] == "Flat Shipping Rate") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($flatshipping_addingtax),
+							);
+						}
+						if ($total['title'] == "Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($total['value'])
+							);
+						}
+					}
+				}
+			}
+			else {
+				foreach ($total_data as $total) {
+					if ($total['title'] == "Total" || $total['title'] == "Sub-Total" || $total['title'] == "Flat Shipping Rate") {
+						if ($total['title'] == "Sub-Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($subtotal_includingtax),
+							);
+						}
+					}
+					if ($total['title'] == "Total") {
+						$data['totals'][] = array(
+							'title' => $total['title'],
+							'text' => $this->currency->format($total['value'])
+						);
+					}
+				}
+			}
+			}
+			else{
+			/*irscode mahesh code level end*/]]></add>
+        </operation>
+        <operation>
+            <search position="before" offset="1"><![CDATA[$data['checkout'] = $this->url->link('checkout/checkout', '', 'SSL');]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+            }
+            /*irscode mahesh code level end*/]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/common/cart.php">
+        <operation>
+            <search position="after"><![CDATA[$data['totals'] = array();]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+			$tax_status = $this->config->get('productpriceincludingtax_status');
+
+		if($tax_status) {
+			$tax_class_id = "";
+			foreach ($this->cart->getProducts() as $product) {
+				$tax_class_id = $product['tax_class_id'];
+			}
+
+			$flatshipping = "";
+			foreach ($total_data as $total) {
+				if ($total['title'] == "Total") {
+					$subtotal_includingtax = $total['value'];
+				}
+				if ($total['title'] == "Flat Shipping Rate") {
+					$flatshipping = $total['value'];
+				}
+			}
+			$flatshipping_addingtax = $this->tax->calculate($flatshipping, $tax_class_id, $this->config->get('config_tax'));
+
+			$subtotal = $subtotal_includingtax - $flatshipping_addingtax;
+
+			if ($flatshipping != "") {
+				foreach ($total_data as $result) {
+					if ($result['title'] == "Total" || $result['title'] == "Sub-Total" || $result['title'] == "Flat Shipping Rate") {
+						if ($result['title'] == "Sub-Total") {
+							$data['totals'][] = array(
+								'title' => $result['title'],
+								'text' => $this->currency->format($subtotal),
+							);
+						}
+						if ($result['title'] == "Flat Shipping Rate") {
+							$data['totals'][] = array(
+								'title' => $result['title'],
+								'text' => $this->currency->format($flatshipping_addingtax),
+							);
+						}
+						if ($result['title'] == "Total") {
+							$data['totals'][] = array(
+								'title' => $result['title'],
+								'text' => $this->currency->format($result['value']),
+							);
+
+						}
+					}
+
+				}
+			} else {
+				foreach ($total_data as $total) {
+					if ($total['title'] == "Total" || $total['title'] == "Sub-Total" || $total['title'] == "Flat Shipping Rate") {
+						if ($total['title'] == "Sub-Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($subtotal_includingtax),
+							);
+						}
+					}
+					if ($total['title'] == "Total") {
+						$data['totals'][] = array(
+							'title' => $total['title'],
+							'text' => $this->currency->format($total['value'])
+						);
+					}
+				}
+			}
+		}
+		else{
+			/*irscode mahesh code level end*/]]></add>
+        </operation>
+        <operation>
+            <search position="before"><![CDATA[$data['cart'] = $this->url->link('checkout/cart');]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+            }
+            /*irscode mahesh code level end*/]]></add>
+        </operation>
+    </file>
+    <file path="catalog/controller/account/order.php">
+        <operation>
+            <search position="after"><![CDATA[$totals = $this->model_account_order->getOrderTotals($this->request->get['order_id']);]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+			$tax_status= $this->config->get('productpriceincludingtax_status');
+
+			if($tax_status==1) {
+
+				foreach ($totals as $total) {
+					if ($total['title'] == "Total") {
+						$totalvalue = $total['value'];
+					}
+					if ($total['title'] == "Flat Shipping Rate") {
+						$flatshipping = $total['value'];
+					}
+				}
+				$tax_class_id = $this->model_account_order->gettaxclassid($this->request->get['order_id']);
+
+				$subtotal = $totalvalue - ($this->tax->calculate($flatshipping, $tax_class_id, $this->config->get('config_tax')));
+
+				foreach ($totals as $total) {
+
+					if ($total['title'] == "Total" || $total['title'] == "Sub-Total" || $total['title'] == "Flat Shipping Rate") {
+						if ($total['title'] == "Sub-Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($subtotal),
+							);
+						}
+						if ($total['title'] == "Flat Shipping Rate") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($this->tax->calculate($total['value'], $tax_class_id, $this->config->get('config_tax'))),
+							);
+						}
+						if ($total['title'] == "Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']),
+							);
+						}
+					}
+
+				}
+			}
+			else{
+			/*irscode mahesh code level end*/]]></add>
+        </operation>
+        <operation>
+            <search position="before"><![CDATA[$data['comment'] = nl2br($order_info['comment']);]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+            }
+            /*irscode mahesh code level end*/]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/order.php">
+        <operation>
+            <search position="before"><![CDATA[public function getOrder($order_id) {]]></search>
+            <add><![CDATA[/*Mahesh code start*/
+    public function gettaxclassid($order_id) {
+		$query = $this->db->query("SELECT p.tax_class_id from oc_order_product op LEFT JOIN oc_product p ON(p.product_id=op.product_id) WHERE order_id = '" . (int)$order_id . "'");
+
+		return $query->row['tax_class_id'];
+	}
+	/*Mahesh code end*/]]></add>
+        </operation>
+    </file>
+
+    <!--adminend-->
+    <file path="catalog/controller/api/cart.php">
+        <operation>
+            <search position="after"><![CDATA[$json['totals'] = array();]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+			$tax_status = $this->config->get('productpriceincludingtax_status');
+			if ($tax_status == 1) {
+
+				foreach ($total_data as $total) {
+					if ($total['title'] == "Total") {
+						$subtotal = $total['value'];
+					}
+				}
+
+				foreach ($total_data as $total) {
+
+					if ($total['title'] == "Total" || $total['title'] == "Sub-Total" || $total['title'] == "Flat Shipping Rate") {
+						if ($total['title'] == "Sub-Total") {
+							$json['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($subtotal),
+							);
+						}
+						if ($total['title'] == "Total") {
+							$json['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($total['value'])
+							);
+						}
+					}
+				}
+			}
+			else{
+			/*irscode mahesh code level end*/]]></add>
+        </operation>
+        <operation>
+            <search position="after" offset="2"><![CDATA['text'  => $this->currency->format($total['value'])]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+            }
+            /*irscode mahesh code level end*/]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/order.php">
+        <operation>
+            <search position="after"><![CDATA[$totals = $this->model_sale_order->getOrderTotals($this->request->get['order_id']);]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+			$tax_status = $this->config->get('productpriceincludingtax_status');
+			if($tax_status) {
+
+				$tax_class_id = $this->model_sale_order->gettaxclassid($this->request->get['order_id']);
+
+				foreach ($totals as $total) {
+					if ($total['title'] == "Total") {
+						$subtotal_includingtax = $total['value'];
+					}
+					if ($total['title'] == "Flat Shipping Rate") {
+						$flatshipping = $total['value'];
+					}
+				}
+
+				$subtotal = $subtotal_includingtax - ($this->model_sale_order->customCalculate($flatshipping, $tax_class_id, $this->config->get('config_tax')));
+
+				foreach ($totals as $total) {
+
+					if ($total['title'] == "Total" || $total['title'] == "Sub-Total" || $total['title'] == "Flat Shipping Rate") {
+
+						if ($total['title'] == "Sub-Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($subtotal),
+							);
+						}
+						if ($total['title'] == "Flat Shipping Rate") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($this->model_sale_order->customCalculate($total['value'], $tax_class_id, $this->config->get('config_tax'))),
+							);
+						}
+						if ($total['title'] == "Total") {
+							$data['totals'][] = array(
+								'title' => $total['title'],
+								'text' => $this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']),
+							);
+						}
+					}
+				}
+			}
+			else{
+			/*irscode mahesh code level end*/]]></add>
+        </operation>
+        <operation>
+            <search position="before"><![CDATA[$data['comment'] = nl2br($order_info['comment']);]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+            }
+            /*irscode mahesh code level end*/]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[$totals = $this->model_sale_order->getOrderTotals($order_id);]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+				$tax_status = $this->config->get('productpriceincludingtax_status');
+				if($tax_status) {
+
+					$tax_class_id = $this->model_sale_order->gettaxclassid($order_id);
+
+					foreach ($totals as $total) {
+						if ($total['title'] == "Total") {
+							$subtotal_includingtax = $total['value'];
+						}
+						if ($total['title'] == "Flat Shipping Rate") {
+							$flatshipping = $total['value'];
+						}
+					}
+					$subtotal = $subtotal_includingtax - ($this->model_sale_order->customCalculate($flatshipping, $tax_class_id, $this->config->get('config_tax')));
+
+					foreach ($totals as $total) {
+
+						if ($total['title'] == "Total" || $total['title'] == "Sub-Total" || $total['title'] == "Flat Shipping Rate") {
+							if ($total['title'] == "Sub-Total") {
+								$total_data[] = array(
+									'title' => $total['title'],
+									'text' => $this->currency->format($subtotal),
+								);
+							}
+							if ($total['title'] == "Flat Shipping Rate") {
+								$total_data[] = array(
+									'title' => $total['title'],
+									'text' => $this->currency->format($this->model_sale_order->customCalculate($total['value'], $tax_class_id, $this->config->get('config_tax'))),
+								);
+							}
+							if ($total['title'] == "Total") {
+								$total_data[] = array(
+									'title' => $total['title'],
+									'text' => $this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']),
+								);
+
+							}
+						}
+					}
+				}
+				else{
+			/*irscode mahesh code level end*/]]></add>
+        </operation>
+        <operation>
+            <search position="before" offset="18"><![CDATA['voucher'            => $voucher_data,]]></search>
+            <add><![CDATA[/*irscode mahesh code level start*/
+            }
+            /*irscode mahesh code level end*/]]></add>
+        </operation>
+    </file>
+    <file path="admin/model/sale/order.php">
+    <operation>
+        <search position="before"><![CDATA[public function getOrder($order_id) {]]></search>
+        <add><![CDATA[/*Mahesh code start*/
+
+	public function gettaxclassid($order_id) {
+		$query = $this->db->query("SELECT p.tax_class_id from oc_order_product op LEFT JOIN oc_product p ON(p.product_id=op.product_id) WHERE order_id = '" . (int)$order_id . "'");
+
+		return $query->row['tax_class_id'];
+	}
+
+	// arun function to calculate tax price
+	public function customCalculate($value, $tax_class_id, $calculate = true) {
+		$tax_rates = array();
+		$country_id = $this->config->get('config_country_id');
+		$zone_id = $this->config->get('config_zone_id');
+		$tax_query = $this->db->query("SELECT tr1.tax_class_id, tr2.tax_rate_id, tr2.name, tr2.rate, tr2.type, tr1.priority FROM " . DB_PREFIX . "tax_rule tr1 LEFT JOIN " . DB_PREFIX . "tax_rate tr2 ON (tr1.tax_rate_id = tr2.tax_rate_id) INNER JOIN " . DB_PREFIX . "tax_rate_to_customer_group tr2cg ON (tr2.tax_rate_id = tr2cg.tax_rate_id) LEFT JOIN "
+ . DB_PREFIX . "zone_to_geo_zone z2gz ON (tr2.geo_zone_id = z2gz.geo_zone_id) LEFT JOIN " . DB_PREFIX . "geo_zone gz ON (tr2.geo_zone_id = gz.geo_zone_id) WHERE tr1.based = 'shipping' AND tr2cg.customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "' AND z2gz.country_id = '" . (int)$country_id . "' AND (z2gz.zone_id = '0' OR z2gz.zone_id = '" . (int)$zone_id . "') ORDER BY tr1.priority ASC");
+
+		foreach ($tax_query->rows as $result) {
+			$tax_rates[$result['tax_class_id']][$result['tax_rate_id']] = array(
+				'tax_rate_id' => $result['tax_rate_id'],
+				'name'        => $result['name'],
+				'rate'        => $result['rate'],
+				'type'        => $result['type'],
+				'priority'    => $result['priority']
+			);
+		}// eo foreach
+
+
+			if ($tax_class_id && $calculate) {
+				$amount = 0;
+
+				$custom_tax_rates = $this->getCustomRates($tax_rates,$value,$tax_class_id);
+
+				foreach ($custom_tax_rates as $tax_rate) {
+					if ($calculate != 'P' && $calculate != 'F') {
+						$amount += $tax_rate['amount'];
+					} elseif ($tax_rate['type'] == $calculate) {
+						$amount += $tax_rate['amount'];
+					}
+				}
+
+				return $value + $amount;
+			} else {
+				return $value;
+			}
+		}
+
+
+	// arun function to get rates
+	public function getCustomRates($tax_rates,$value,$tax_class_id){
+		if (isset($tax_rates[$tax_class_id])) {
+			foreach ($tax_rates[$tax_class_id] as $tax_rate) {
+				if (isset($tax_rate_data[$tax_rate['tax_rate_id']])) {
+					$amount = $tax_rate_data[$tax_rate['tax_rate_id']]['amount'];
+				} else {
+					$amount = 0;
+				}
+
+				if ($tax_rate['type'] == 'F') {
+					$amount += $tax_rate['rate'];
+				} elseif ($tax_rate['type'] == 'P') {
+					$amount += ($value / 100 * $tax_rate['rate']);
+				}
+
+				$tax_rate_data[$tax_rate['tax_rate_id']] = array(
+					'tax_rate_id' => $tax_rate['tax_rate_id'],
+					'name'        => $tax_rate['name'],
+					'rate'        => $tax_rate['rate'],
+					'type'        => $tax_rate['type'],
+					'amount'      => $amount
+				);
+			}
+		}
+
+		return $tax_rate_data;
+	} // eof
+	/*Mahesh code end*/]]></add>
+    </operation>
+    </file>
+    </modification>

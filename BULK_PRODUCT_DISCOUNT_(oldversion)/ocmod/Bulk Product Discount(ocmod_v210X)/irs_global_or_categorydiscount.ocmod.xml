@@ -1,0 +1,915 @@
+<modification>
+    <name>irs_global_or_categorydiscount.ocmod</name>
+    <version>1.1</version>
+    <author>IRSSOFT</author>
+    <code>irs_global_or_categorydiscount.ocmod</code>
+    <link>www.irssoft.com</link>
+    <!--admin pge-->
+
+     <file path="admin/controller/common/menu.php">
+        <operation>
+            <search><![CDATA[$data['currency'] = $this->url->link('localisation/currency', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+            <add position="after"><![CDATA[$data['categorydiscount'] = $this->url->link('localisation/categorydiscount', 'token=' . $this->session->data['token'], 'SSL');]]></add>
+        </operation>
+    </file>
+    <file path="admin/view/template/common/menu.tpl">
+        <operation>
+            <search><![CDATA[<li><a href="<?php echo $location; ?>"><?php echo $text_location; ?></a></li>]]></search>
+            <add position="before"><![CDATA[<li><a href="<?php echo $categorydiscount; ?>"><?php echo "Category Discount"; ?></a></li>]]></add>
+        </operation>
+    </file>
+
+<!--cart page-->
+<file path="system/library/cart.php">
+        <operation>
+            <search><![CDATA[$price = $product_query->row['price'];]]></search>
+            <add position="replace"><![CDATA[$customer_group_id="";
+
+if($this->config->get('config_customer_group_id'))
+{
+$customer_group_id = $this->config->get('config_customer_group_id');
+}
+
+//step 1 
+//irs1
+     $take_price_without_tax_dollr=$product_query->row['price'];//echo $take_price_without_tax_dollr
+
+//step 2 
+
+//check category discount or not
+$db_discountcategory_id = $this->db->query("SELECT max(cd.percentage) AS percentage,cd.category_id,cd.status FROM " . DB_PREFIX . "product_to_category ptc LEFT JOIN " . DB_PREFIX . "category_discount cd ON(ptc.category_id = cd.category_id) WHERE product_id ='" . (int)$product_query->row['product_id'] . "'");
+//print_r($db_discountcategory_id);
+$db_categorydiscount_percentage = $db_discountcategory_id->row['percentage'];
+$db_categorydiscount_status = $db_discountcategory_id->row['status'];
+
+if($db_categorydiscount_status==1 && $db_categorydiscount_percentage!=0){ 
+        $db_discount_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$db_categorydiscount_percentage));
+			//echo $db_discount_price."<br>";
+	    $db_discount_price=$db_discount_price;
+
+	//take special price default
+	
+      // Product Specials
+       $product_special_query = $this->db->query("SELECT price FROM " . DB_PREFIX . "product_special WHERE product_id = '" . (int) $cart['product_id'] . "' AND customer_group_id = '" . (int)$customer_group_id . "' AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) ORDER BY priority ASC, price ASC LIMIT 1");
+//echo $product_special_query->row['price'];
+	  if ($product_special_query->num_rows) {
+		$product_special = $product_special_query->row['price'];
+		$db_discount_special_minimum_price = min($db_discount_price,$product_special);
+		$special = $db_discount_special_minimum_price;
+		$price = $take_price_without_tax_dollr;
+	  }
+	 else{					
+
+       $price = $db_discount_price;
+	   $db_specail_price  = $take_price_without_tax_dollr;
+     }	
+}
+
+
+
+else{
+     //Global category discount discount 
+     $global_discount_status=$this->config->get('global_discount_status') ;			
+     $global_discount=$this->config->get('global_discount') ;
+
+     if($global_discount_status==1) 
+     {
+        // Product Specials
+        $product_special_query = $this->db->query("SELECT price FROM " . DB_PREFIX . "product_special WHERE product_id = '" . (int) $cart['product_id'] . "' AND customer_group_id = '" . (int)$customer_group_id . "' AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) ORDER BY priority ASC, price ASC LIMIT 1");
+        //echo $product_special_query->row['price'];
+    	if ($product_special_query->num_rows) {
+        $db_discount_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$global_discount));
+			//echo $db_discount_price."<br>";
+	    $db_discount_price=$db_discount_price;
+	    $product_special = $product_special_query->row['price'];
+
+		$db_discount_special_minimum_price = min($db_discount_price,$product_special);
+
+		$db_specail_priceididos3= $db_discount_special_minimum_price;
+		$price = $db_discount_special_minimum_price;//echo $price;
+  
+	    }
+	    else{						
+
+        $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$global_discount));
+			 
+        $price = $db_discount_default_price;//echo  $price;
+
+        $db_specail_price =$take_price_without_tax_dollr;
+       }
+
+
+
+
+
+/*     $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$global_discount));
+			 
+     $price = $db_discount_default_price;//echo  $price;
+
+     $db_specail_price =$take_price_without_tax_dollr;*/
+			
+     }
+     else{
+
+     $price=$take_price_without_tax_dollr;
+
+     }
+
+}]]></add>
+        </operation>
+ <operation>
+            <search><![CDATA[$price = $product_special_query->row['price'];]]></search>
+            <add position="replace"><![CDATA[if(!empty($db_discount_special_minimum_price)){
+						   $price = $db_discount_special_minimum_price;
+						}
+						else{
+						$price = $product_special_query->row['price'];
+						}]]></add>
+        </operation>
+    </file>
+
+<!--catalog page--> 
+
+ <file path="catalog/language/english/english.php">
+        <operation>
+            <search><![CDATA[// Locale]]></search>
+            <add position="after"><![CDATA[$_['text_mrp']              = 'MRP : ';
+			  $_['text_offer_price']      = 'Offer Price : ';]]></add>
+        </operation>
+    </file>
+
+ <file path="catalog/model/catalog/category.php">
+        <operation>
+            <search><![CDATA[public function getCategory($category_id) {]]></search>
+            <add position="before"><![CDATA[public function getDiscountCategoryId($categoryid) {
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "category_discount WHERE category_id = '" . $categoryid . "'");
+        if($query->row)
+            return $query->row;
+        else
+            return '';
+	}
+	
+	public function getCategoryId($product_id) {
+		$query = $this->db->query("SELECT cd.category_id  FROM " . DB_PREFIX . "product_to_category ptc LEFT JOIN " . DB_PREFIX . "category_discount cd ON(ptc.category_id = cd.category_id) WHERE product_id ='" . (int)$product_id . "'");
+
+        if($query->row)
+            return $query->row;
+        else
+            return '';
+	}]]></add>
+        </operation>
+    </file>
+
+<!--product detail page-->
+<file path="catalog/controller/product/product.php">
+        <operation>
+            <search><![CDATA[$data['heading_title'] = $product_info['name'];]]></search>
+            <add position="after"><![CDATA[$data['text_mrp'] = $this->language->get('text_mrp');
+$data['text_offer_price'] = $this->language->get('text_offer_price');]]></add>
+        </operation>
+
+	<operation>
+            <search><![CDATA[$data['price'] = $this->currency->format($this->tax->calculate($product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add position="before" offset="1"><![CDATA[/*]]></add>
+        </operation>
+
+	<operation>
+            <search><![CDATA[if ((float)$product_info['special']) {]]></search>
+            <add position="before"><![CDATA[*/]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[$data['tax'] = $this->currency->format((float)$product_info['special'] ? $product_info['special'] : $product_info['price']);]]></search>
+            <add position="before" offset="1"><![CDATA[//step 1 Product Have Mrp Or Not			
+//irs1 
+	$take_price_without_tax_dollr=$product_info['price'];
+
+//step 2 check category discount or not
+//irs1
+//category discount
+
+ $category_info = $this->model_catalog_category->getCategoryId($product_info['product_id']); //print_r($category_info);
+ 
+        if(!empty($category_info['category_id'])){ 
+			
+			$categoryid=$category_info['category_id'];
+		}
+		else{
+			$categoryid='';
+		}			
+
+$db_discountcategory_id = $this->model_catalog_category->getDiscountCategoryId($categoryid);//print_r($db_discountcategory_id);
+
+if(!empty($db_discountcategory_id)){  
+      if($db_discountcategory_id['status']==1 && isset($db_discountcategory_id['percentage']))
+      { //category discount enable		
+		
+			//echo $take_price_without_tax_dollr;
+			$db_discount_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$db_discountcategory_id['percentage']));
+			//echo $db_discount_price."<br>";
+			$db_discount_price=$this->tax->calculate($db_discount_price, $product_info['tax_class_id'], $this->config->get('config_tax'));						
+			//echo $db_discount_price;
+			//take special price without dollar symbol
+			$product_special=$this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax'));			
+			
+			if((float)$product_info['special']){ 	
+				
+				$db_discount_special_minimum_price = min($db_discount_price,$product_special);
+				$data['special'] = $this->currency->format($db_discount_special_minimum_price);
+				$data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));			
+				//echo $data['price'];echo $data['special'];
+			}
+			else{
+				
+				$data['db_specail_price'] = $this->currency->format($db_discount_price);
+				$data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+				
+				}		
+	 }
+	 else{//category discount disable
+		 //check global discount available
+		     
+			 $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;
+			
+			  if( $data['global_discount_status']==1) 
+			  {  			  
+					 //add special calculation code1
+					 /* $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$this->data['global_discount']));		     
+					 $data['db_specail_price'] = $this->currency->format($this->tax->calculate($db_discount_default_price, $product_info['tax_class_id'], $this->config->get('config_tax')));
+					 $data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));*/
+					 //echo $db_discount_default_price;
+				 
+					if((float)$product_info['special']){ 
+					$product_special=$this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax'));			
+					$db_discount_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$db_discountcategory_id['percentage']));
+					$db_discount_price=$this->tax->calculate($db_discount_price, $product_info['tax_class_id'], $this->config->get('config_tax'));
+					//echo  $product_special;
+					$db_discount_special_minimum_price = min($db_discount_price,$product_special);
+					$data['special'] = $this->currency->format($db_discount_special_minimum_price);
+					$data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));			
+					
+					}
+					else{	
+					$db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));		     
+					$data['db_specail_price'] = $this->currency->format($this->tax->calculate($db_discount_default_price, $product_info['tax_class_id'], $this->config->get('config_tax')));
+					$data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+					
+					}			 
+			  }
+			  else { 
+				   //add special calculation code2
+					if((float)$product_info['special']){ 
+					$data['special'] = $this->currency->format($this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax')));
+					}
+					$data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+					$db_discount_price='';
+					$discount_percentage='';
+					$product_price='';
+					$db_discount_special_minimum_price='';
+					$discount_status='';
+			 }
+	    }
+ }
+else{//not category discount
+	 //check global discount available
+	  
+	         $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;			 
+			 //take default price without dollar and tax			
+			 if($data['global_discount_status']==1) 
+			 {		 
+			    if((float)$product_info['special']){ 
+				$special = $this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax'));			
+				$db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $db_specail_price = $this->tax->calculate($db_discount_default_price, $product_info['tax_class_id'], $this->config->get('config_tax'));
+				$db_discount_special_minimum_price = min($special,$db_specail_price);//echo $data['special'] ;
+			    $data['special'] = $this->currency->format($db_discount_special_minimum_price);
+			    $data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax'))); 			    
+			    
+			    }				 
+				else{  
+			    $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $data['db_specail_price'] = $this->currency->format($this->tax->calculate($db_discount_default_price, $product_info['tax_class_id'], $this->config->get('config_tax')));
+			    $data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+				}
+				 
+		    }
+		    else { 	
+				
+				if((float)$product_info['special']){ 
+					$data['special'] = $this->currency->format($this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax')));
+					}
+					
+				if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+					$data['price'] = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+				} else {
+					$data['price'] = false;
+				}
+			}
+	}
+//irs2
+
+//irs1
+$data['global_discount_status']=$this->config->get('global_discount_status') ;
+$data['global_discount']=$this->config->get('global_discount') ;	//echo $data['global_discount'];
+//irs2
+]]></add>
+        </operation>
+
+         <!--related products in dtail page-->
+	<operation>
+            <search><![CDATA[$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add position="before" offset="1"><![CDATA[/*]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[if ((float)$result['special']) {]]></search>
+            <add position="before"><![CDATA[*/]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[$tax = $this->currency->format((float)$result['special'] ? $result['special'] : $result['price']);]]></search>
+            <add position="before" offset="1"><![CDATA[//step 1 Product Have Mrp Or Not			
+//irs1
+ 
+	$take_price_without_tax_dollr=$result['price'];
+ 
+//irs2
+
+$category_info = $this->model_catalog_category->getCategoryId($result['product_id']);
+ 
+        if(!empty($category_info['category_id'])){ 
+			
+			$categoryid=$category_info['category_id'];
+		}
+		else{
+			$categoryid='';
+		}			
+
+$db_discountcategory_id = $this->model_catalog_category->getDiscountCategoryId($categoryid);//print_r($db_discountcategory_id);exit;
+
+if(!empty($db_discountcategory_id)){  
+      if($db_discountcategory_id['status']==1 && isset($db_discountcategory_id['percentage']))
+      { 		
+			//take db percentage price in default price 
+			//echo $take_price_without_tax_dollr;
+			$db_discount_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$db_discountcategory_id['percentage']));
+			//echo $db_discount_price."<br>";
+			$db_discount_price=$this->tax->calculate($db_discount_price, $result['tax_class_id'], $this->config->get('config_tax'));						
+			//echo $db_discount_price;
+			//take special price without dollar symbol
+			$product_special=$this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax'));			
+			
+			if((float)$result['special']){ 
+				
+				$db_discount_special_minimum_price = min($db_discount_price,$product_special);
+				$special = $this->currency->format($db_discount_special_minimum_price);
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));			
+				
+			}
+			else{
+				
+				$specail_price = $this->currency->format($db_discount_price);
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+				
+				}		
+	 }
+	 else{//category discount disable
+		 //check global discount available
+		     
+			 $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;
+			
+		  if( $data['global_discount_status']==1) 
+		  {  
+			  //add special calculation code1
+			 $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));		     
+			 $specail_price = $this->currency->format($this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax')));
+			 $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+			 
+		  }
+		  else { 
+			   //add special calculation code2
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+				$db_discount_price='';
+				$discount_percentage='';
+				$product_price='';
+				$db_discount_special_minimum_price='';
+				$discount_status='';
+		  }
+	   }
+ }
+else{//not category discount
+	 //check global discount available
+	  
+	         $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;			 
+			 //take default price without dollar and tax			
+			 if( $data['global_discount_status']==1) 
+			 {				 
+			    if((float)$result['special']){ 
+				$defaultspecial = $this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax'));			
+				$db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $db_specail_price = $this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax'));
+				$db_discount_special_minimum_price = min($defaultspecial,$db_specail_price);//echo $data['special'] ;
+			    $special = $this->currency->format($db_discount_special_minimum_price);
+			    $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax'))); 			    
+			    
+			    }				 
+				else{ 
+			    $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $specail_price = $this->currency->format($this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax')));
+			    $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+			    
+				}
+				 
+		    }
+		    else { 		
+				if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+					$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result ['tax_class_id'], $this->config->get('config_tax')));
+				} else {
+					$price = false;
+				}
+			}
+	}
+//irs2]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA['product_id'  => $result['product_id'],]]></search>
+            <add position="after"><![CDATA['specail_price'=>(isset($specail_price)?$specail_price:""),]]></add>
+        </operation>
+    </file>
+
+ <file path="catalog/view/theme/*/template/product/product.tpl">
+	
+        <operation>
+            <search><![CDATA[<h2><?php echo $price; ?></h2>]]></search>
+            <add position="replace"><![CDATA[<!--00--><h2><?php if(!isset($db_specail_price)) { echo $price; } else { ?>
+  <span style="text-decoration: line-through;"><?php echo $text_mrp.$price; ?><br></span> <span class="price-new"><?php echo $text_offer_price.$db_specail_price; ?></span><?php } ?></h2><!--00-->]]></add>
+        </operation>
+	    <operation>
+            <search><![CDATA[<li><span style="text-decoration: line-through;"><?php echo $price; ?></span></li>]]></search>
+            <add position="before"><![CDATA[<h2><?php  if($global_discount_status == 1 ) {  ?><span style="text-decoration: line-through;"><?php echo $text_mrp.$price; ?></span> <br><span class="price-new"><?php echo $text_offer_price.$special; ?></span><?php } else { ?>]]></add>
+        </operation>
+         <operation>
+            <search><![CDATA[<h2><?php echo $special; ?></h2>]]></search>
+            <add position="after" offset="1"><![CDATA[<?php } ?></h2>]]></add>
+        </operation>
+<!--related products-->
+	 <operation>
+            <search><![CDATA[<?php if (!$product['special']) { ?>]]></search>
+            <add position="replace" offset="1"><![CDATA[<?php if (!$product['special']) { ?><!--00--><?php if(!isset($product['specail_price'])) { echo $product['price']; } else { if(!empty($global_discount) && ($global_discount_status==1)) { ?>
+        <span class="price-old"><?php echo $text_mrp.$product['price']; ?><br></span> <span class="price-new"><?php echo $text_offer_price.$product['specail_price']; ?></span><?php }  else { echo $product['price']; } } ?><!--00-->]]></add>
+        </operation>
+	 <operation>
+            <search><![CDATA[<span class="price-new"><?php echo $product['special']; ?></span> <span class="price-old"><?php echo $product['price']; ?></span>]]></search>
+            <add position="replace"><![CDATA[<!--00--><?php  if($global_discount_status == 1 ) {  ?><span style="text-decoration: line-through;"><?php echo $text_mrp.$product['price']; ?></span><br> <span class=""><?php echo $product['special']; ?></span><?php } else { ?><span class="price-new"><?php echo $product['special']; ?></span> <span class="price-old"><?php echo $product['price']; ?></span><?php } ?><!--00-->]]></add>
+        </operation>
+    </file>
+
+<!--category page-->
+<file path="catalog/controller/product/category.php">
+        <operation>
+            <search><![CDATA[$data['heading_title'] = $category_info['name'];]]></search>
+            <add position="after"><![CDATA[$data['text_mrp'] = $this->language->get('text_mrp');
+$data['text_offer_price'] = $this->language->get('text_offer_price');]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[$image = $this->model_tool_image->resize('placeholder.png', $this->config->get('config_image_product_width'), $this->config->get('config_image_product_height'));]]></search>
+            <add position="after" offset="1"><![CDATA[/*]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[if ((float)$result['special']) {]]></search>
+            <add position="before"><![CDATA[*/]]></add>
+        </operation>
+
+	<operation>
+            <search><![CDATA[if ($this->config->get('config_tax')) {]]></search>
+            <add position="before"><![CDATA[//step 1 Product Have Mrp Or Not			
+	$take_price_without_tax_dollr=$result['price'];
+
+//step 2 check category discount or not
+//irs1
+//category discount
+
+ $category_info = $this->model_catalog_category->getCategoryId($result['product_id']);
+ 
+        if(!empty($category_info['category_id'])){ 
+			
+			$categoryid=$category_info['category_id'];
+		}
+		else{
+			$categoryid='';
+		}			
+
+$db_discountcategory_id = $this->model_catalog_category->getDiscountCategoryId($categoryid);//print_r($db_discountcategory_id);exit;
+
+if(!empty($db_discountcategory_id)){  
+      if($db_discountcategory_id['status']==1 && isset($db_discountcategory_id['percentage']))
+      { 		
+			//take db percentage price in default price 
+			//echo $take_price_without_tax_dollr;
+			$db_discount_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$db_discountcategory_id['percentage']));
+			//echo $db_discount_price."<br>";
+			$db_discount_price=$this->tax->calculate($db_discount_price, $result['tax_class_id'], $this->config->get('config_tax'));						
+			//echo $db_discount_price;
+			//take special price without dollar symbol
+			$product_special=$this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax'));			
+			
+			if((float)$result['special']){ 
+				
+				$db_discount_special_minimum_price = min($db_discount_price,$product_special);
+				$special = $this->currency->format($db_discount_special_minimum_price);
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));			
+				
+			}
+			else{
+				
+				$specail_price = $this->currency->format($db_discount_price);
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+				
+				}		
+	 }
+	 else{//category discount disable
+		 //check global discount available
+		     
+			 $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;
+			
+		  if( $data['global_discount_status']==1) 
+		  {  
+			  //add special calculation code1
+			 $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));		     
+			 $specail_price = $this->currency->format($this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax')));
+			 $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+			 
+		  }
+		  else { 
+			   //add special calculation code2
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+				$db_discount_price='';
+				$discount_percentage='';
+				$product_price='';
+				$db_discount_special_minimum_price='';
+				$discount_status='';
+		  }
+	   }
+ }
+else{//not category discount
+	 //check global discount available
+	  
+	         $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;			 
+			 //take default price without dollar and tax			
+			 if( $data['global_discount_status']==1) 
+			 {				 
+			    if((float)$result['special']){ 
+				$defaultspecial = $this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax'));			
+				$db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $db_specail_price = $this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax'));
+				$db_discount_special_minimum_price = min($defaultspecial,$db_specail_price);//echo $data['special'] ;
+			    $special = $this->currency->format($db_discount_special_minimum_price);
+			    $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax'))); 			    
+			    
+			    }				 
+				else{ 
+			    $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $specail_price = $this->currency->format($this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax')));
+			    $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+			    
+				}
+				 
+		    }
+		    else { 		
+				if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+					$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+				} else {
+					$price = false;
+				}
+			}
+	}
+//irs2
+//irs1
+$data['global_discount_status']=$this->config->get('global_discount_status') ;
+$data['global_discount']=$this->config->get('global_discount') ;	//echo $data['global_discount'];
+//irs2]]></add>
+        </operation>
+
+	
+<operation>
+            <search><![CDATA['product_id'  => $result['product_id'],]]></search>
+            <add position="after"><![CDATA['specail_price'=>(isset($specail_price)?$specail_price:""),]]></add>
+        </operation>
+ </file>
+
+<file path="catalog/view/theme/*/template/product/category.tpl">
+        <operation>
+            <search><![CDATA[<?php if (!$product['special']) { ?>]]></search>
+            <add position="replace" offset="1"><![CDATA[<?php if (!$product['special']) { ?><!--00--><?php if(empty($product['specail_price'])) { echo $product['price']; }else { ?>
+               <span style="text-decoration: line-through;"><?php echo $text_mrp.$product['price']; ?><br></span> 
+               <span class="price-new"><?php echo $product['specail_price']; ?></span><?php }   ?><!--00-->]]></add>
+        </operation>
+	 <operation>
+            <search><![CDATA[<span class="price-new"><?php echo $product['special']; ?></span> <span class="price-old"><?php echo $product['price']; ?></span>]]></search>
+            <add position="replace"><![CDATA[ <!--00--><?php  if($global_discount_status == 1 ) {  ?>
+					  <span  style="text-decoration: line-through;"><?php echo $text_mrp.$product['price']; ?></span><br> 
+					  <span class="price-new"><?php echo $product['special']; ?></span>
+					  <?php } else { ?><span class="price-new"><?php echo $product['special']; ?></span> <span class="price-old"><?php echo $product['price']; ?></span><?php } ?><!--00-->]]></add>
+        </operation>
+    </file>
+
+<!--search page-->
+<file path="catalog/controller/product/search.php">
+        <operation>
+            <search><![CDATA[$data['text_empty'] = $this->language->get('text_empty');]]></search>
+            <add position="after"><![CDATA[$data['text_mrp'] = $this->language->get('text_mrp');
+$data['text_offer_price'] = $this->language->get('text_offer_price');]]></add>
+        </operation>
+	 <operation>
+            <search><![CDATA[$image = $this->model_tool_image->resize('placeholder.png', $this->config->get('config_image_product_width'), $this->config->get('config_image_product_height'));]]></search>
+            <add position="after" offset="1"><![CDATA[/*]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[if ((float)$result['special']) {]]></search>
+            <add position="before"><![CDATA[*/]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[if ($this->config->get('config_tax')) {]]></search>
+            <add position="before"><![CDATA[//step 1 Product Have Mrp Or Not			
+	$take_price_without_tax_dollr=$result['price'];
+
+//step 2 check category discount or not
+//irs1
+//category discount
+
+ $category_info = $this->model_catalog_category->getCategoryId($result['product_id']);
+ 
+        if(!empty($category_info['category_id'])){ 
+			
+			$categoryid=$category_info['category_id'];
+		}
+		else{
+			$categoryid='';
+		}			
+
+$db_discountcategory_id = $this->model_catalog_category->getDiscountCategoryId($categoryid);//print_r($db_discountcategory_id);exit;
+
+if(!empty($db_discountcategory_id)){  
+      if($db_discountcategory_id['status']==1 && isset($db_discountcategory_id['percentage']))
+      { 		
+			//take db percentage price in default price 
+			//echo $take_price_without_tax_dollr;
+			$db_discount_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$db_discountcategory_id['percentage']));
+			//echo $db_discount_price."<br>";
+			$db_discount_price=$this->tax->calculate($db_discount_price, $result['tax_class_id'], $this->config->get('config_tax'));						
+			//echo $db_discount_price;
+			//take special price without dollar symbol
+			$product_special=$this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax'));			
+			
+			if((float)$result['special']){ 
+				
+				$db_discount_special_minimum_price = min($db_discount_price,$product_special);
+				$special = $this->currency->format($db_discount_special_minimum_price);
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));			
+				
+			}
+			else{
+				
+				$specail_price = $this->currency->format($db_discount_price);
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+				
+				}		
+	 }
+	 else{//category discount disable
+		 //check global discount available
+		     
+			 $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;
+			
+		  if( $data['global_discount_status']==1) 
+		  {  
+			  //add special calculation code1
+			 $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));		     
+			 $specail_price = $this->currency->format($this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax')));
+			 $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+			 
+		  }
+		  else { 
+			   //add special calculation code2
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+				$db_discount_price='';
+				$discount_percentage='';
+				$product_price='';
+				$db_discount_special_minimum_price='';
+				$discount_status='';
+		  }
+	   }
+ }
+else{//not category discount
+	 //check global discount available
+	  
+	         $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;			 
+			 //take default price without dollar and tax			
+			 if( $data['global_discount_status']==1) 
+			 {				 
+			    if((float)$result['special']){ 
+				$defaultspecial = $this->tax->calculate($result['special'], $result['tax_class_id'], $this->config->get('config_tax'));			
+				$db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $db_specail_price = $this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax'));
+				$db_discount_special_minimum_price = min($defaultspecial,$db_specail_price);//echo $data['special'] ;
+			    $special = $this->currency->format($db_discount_special_minimum_price);
+			    $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax'))); 			    
+			    
+			    }				 
+				else{ 
+			    $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $specail_price = $this->currency->format($this->tax->calculate($db_discount_default_price, $result['tax_class_id'], $this->config->get('config_tax')));
+			    $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+			    
+				}
+				 
+		    }
+		    else { 		
+				if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+					$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $result['tax_class_id'], $this->config->get('config_tax')));
+				} else {
+					$price = false;
+				}
+			}
+	}
+//irs2
+//irs1
+$data['global_discount_status']=$this->config->get('global_discount_status') ;
+$data['global_discount']=$this->config->get('global_discount') ;
+//irs2]]></add>
+        </operation>
+	
+	<operation>
+            <search><![CDATA['product_id'  => $result['product_id'],]]></search>
+            <add position="after"><![CDATA['specail_price'=>(isset($specail_price)?$specail_price:""),]]></add>
+        </operation>
+</file>
+
+<file path="catalog/view/theme/*/template/product/search.tpl">
+        <operation>
+            <search><![CDATA[<?php if (!$product['special']) { ?>]]></search>
+            <add position="replace" offset="1"><![CDATA[<?php if (!$product['special']) { ?><!--00--><?php if(empty($product['specail_price'])) { echo $product['price']; }else { ?>
+               <span style="text-decoration: line-through;"><?php echo $text_mrp.$product['price']; ?><br></span> 
+               <span class="price-new"><?php echo $product['specail_price']; ?></span><?php }   ?><!--00-->]]></add>
+        </operation>
+	 <operation>
+            <search><![CDATA[<span class="price-new"><?php echo $product['special']; ?></span> <span class="price-old"><?php echo $product['price']; ?></span>]]></search>
+            <add position="replace"><![CDATA[<!--00--><?php  if($global_discount_status == 1 ) {  ?>
+					  <span  style="text-decoration: line-through;"><?php echo $text_mrp.$product['price']; ?></span><br> 
+					  <span class="price-new"><?php echo $product['special']; ?></span>
+					  <?php } else { ?><span class="price-new"><?php echo $product['special']; ?></span> <span class="price-old"><?php echo $product['price']; ?></span><?php } ?><!--00-->]]></add>
+        </operation>
+    </file>
+
+<!--featured page home-->
+<file path="catalog/controller/module/featured.php">
+        <operation>
+            <search><![CDATA[$data['text_tax'] = $this->language->get('text_tax');]]></search>
+            <add position="after"><![CDATA[$data['text_mrp'] = $this->language->get('text_mrp');
+$data['text_offer_price'] = $this->language->get('text_offer_price');
+$this->load->model('catalog/category');]]></add>
+        </operation>
+	 <operation>
+            <search><![CDATA[$image = $this->model_tool_image->resize('placeholder.png', $setting['width'], $setting['height']);]]></search>
+            <add position="after" offset="1"><![CDATA[/*]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[if ((float)$product_info['special']) {]]></search>
+            <add position="before"><![CDATA[*/]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA[if ($this->config->get('config_tax')) {]]></search>
+            <add position="before"><![CDATA[//irs1
+ 
+	$take_price_without_tax_dollr=$product_info['price'];
+ 
+//irs2
+
+$category_info = $this->model_catalog_category->getCategoryId($product_info['product_id']);
+ 
+        if(!empty($category_info['category_id'])){ 
+			
+			$categoryid=$category_info['category_id'];
+		}
+		else{
+			$categoryid='';
+		}			
+
+$db_discountcategory_id = $this->model_catalog_category->getDiscountCategoryId($categoryid);//print_r($db_discountcategory_id);exit;
+
+if(!empty($db_discountcategory_id)){  
+      if($db_discountcategory_id['status']==1 && isset($db_discountcategory_id['percentage']))
+      { 		
+			//take db percentage price in default price 
+			//echo $take_price_without_tax_dollr;
+			$db_discount_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$db_discountcategory_id['percentage']));
+			//echo $db_discount_price."<br>";
+			$db_discount_price=$this->tax->calculate($db_discount_price, $product_info['tax_class_id'], $this->config->get('config_tax'));						
+			//echo $db_discount_price;
+			//take special price without dollar symbol
+			$product_special=$this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax'));			
+			
+			if((float)$product_info['special']){ 
+				
+				$db_discount_special_minimum_price = min($db_discount_price,$product_special);
+				$special = $this->currency->format($db_discount_special_minimum_price);
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));			
+				
+			}
+			else{
+				
+				$specail_price = $this->currency->format($db_discount_price);
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+				
+				}		
+	 }
+	 else{//category discount disable
+		 //check global discount available
+		     
+			 $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;
+			
+		  if( $data['global_discount_status']==1) 
+		  {  
+			  //add special calculation code1
+			 $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));		     
+			 $specail_price = $this->currency->format($this->tax->calculate($db_discount_default_price, $product_info['tax_class_id'], $this->config->get('config_tax')));
+			 $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+			 
+		  }
+		  else { 
+			   //add special calculation code2
+				$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+				$db_discount_price='';
+				$discount_percentage='';
+				$product_price='';
+				$db_discount_special_minimum_price='';
+				$discount_status='';
+		  }
+	   }
+ }
+else{//not category discount
+	 //check global discount available
+	  
+	         $data['global_discount_status']=$this->config->get('global_discount_status') ;
+			 $data['global_discount']=$this->config->get('global_discount') ;			 
+			 //take default price without dollar and tax			
+			 if( $data['global_discount_status']==1) 
+			 {				 
+			    if((float)$product_info['special']){ 
+				$defaultspecial = $this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax'));			
+				$db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $db_specail_price = $this->tax->calculate($db_discount_default_price, $product_info['tax_class_id'], $this->config->get('config_tax'));
+				$db_discount_special_minimum_price = min($defaultspecial,$db_specail_price);//echo $data['special'] ;
+			    $special = $this->currency->format($db_discount_special_minimum_price);
+			    $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax'))); 			    
+			    
+			    }				 
+				else{ 
+			    $db_discount_default_price=($take_price_without_tax_dollr-(($take_price_without_tax_dollr/100)*$data['global_discount']));			 
+			    $specail_price = $this->currency->format($this->tax->calculate($db_discount_default_price, $product_info['tax_class_id'], $this->config->get('config_tax')));
+			    $price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+			    
+				}
+				 
+		    }
+		    else { 		
+				if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+					$price = $this->currency->format($this->tax->calculate($take_price_without_tax_dollr, $product_info['tax_class_id'], $this->config->get('config_tax')));
+				} else {
+					$price = false;
+				}
+			}
+	}
+//irs2
+
+$data['global_discount_status']=$this->config->get('global_discount_status') ;
+$data['global_discount']=$this->config->get('global_discount') ;]]></add>
+        </operation>
+	<operation>
+            <search><![CDATA['product_id'  => $product_info['product_id'],]]></search>
+            <add position="after"><![CDATA['specail_price'=>(isset($specail_price)?$specail_price:""),]]></add>
+        </operation>
+ </file>
+
+<file path="catalog/view/theme/*/template/module/featured.tpl">
+        <operation>
+            <search><![CDATA[<?php if (!$product['special']) { ?>]]></search>
+            <add position="replace" offset="1"><![CDATA[<?php if (!$product['special']) { ?> <!--00--><?php if(empty($product['specail_price'])) { echo $product['price']; }else { ?>
+         <span style="text-decoration: line-through;"><?php echo $text_mrp.$product['price']; ?><br></span>
+         <span class="price-new"><?php echo $product['specail_price']; ?></span><?php }   ?><!--00-->]]></add>
+        </operation>
+	 <operation>
+            <search><![CDATA[<span class="price-new"><?php echo $product['special']; ?></span> <span class="price-old"><?php echo $product['price']; ?></span>]]></search>
+            <add position="replace"><![CDATA[ <!--00--><?php  if($global_discount_status == 1 ) {  ?>
+			  <span style="text-decoration: line-through;"><?php echo $text_mrp.$product['price']; ?></span><br> 
+			  <span class="price-new"><?php echo $product['special']; ?></span>
+			  <?php } else { ?><span class="price-new"><?php echo $product['special']; ?></span> <span class="price-old"><?php echo $product['price']; ?></span><?php } ?><!--00-->]]></add>
+        </operation>
+    </file>
+</modification>
+

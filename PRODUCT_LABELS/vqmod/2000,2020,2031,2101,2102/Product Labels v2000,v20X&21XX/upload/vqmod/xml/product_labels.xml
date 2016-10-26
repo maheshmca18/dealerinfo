@@ -1,0 +1,2189 @@
+<modification>
+    <id>Product_label</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRSSOFT</author>
+    <!--admin page-->
+    <file path="admin/controller/common/menu.php">
+        <operation>
+            <search position="after"><![CDATA[$data['home'] = $this->url->link('common/dashboard', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+            <add><![CDATA[$data['product_label'] = $this->url->link('localisation/product_labels', 'token=' . $this->session->data['token'], 'SSL');]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/view/template/common/menu.tpl">
+        <operation>
+            <search position="before"><![CDATA[<li><a href="<?php echo $location; ?>"><?php echo $text_location; ?></a></li>]]></search>
+            <add><![CDATA[<li><a href="<?php echo $product_label; ?>"><?php echo "Product Label "; ?></a></li>]]></add>
+        </operation>
+    </file>
+    <!-- hide edit button in admin module product label-->
+
+    <file path="admin/controller/extension/module.php">
+        <operation>
+            <search position="after" ><![CDATA['name'      => $this->language->get('heading_title'),]]></search>
+            <add><![CDATA['display' => $display_style,]]>
+            </add>
+        </operation>
+        <operation>
+            <search position="before" ><![CDATA[$data['extensions'][] = array(]]></search>
+            <add><![CDATA[$display_style = ($this->language->get('heading_title') == 'Product Labels') ? "style=display:none" : "";]]></add>
+        </operation>
+
+    </file>
+
+    <file path="admin/view/template/extension/module.tpl">
+        <operation>
+            <search position="replace"><![CDATA[<a href="<?php echo $extension['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a>]]></search>
+            <add><![CDATA[<a href="<?php echo $extension['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary" <?php echo $extension['display']; ?>><i class="fa fa-pencil"></i></a>]]></add>
+        </operation>
+    </file>
+
+    <!--catalog Featured page-->
+    <file path="catalog/language/english/english.php">
+        <operation>
+            <search position="before"><![CDATA[$_['button_address_add']    = 'Add Address';]]></search>
+            <add><![CDATA[$_['text_percent'] = '- %s&#37;';]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/module/featured.php">
+        <operation>
+            <search position="after"><![CDATA[if ($product_info) {]]></search>
+            <add><![CDATA[ if ($product_info['date_added']) {
+                        $date = $product_info['date_added'];
+                    } else {
+                        $date = "";
+                    }
+
+                    //out of stock
+                    if ($product_info['quantity']) {
+                        $stock_quantity = $product_info['quantity'];
+                    } else {
+                        $stock_quantity = 0;
+                    }
+
+                    ]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA['percent'	=> sprintf($this->language->get('text_percent'), (round((($product_info['price'] -  $product_info['special'])/$product_info['price'])*100 ,0))),
+                        'percent_value'	=> (round((($product_info['price'] -  $product_info['special'])/$product_info['price'])*100 ,0)),
+                        'date'=>$date,
+  'stockquantity'=>$stock_quantity,]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[if ($data['products']) {]]></search>
+            <add><![CDATA[   $this->load->model('localisation/product_labels');
+        $label_info = $this->model_localisation_product_labels->getLabels();
+
+        foreach($label_info as $labelget){
+            $data['labelvalues'][]=array(
+                'label_id'=> $labelget['label_id'],
+                'label_text'=> $labelget['label_text'],
+                'label_color'=> $labelget['label_color'],
+                'label_text_color'=> $labelget['label_text_color'],
+                'condition_type'=> $labelget['condition_type'],
+                'status'=> $labelget['status']
+
+            );
+            if($labelget['label_id']==1) {
+               $data['new_product_db_days']= $labelget['condition_type'];
+               $data['new_product_db_text']= $labelget['label_text'];
+               $data['new_product_db_text_color']= $labelget['label_text_color'];
+               $data['new_product_db_label_color']= $labelget['label_color'];
+               $data['new_product_status']= $labelget['status'];
+                $data['position_new']=$labelget['position'];
+
+            }
+            if($labelget['label_id']==2) {
+                $data['discount_product_db_percent']= $labelget['condition_type'];
+                $data['discount_product_db_text']= $labelget['label_text'];
+                $data['discount_product_db_text_color']= $labelget['label_text_color'];
+                $data['discount_product_db_label_color']= $labelget['label_color'];
+                $data['discount_product_status']= $labelget['status'];
+                $data['position_discount']= $labelget['position'];
+
+            }
+            if($labelget['label_id']==3) {
+                $data['shipping_product_db_text']= $labelget['label_text'];
+                $data['shipping_product_db_text_color']= $labelget['label_text_color'];
+                $data['shipping_product_db_label_color']= $labelget['label_color'];
+                $data['shipping_product_status']= $labelget['status'];
+                $data['position_shipping']= $labelget['position'];
+
+            }
+            if($labelget['label_id']==4) {
+                $data['outofstock_product_db_text']= $labelget['label_text'];
+                $data['outofstock_product_db_text_color']= $labelget['label_text_color'];
+                $data['outofstock_product_db_label_color']= $labelget['label_color'];
+                $data['outofstock_product_status']= $labelget['status'];
+                $data['position_outofstock']= $labelget['position'];
+
+
+            }
+        }
+
+//take flat shipping rate in shipping_method.php ->controller
+        $data['shipping_charge']= $this->config->get('flat_cost');
+
+        $data['install_status'] = $this->config->get('product_label_install_status');]]></add>
+        </operation>
+
+
+    </file>
+
+    <file path="catalog/view/theme/*/template/module/featured.tpl">
+        <operation>
+            <search position="before"><![CDATA[<h3><?php echo $heading_title; ?></h3>]]></search>
+            <add><![CDATA[<!--new product-->
+
+                    <?php
+                      if($install_status==1) { if($position_new==1){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+    }
+</style>
+<?php } if($position_new==2){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+    }
+</style>
+<?php } if($position_new==3){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        bottom: 63px;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+    }
+</style>
+<?php } if($position_new==4){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+</style>
+<?php } ?>
+<!--new product-->
+
+<!--discount product-->
+<?php if($position_discount==1) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        left:15px;
+        top: 8px;
+    }
+
+</style>
+<?php } if($position_discount==2) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float:right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+    }
+
+</style>
+<?php } if($position_discount==3) { ?>
+
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_discount==4) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        right: 15px;
+        bottom: 63px;
+    }
+
+</style>
+<?php } ?>
+<!--discount product-->
+
+<!--shipping product-->
+<?php if($position_shipping==1) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==2) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==3) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==4) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        right: 15px;
+        bottom: 63px;
+        z-index: 1;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } ?>
+<!--shipping product-->
+
+<!--outofstock product-->
+<?php if($position_outofstock==1) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_outofstock==2) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float:right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+    }
+</style>
+<?php } if($position_outofstock==3) { ?>
+
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+    }
+</style>
+<?php } if($position_outofstock==4) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        right: 15px;
+        bottom: 63px;
+    }
+
+
+</style>
+<?php } } ?>
+<!--outofstock product-->]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[<div class="product-thumb transition">]]></search>
+            <add><![CDATA[ <!--New product count-->
+        <?php
+         if($install_status==1) {
+        $datetime1 = new DateTime($product['date']);
+        $datetime2 = new DateTime();
+        $interval = $datetime1->diff($datetime2);
+        $date_diff_count=$interval->format('%a');
+
+        if($new_product_status == 1 ) {
+        if($new_product_db_days > $date_diff_count) { ?>
+        <div class="new_product">
+            <?php echo $new_product_db_text; ?>
+        </div>
+        <?php } } ?>
+        <!--New product count-->
+
+        <!--discount product-->
+        <?php if($discount_product_status==1) {
+        if($discount_product_db_percent <= $product['percent_value']) { ?>
+        <?php if ($product['special'])  { ?>
+        <div class="discount_product">
+            <?php echo $product['percent']; ?>
+        </div>
+        <?php } } } ?>
+        <!--discount product-->
+        <!--shipping product<?php if(isset($shipping_charge)) { echo $shipping_charge; } ?>-->
+        <?php if($shipping_product_status==1) {
+               if(isset($shipping_charge)) {
+               if($shipping_charge==0) { ?>
+
+        <div class="shipping_product">
+            <?php echo $shipping_product_db_text;  ?>
+        </div>
+        <?php } } } ?>
+        <!--shipping product-->
+ <!--outofstock product-->
+        <?php if($outofstock_product_status==1) {
+               if($product['stockquantity']==0) { ?>
+        <div class="outofstock_product">
+            <?php echo $outofstock_product_db_text;  ?>
+        </div>
+        <?php } } } ?>
+        <!--outofstock product-->
+]]></add>
+        </operation>
+
+    </file>
+
+
+    <!--catalog detail&related page-->
+    <!--detail page-->
+    <file path="catalog/controller/product/product.php">
+        <operation>
+            <search position="before"><![CDATA[$data['images'] = array();]]></search>
+            <add><![CDATA[     if ($product_info['date_added']) {
+                $date = $product_info['date_added'];
+            } else {
+                $date = "";
+            }
+
+            //out of stock
+            if ($product_info['quantity']) {
+                $stock_quantity = $product_info['quantity'];
+            } else {
+                $stock_quantity = 0;
+            }
+
+            $this->load->model('localisation/product_labels');
+            $label_info = $this->model_localisation_product_labels->getLabels();
+
+            foreach($label_info as $labelget){
+                $data['labelvalues'][]=array(
+                    'label_id'=> $labelget['label_id'],
+                    'label_text'=> $labelget['label_text'],
+                    'label_color'=> $labelget['label_color'],
+                    'label_text_color'=> $labelget['label_text_color'],
+                    'condition_type'=> $labelget['condition_type'],
+                    'status'=> $labelget['status']
+
+                );
+                if($labelget['label_id']==1) {
+                    $data['new_product_db_days']= $labelget['condition_type'];
+                    $data['new_product_db_text']= $labelget['label_text'];
+                    $data['new_product_db_text_color']= $labelget['label_text_color'];
+                    $data['new_product_db_label_color']= $labelget['label_color'];
+                    $data['new_product_status']= $labelget['status'];
+                    $data['position_new']=$labelget['position'];
+
+                }
+                if($labelget['label_id']==2) {
+                    $data['discount_product_db_percent']= $labelget['condition_type'];
+                    $data['discount_product_db_text']= $labelget['label_text'];
+                    $data['discount_product_db_text_color']= $labelget['label_text_color'];
+                    $data['discount_product_db_label_color']= $labelget['label_color'];
+                    $data['discount_product_status']= $labelget['status'];
+                    $data['position_discount']= $labelget['position'];
+
+                }
+                if($labelget['label_id']==3) {
+                    $data['shipping_product_db_text']= $labelget['label_text'];
+                    $data['shipping_product_db_text_color']= $labelget['label_text_color'];
+                    $data['shipping_product_db_label_color']= $labelget['label_color'];
+                    $data['shipping_product_status']= $labelget['status'];
+                    $data['position_shipping']= $labelget['position'];
+
+                }
+		if($labelget['label_id']==4) {
+                    $data['outofstock_product_db_text']= $labelget['label_text'];
+                    $data['outofstock_product_db_text_color']= $labelget['label_text_color'];
+                    $data['outofstock_product_db_label_color']= $labelget['label_color'];
+                    $data['outofstock_product_status']= $labelget['status'];
+                    $data['position_outofstock']= $labelget['position'];
+                }
+            }
+if ((float)$product_info['special']) {
+                $special = $this->currency->format($this->tax->calculate($product_info['special'], $product_info['tax_class_id'], $this->config->get('config_tax')));
+            } else {
+                $special = false;
+            }
+//take flat shipping rate in shipping_method.php ->controller
+              $data['shipping_charge']= $this->config->get('flat_cost');
+
+              $data['install_status'] = $this->config->get('product_label_install_status');
+]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[$data['images'][] = array(]]></search>
+            <add><![CDATA[ 'percent'	=> sprintf($this->language->get('text_percent'), (round((($product_info['price'] -  $product_info['special'])/$product_info['price'])*100 ,0))),
+                    'percent_value'	=> (round((($product_info['price'] -  $product_info['special'])/$product_info['price'])*100 ,0)),
+                     'date'=>$date,
+                    'special'     => $special,
+                    'stockquantity'=>$stock_quantity,]]></add>
+        </operation>
+
+        <!--related page-->
+        <operation>
+            <search position="after"><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA[ 'percent'	=> sprintf($this->language->get('text_percent'), (round((($result['price'] -  $result['special'])/$result['price'])*100 ,0))),
+                    'percent_value'	=> (round((($result['price'] -  $result['special'])/$result['price'])*100 ,0)),
+                    'date'=>$date,
+ 'stockquantity'=>$stock_quantity,]]></add>
+        </operation>
+
+        <operation>
+            <search position="before"><![CDATA[$data['tags'] = array();]]></search>
+            <add><![CDATA[      $this->load->model('localisation/product_labels');
+            $label_info = $this->model_localisation_product_labels->getLabels();
+
+            foreach($label_info as $labelget){
+                $data['labelvalues'][]=array(
+                    'label_id'=> $labelget['label_id'],
+                    'label_text'=> $labelget['label_text'],
+                    'label_color'=> $labelget['label_color'],
+                    'label_text_color'=> $labelget['label_text_color'],
+                    'condition_type'=> $labelget['condition_type'],
+                    'status'=> $labelget['status']
+
+                );
+                if($labelget['label_id']==1) {
+                    $data['new_product_db_days']= $labelget['condition_type'];
+                    $data['new_product_db_text']= $labelget['label_text'];
+                    $data['new_product_db_text_color']= $labelget['label_text_color'];
+                    $data['new_product_db_label_color']= $labelget['label_color'];
+                    $data['new_product_status']= $labelget['status'];
+                    $data['position_new']=$labelget['position'];
+
+                }
+                if($labelget['label_id']==2) {
+                    $data['discount_product_db_percent']= $labelget['condition_type'];
+                    $data['discount_product_db_text']= $labelget['label_text'];
+                    $data['discount_product_db_text_color']= $labelget['label_text_color'];
+                    $data['discount_product_db_label_color']= $labelget['label_color'];
+                    $data['discount_product_status']= $labelget['status'];
+                    $data['position_discount']= $labelget['position'];
+
+                }
+                if($labelget['label_id']==3) {
+                    $data['shipping_product_db_text']= $labelget['label_text'];
+                    $data['shipping_product_db_text_color']= $labelget['label_text_color'];
+                    $data['shipping_product_db_label_color']= $labelget['label_color'];
+                    $data['shipping_product_status']= $labelget['status'];
+                    $data['position_shipping']= $labelget['position'];
+
+                }
+		        if($labelget['label_id']==4) {
+                    $data['outofstock_product_db_text']= $labelget['label_text'];
+                    $data['outofstock_product_db_text_color']= $labelget['label_text_color'];
+                    $data['outofstock_product_db_label_color']= $labelget['label_color'];
+                    $data['outofstock_product_status']= $labelget['status'];
+                    $data['position_outofstock']= $labelget['position'];
+                }
+            }
+
+//take flat shipping rate in shipping_method.php ->controller
+              $data['shipping_charge']= $this->config->get('flat_cost');
+
+              $data['install_status'] = $this->config->get('product_label_install_status');]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search position="before"><![CDATA[<?php echo $header; ?>]]></search>
+            <add><![CDATA[<!--new product-->
+<?php if($install_status==1){ if($position_new==1){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 2%;
+        z-index: 1;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+    }
+
+</style>
+<?php } if($position_new==2){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float:right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 6px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+    }
+</style>
+<?php } if($position_new==3){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: relative;
+        text-align: center;
+        z-index: 1;
+        bottom: 55px;
+        left: 20px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+</style>
+<?php } if($position_new==4){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: relative;
+        z-index: 1;
+        right: 0px;
+        bottom: 55px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+</style>
+<?php } ?>
+<!--new product-->
+<!--new product_related-->
+<?php if($position_new==1){ ?>
+<style>
+    .new_product_related {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 2%;
+        z-index: 1;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+
+</style>
+<?php } if($position_new==2){ ?>
+<style>
+    .new_product_related {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 10px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+
+    }
+</style>
+<?php } if($position_new==3){ ?>
+<style>
+    .new_product_related {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        top: 70%;
+        z-index: 1;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+</style>
+<?php } if($position_new==4){ ?>
+<style>
+    .new_product_related {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 64px;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+</style>
+<?php } ?>
+<!--new product related-->
+
+<!--discount product-->
+<?php if($position_discount==1) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        left:15px;
+        top: 8px;
+    }
+
+</style>
+<?php } if($position_discount==2) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        right: 15px;
+        top: 6px;
+    }
+
+</style>
+<?php } if($position_discount==3) { ?>
+
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: relative;
+        z-index: 1;
+        bottom: 55px;
+        left:20px;
+    }
+
+</style>
+<?php } if($position_discount==4) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: relative;
+        z-index: 1;
+        right: 0px;
+        bottom: 55px;
+    }
+
+</style>
+<?php } ?>
+<!--discount product-->
+
+<!--discount product related-->
+<?php if($position_discount==1) { ?>
+<style>
+    .discount_product_related {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        top: 2%;
+        z-index: 1;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_discount==2) { ?>
+<style>
+    .discount_product_related {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 10px;
+        z-index: 1;
+        right: 15px;
+    }
+
+</style>
+<?php } if($position_discount==3) { ?>
+
+<style>
+    .discount_product_related {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        bottom: 64px;;
+        z-index: 1;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_discount==4) { ?>
+<style>
+    .discount_product_related {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        bottom: 64px;
+        right:15px;
+        z-index: 1;
+    }
+
+</style>
+<?php } ?>
+<!--discount product related-->
+
+<!--shipping product-->
+<?php if($position_shipping==1) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 6px;
+        z-index: 1;
+        left:15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+
+<?php } if($position_shipping==2) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 6px;
+        z-index: 1;
+        right: 16px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==3) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: relative;
+        z-index: 1;
+        bottom: 55px;
+        left:20px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==4) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        /*float: left;*/
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: relative;
+        bottom: 55px;
+        z-index: 1;
+        right: 0px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } ?>
+<!--shipping product-->
+<!--shipping product related-->
+<?php if($position_shipping==1) { ?>
+<style>
+    .shipping_product_related{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        top: 2%;
+        z-index: 1;
+        left:15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+
+<?php } if($position_shipping==2) { ?>
+<style>
+    .shipping_product_related{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==3) { ?>
+<style>
+    .shipping_product_related{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        left:15px;
+        bottom: 64px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==4) { ?>
+<style>
+    .shipping_product_related{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 64px;
+        right: 16px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php }   ?>
+<!--shipping product related-->
+<!--outofstock product-->
+
+<?php if($position_outofstock==1) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        left:15px;
+        top: 8px;
+    }
+
+</style>
+<?php } if($position_outofstock==2) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        right: 15px;
+        top: 6px;
+    }
+
+</style>
+<?php } if($position_outofstock==3) { ?>
+
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: relative;
+        z-index: 1;
+        bottom: 55px;
+        left:20px;
+    }
+
+</style>
+<?php } if($position_outofstock==4) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: relative;
+        z-index: 1;
+        right: -5px;
+        bottom: 55px;
+    }
+
+</style>
+<?php } ?>
+
+<!--outofstock product-->
+
+<!--outofstock product related-->
+<?php if($position_outofstock==1) { ?>
+<style>
+    .outofstock_product_relatedt {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        top: 2%;
+        z-index: 1;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_outofstock==2) { ?>
+<style>
+    .outofstock_product_relatedt {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 10px;
+        z-index: 1;
+        right: 15px;
+    }
+
+</style>
+<?php } if($position_outofstock==3) { ?>
+
+<style>
+    .outofstock_product_relatedt {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        bottom: 64px;;
+        z-index: 1;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_outofstock==4) { ?>
+<style>
+    .outofstock_product_relatedt {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        bottom: 64px;
+        right:15px;
+        z-index: 1;
+            }
+
+</style>
+<?php } } ?>
+<!--outofstock product related-->
+]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[<li><a class="thumbnail" href="<?php echo $popup; ?>" title="<?php echo $heading_title; ?>"><img src="<?php echo $thumb; ?>" title="<?php echo $heading_title; ?>" alt="<?php echo $heading_title; ?>" />]]></search>
+            <add><![CDATA[ <?php if($install_status==1) {
+            foreach($images as $product) {  } ?>
+                    <!--New product count-->
+                    <?php $datetime1 = new DateTime($product['date']);
+                $datetime2 = new DateTime();
+                $interval = $datetime1->diff($datetime2);
+                    $date_diff_count=$interval->format('%a');
+                    if($new_product_status == 1 ) {
+                    if($new_product_db_days > $date_diff_count) { ?>
+                    <div class="new_product">
+                        <?php echo $new_product_db_text; ?>
+                    </div>
+                    <?php } } ?>
+                    <!--New product count-->
+
+                    <!--discount product-->
+                    <?php if($discount_product_status==1) {
+                if($discount_product_db_percent <= $product['percent_value']) { ?>
+                    <?php if ($product['special'])  { ?>
+                    <div class="discount_product">
+                        <?php echo $product['percent']; ?>
+                    </div>
+                    <?php } } } ?>
+                    <!--discount product-->
+
+                    <!--shipping product<?php if(isset($shipping_charge)) { echo $shipping_charge; } ?>-->
+                    <?php if($shipping_product_status==1) {
+                       if(isset($shipping_charge)) {
+                       if($shipping_charge==0) { ?>
+                            <div class="shipping_product">
+                                <?php echo $shipping_product_db_text;  ?>
+                            </div>
+                    <?php } } }  ?>
+                    <!--shipping product-->
+		 <!--outofstock product-->
+                    <?php if($outofstock_product_status==1) {
+               if($product['stockquantity']==0) { ?>
+                    <div class="outofstock_product">
+                        <?php echo $outofstock_product_db_text;  ?>
+                    </div>
+                    <?php } } } ?>
+                    <!--outofstock product-->]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[<div class="product-thumb transition">]]></search>
+            <add><![CDATA[ <!--New product count-->
+              <?php if($install_status==1) { $datetime1 = new DateTime($product['date']);
+            $datetime2 = new DateTime();
+            $interval = $datetime1->diff($datetime2);
+              $date_diff_count=$interval->format('%a');
+              if($new_product_status == 1 ) {
+              if($new_product_db_days > $date_diff_count) { ?>
+              <div class="new_product_related">
+                  <?php echo $new_product_db_text; ?>
+              </div>
+              <?php } } ?>
+              <!--New product count-->
+              <!--discount product-->
+              <?php if($discount_product_status==1) {
+             if($discount_product_db_percent <= $product['percent_value']) { ?>
+              <?php if ($product['special'])  { ?>
+              <div class="discount_product_related">
+                  <?php echo $product['percent']; ?>
+              </div>
+              <?php } } } ?>
+              <!--discount product-->
+              <!--shipping product<?php if(isset($shipping_charge)) { echo $shipping_charge; } ?>-->
+              <?php if($shipping_product_status==1) {
+             if(isset($shipping_charge)) {
+             if($shipping_charge==0) { ?>
+
+              <div class="shipping_product_related">
+                  <?php echo $shipping_product_db_text;  ?>
+              </div>
+              <?php } } } ?>
+              <!--shipping product-->
+ 		<!--outofstock product-->
+              <?php if($outofstock_product_status==1) {
+               if($product['stockquantity']==0) { ?>
+              <div class="outofstock_product_relatedt">
+                  <?php echo $outofstock_product_db_text;  ?>
+              </div>
+              <?php } } } ?>
+              <!--outofstock product-->]]></add>
+        </operation>
+    </file>
+    <!--catagory page-->
+    <file path="catalog/controller/product/category.php">
+        <operation>
+            <search position="before"><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA[if ($result['date_added']) {
+                    $date = $result['date_added'];
+                } else {
+                    $date = "";
+                }
+               //out of stock
+                if ($result['quantity']) {
+                    $stock_quantity = $result['quantity'];
+                } else {
+                    $stock_quantity = 0;
+                }]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA[  'percent'	=> sprintf($this->language->get('text_percent'), (round((($result['price'] -  $result['special'])/$result['price'])*100 ,0))),
+                    'percent_value'	=> (round((($result['price'] -  $result['special'])/$result['price'])*100 ,0)),
+                    'date'=>$date,
+                    'special'     => $special,
+			 'stockquantity'=>$stock_quantity,]]></add>
+        </operation>
+        <operation>
+            <search position="before"><![CDATA[$data['sorts'] = array();]]></search>
+            <add><![CDATA[
+            $this->load->model('localisation/product_labels');
+            $label_info = $this->model_localisation_product_labels->getLabels();
+            //print_r($label_info);
+
+            foreach($label_info as $labelget){
+                $data['labelvalues'][]=array(
+                    'label_id'=> $labelget['label_id'],
+                    'label_text'=> $labelget['label_text'],
+                    'label_color'=> $labelget['label_color'],
+                    'label_text_color'=> $labelget['label_text_color'],
+                    'condition_type'=> $labelget['condition_type'],
+                    'status'=> $labelget['status']
+
+                );
+                if($labelget['label_id']==1) {
+                    $data['new_product_db_days']= $labelget['condition_type'];
+                    $data['new_product_db_text']= $labelget['label_text'];
+                    $data['new_product_db_text_color']= $labelget['label_text_color'];
+                    $data['new_product_db_label_color']= $labelget['label_color'];
+                    $data['new_product_status']= $labelget['status'];
+                    $data['position_new']=$labelget['position'];
+
+                }
+                if($labelget['label_id']==2) {
+                    $data['discount_product_db_percent']= $labelget['condition_type'];
+                    $data['discount_product_db_text']= $labelget['label_text'];
+                    $data['discount_product_db_text_color']= $labelget['label_text_color'];
+                    $data['discount_product_db_label_color']= $labelget['label_color'];
+                    $data['discount_product_status']= $labelget['status'];
+                    $data['position_discount']= $labelget['position'];
+
+                }
+                if($labelget['label_id']==3) {
+                    $data['shipping_product_db_text']= $labelget['label_text'];
+                    $data['shipping_product_db_text_color']= $labelget['label_text_color'];
+                    $data['shipping_product_db_label_color']= $labelget['label_color'];
+                    $data['shipping_product_status']= $labelget['status'];
+                    $data['position_shipping']= $labelget['position'];
+
+                }
+		        if($labelget['label_id']==4) {
+                    $data['outofstock_product_db_text']= $labelget['label_text'];
+                    $data['outofstock_product_db_text_color']= $labelget['label_text_color'];
+                    $data['outofstock_product_db_label_color']= $labelget['label_color'];
+                    $data['outofstock_product_status']= $labelget['status'];
+                    $data['position_outofstock']= $labelget['position'];
+                }
+            }
+
+//take flat shipping rate in shipping_method.php ->controller
+              $data['shipping_charge']= $this->config->get('flat_cost');
+
+              $data['install_status'] = $this->config->get('product_label_install_status');
+]]></add>
+        </operation>
+
+    </file>
+
+    <file path="catalog/view/theme/*/template/product/category.tpl">
+        <operation>
+            <search position="before"><![CDATA[<?php echo $header; ?>]]></search>
+            <add><![CDATA[
+<?php if($install_status==1) {
+if($position_new==1){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+
+
+</style>
+<?php } if($position_new==2){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+
+    }
+</style>
+<?php } if($position_new==3){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        bottom: 63px;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+</style>
+<?php } if($position_new==4){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+    }
+</style>
+<?php } ?>
+<!--new product-->
+
+<!--discount product-->
+<?php if($position_discount==1) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_discount==2) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float:right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+    }
+
+</style>
+<?php } if($position_discount==3) { ?>
+
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_discount==4) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        right: 15px;
+        bottom: 63px;
+    }
+
+</style>
+<?php } ?>
+<!--discount product-->
+
+<!--shipping product-->
+<?php if($position_shipping==1) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+
+<?php } if($position_shipping==2) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==3) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==4) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        right: 15px;
+        bottom: 63px;
+        z-index: 1;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php }  ?>
+<!--shipping product-->
+<!--outofstock product-->
+<?php if($position_outofstock==1) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:15px;
+    }
+</style>
+<?php } if($position_outofstock==2) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float:right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+    }
+</style>
+<?php } if($position_outofstock==3) { ?>
+
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+    }
+</style>
+<?php } if($position_outofstock==4) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        right: 15px;
+        bottom: 63px;
+    }
+</style>
+<?php } } ?>
+<!--outofstock product-->
+
+]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[<div class="product-thumb">]]></search>
+            <add><![CDATA[ <!--New product count-->
+              <?php if($install_status==1) {
+              $datetime1 = new DateTime($product['date']);
+        $datetime2 = new DateTime();
+        $interval = $datetime1->diff($datetime2);
+              $date_diff_count=$interval->format('%a');
+
+              if($new_product_status == 1 ) {
+              if($new_product_db_days > $date_diff_count) { ?>
+              <div class="new_product">
+                  <?php echo $new_product_db_text; ?>
+              </div>
+              <?php } } ?>
+              <!--New product count-->
+              <!--discount product-->
+              <?php if($discount_product_status==1) {
+        if($discount_product_db_percent <= $product['percent_value']) { ?>
+              <?php if ($product['special'])  { ?>
+              <div class="discount_product">
+                  <?php echo $product['percent']; ?>
+              </div>
+              <?php } } } ?>
+              <!--discount product-->
+              <!--shipping product<?php if(isset($shipping_charge)) { echo $shipping_charge; } ?>-->
+              <?php if($shipping_product_status==1) {
+        if(isset($shipping_charge)) {
+           if($shipping_charge==0) { ?>
+
+              <div class="shipping_product">
+                  <?php echo $shipping_product_db_text;  ?>
+              </div>
+              <?php } } } ?>
+              <!--shipping product-->
+        <!--outofstock product-->
+              <?php if($outofstock_product_status==1) {
+               if($product['stockquantity']==0) { ?>
+              <div class="outofstock_product">
+                  <?php echo $outofstock_product_db_text;  ?>
+              </div>
+              <?php } } } ?>
+              <!--outofstock product-->
+]]></add>
+        </operation>
+    </file>
+
+    <!--search page-->
+    <file path="catalog/controller/product/search.php">
+        <operation>
+            <search position="before"><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA[if ($result['date_added']) {
+                    $date = $result['date_added'];
+                } else {
+                    $date = "";
+                }
+                //out of stock
+                if ($result['quantity']) {
+                    $stock_quantity = $result['quantity'];
+                } else {
+                    $stock_quantity = 0;
+                }]]></add>
+        </operation>
+        <operation>
+            <search position="after"><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA[  'percent'	=> sprintf($this->language->get('text_percent'), (round((($result['price'] -  $result['special'])/$result['price'])*100 ,0))),
+                    'percent_value'	=> (round((($result['price'] -  $result['special'])/$result['price'])*100 ,0)),
+                    'date'=>$date,
+                    'special'     => $special,
+'stockquantity'=>$stock_quantity,]]></add>
+        </operation>
+        <operation>
+            <search position="before"><![CDATA[$data['sorts'] = array();]]></search>
+            <add><![CDATA[
+            $this->load->model('localisation/product_labels');
+            $label_info = $this->model_localisation_product_labels->getLabels();
+            foreach($label_info as $labelget){
+                $data['labelvalues'][]=array(
+                    'label_id'=> $labelget['label_id'],
+                    'label_text'=> $labelget['label_text'],
+                    'label_color'=> $labelget['label_color'],
+                    'label_text_color'=> $labelget['label_text_color'],
+                    'condition_type'=> $labelget['condition_type'],
+                    'status'=> $labelget['status']
+
+                );
+                if($labelget['label_id']==1) {
+                    $data['new_product_db_days']= $labelget['condition_type'];
+                    $data['new_product_db_text']= $labelget['label_text'];
+                    $data['new_product_db_text_color']= $labelget['label_text_color'];
+                    $data['new_product_db_label_color']= $labelget['label_color'];
+                    $data['new_product_status']= $labelget['status'];
+                    $data['position_new']=$labelget['position'];
+
+                }
+                if($labelget['label_id']==2) {
+                    $data['discount_product_db_percent']= $labelget['condition_type'];
+                    $data['discount_product_db_text']= $labelget['label_text'];
+                    $data['discount_product_db_text_color']= $labelget['label_text_color'];
+                    $data['discount_product_db_label_color']= $labelget['label_color'];
+                    $data['discount_product_status']= $labelget['status'];
+                    $data['position_discount']= $labelget['position'];
+
+                }
+                if($labelget['label_id']==3) {
+                    $data['shipping_product_db_text']= $labelget['label_text'];
+                    $data['shipping_product_db_text_color']= $labelget['label_text_color'];
+                    $data['shipping_product_db_label_color']= $labelget['label_color'];
+                    $data['shipping_product_status']= $labelget['status'];
+                    $data['position_shipping']= $labelget['position'];
+
+                }
+		        if($labelget['label_id']==4) {
+                    $data['outofstock_product_db_text']= $labelget['label_text'];
+                    $data['outofstock_product_db_text_color']= $labelget['label_text_color'];
+                    $data['outofstock_product_db_label_color']= $labelget['label_color'];
+                    $data['outofstock_product_status']= $labelget['status'];
+                    $data['position_outofstock']= $labelget['position'];
+                }
+            }
+
+//take flat shipping rate in shipping_method.php ->controller
+              $data['shipping_charge']= $this->config->get('flat_cost');
+              $data['install_status'] = $this->config->get('product_label_install_status');
+]]></add>
+        </operation>
+
+    </file>
+
+    <file path="catalog/view/theme/*/template/product/search.tpl">
+        <operation>
+            <search position="before"><![CDATA[<?php echo $header; ?>]]></search>
+            <add><![CDATA[
+<?php  if($install_status==1) {
+if($position_new==1){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+
+
+</style>
+<?php } if($position_new==2){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+
+    }
+</style>
+<?php } if($position_new==3){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        bottom: 63px;
+        left:16px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+</style>
+<?php } if($position_new==4){ ?>
+<style>
+    .new_product {
+        background-color: <?php echo $new_product_db_label_color;?>;
+        color:<?php echo $new_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        right: 15px;
+        border-bottom-right-radius: 10px;
+        border-top-left-radius: 10px;
+
+    }
+</style>
+<?php } ?>
+<!--new product-->
+
+<!--discount product-->
+<?php if($position_discount==1) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_discount==2) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float:right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+    }
+
+</style>
+<?php } if($position_discount==3) { ?>
+
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+    }
+
+</style>
+<?php } if($position_discount==4) { ?>
+<style>
+    .discount_product {
+        background-color: <?php echo $discount_product_db_label_color?>;
+        color:<?php echo $discount_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        right: 15px;
+        bottom: 63px;
+    }
+
+</style>
+<?php } ?>
+<!--discount product-->
+
+<!--shipping product-->
+<?php if($position_shipping==1) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+
+<?php } if($position_shipping==2) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==3) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php } if($position_shipping==4) { ?>
+<style>
+    .shipping_product{
+        background-color: <?php echo $shipping_product_db_label_color;?>;
+        color:<?php echo $shipping_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        right: 15px;
+        bottom: 63px;
+        z-index: 1;
+        border-bottom-right-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+</style>
+<?php }  ?>
+<!--shipping product-->
+<!--outofstock product-->
+<?php if($position_outofstock==1) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        left:15px;
+    }
+</style>
+<?php } if($position_outofstock==2) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float:right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        top: 8px;
+        z-index: 1;
+        right: 15px;
+    }
+</style>
+<?php } if($position_outofstock==3) { ?>
+
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: left;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 63px;
+        left:15px;
+    }
+</style>
+<?php } if($position_outofstock==4) { ?>
+<style>
+    .outofstock_product {
+        background-color: <?php echo $outofstock_product_db_label_color?>;
+        color:<?php echo $outofstock_product_db_text_color;?>;
+        float: right;
+        font-size: 12pt;
+        font-weight: 700;
+        padding: 6px 8px 5px;
+        position: absolute;
+        text-align: center;
+        z-index: 1;
+        right: 15px;
+        bottom: 63px;
+    }
+</style>
+<?php } } ?>
+<!--outofstock product-->
+]]></add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA[<div class="product-thumb">]]></search>
+            <add><![CDATA[ <!--New product count-->
+              <?php if($install_status==1) {
+              $datetime1 = new DateTime($product['date']);
+        $datetime2 = new DateTime();
+        $interval = $datetime1->diff($datetime2);
+              $date_diff_count=$interval->format('%a');
+
+              if($new_product_status == 1 ) {
+              if($new_product_db_days > $date_diff_count) { ?>
+              <div class="new_product">
+                  <?php echo $new_product_db_text; ?>
+              </div>
+              <?php } } ?>
+              <!--New product count-->
+              <!--discount product-->
+              <?php if($discount_product_status==1) {
+        if($discount_product_db_percent <= $product['percent_value']) { ?>
+              <?php if ($product['special'])  { ?>
+              <div class="discount_product">
+                  <?php echo $product['percent']; ?>
+              </div>
+              <?php } } } ?>
+              <!--discount product-->
+              <!--shipping product<?php if(isset($shipping_charge)) { echo $shipping_charge; } ?>-->
+              <?php if($shipping_product_status==1) {
+        if(isset($shipping_charge)) {
+           if($shipping_charge==0) { ?>
+             <div class="shipping_product">
+                  <?php echo $shipping_product_db_text;  ?>
+              </div>
+              <?php } } } ?>
+              <!--shipping product-->
+ <!--outofstock product-->
+              <?php if($outofstock_product_status==1) {
+               if($product['stockquantity']==0) { ?>
+              <div class="outofstock_product">
+                  <?php echo $outofstock_product_db_text;  ?>
+              </div>
+              <?php } } } ?>
+              <!--outofstock product-->
+]]></add>
+        </operation>
+    </file>
+</modification>

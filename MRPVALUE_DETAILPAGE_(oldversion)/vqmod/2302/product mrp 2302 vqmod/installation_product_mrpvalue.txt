@@ -1,0 +1,49 @@
+---------------------------------------------------------------------------------------------
+ Product MRP Value 
+---------------------------------------------------------------------------------------------
+This Plugin requires "vQmod".
+
+This Plugin allows the admin user add  MRP for products. 
+With this Plugin you can show MRP and also show your offer price for the products.
+
+MRP has shown following pages: 
+Product detail page, 
+Category page,
+Search page and
+Feature page
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because add a new files and add new fields in your data table .
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Go To Extension->module(choose Module from Module)->install Product MRP value. 
+
+4. Go to Database and check `mrp` Column has exist in your oc_product table
+
+       column_name   :mrp
+
+      
+5. Go to the admin Products page, [Admin -> catalog -> Products]
+
+               Click edit product and view in data tab and find MRP label give your MRP value.
+
+               Click save button.
+		
+		 
+6. Go to your frontend and select your product,see MRP value in following pages.
+   Product detail page, 
+   Category page,
+   Search page and
+   Feature page
+
+            
+             
+
+             
