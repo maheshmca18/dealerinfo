@@ -1,0 +1,386 @@
+<modification>
+
+	<id>Import Category data</id>
+	<version>1.0</version>
+	<vqmver>2.3.2 +</vqmver>
+	<author>IRS</author>
+	 
+<!-- Language -->
+
+	<file name="admin/language/english/english.php">
+		<operation>
+			<search position="after" offset="0"><![CDATA[$_['button_approve']                = 'Approve';]]></search>
+			<add><![CDATA[$_['button_import']                = 'Import';]]></add>
+		</operation>
+	</file>
+	
+	
+<!-- Category -->    
+<!-- Controller --> 
+  
+    <file name="admin/controller/catalog/category.php">
+	<operation>
+			<search position="before" offset="0"><![CDATA[$this->data['button_insert'] = $this->language->get('button_insert');]]></search>
+            <add><![CDATA[$this->data['button_import'] = $this->language->get('button_import');
+			$this->data['import'] = $this->url->link('catalog/category/import', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>  
+	
+		<operation>
+			<search position="before" offset="0"><![CDATA[public function insert() {]]></search>
+			<add><![CDATA[
+	public function import() {
+		
+		$excel_field_error = 0;
+		$_SESSION['categorylist']=array();
+	
+		$this->language->load('catalog/category');
+		
+		$this->load->model('catalog/category');
+		
+		$this->data['heading_title'] = "Import Category Data";
+
+		$this->data['entry_import'] = $this->language->get('Upload CSV File');
+		
+		$this->data['entry_insertonly'] = $this->language->get('Insert Only');	
+				
+		$this->data['action'] = $this->url->link('catalog/category/import', 'token=' . $this->session->data['token'], 'SSL');
+		
+		$this->data['importdataurl'] = $this->url->link('catalog/category/importcategories', 'token=' . $this->session->data['token'], 'SSL');
+		
+		
+		$this->data['sampleexport'] = $this->url->link('catalog/category/categoriessampleexport', 'token=' . $this->session->data['token'], 'SSL');
+		
+		
+  		$this->data['breadcrumbs'] = array();
+
+   		$this->data['breadcrumbs'][] = array(
+       		'text'      => $this->language->get('text_home'),
+			'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),  		
+      		'separator' => false
+   		);
+
+   		$this->data['breadcrumbs'][] = array(
+       		'text'      => $this->language->get('heading_title'),
+			'href'      => $this->url->link('catalog/category', 'token=' . $this->session->data['token'], 'SSL'),
+      		'separator' => ' :: '
+   		);
+		
+		if(isset($_POST['submit']))
+		{		
+				$insertonly=0;
+				
+				if(isset($_POST['insertonly']) && $_POST['insertonly']==1)
+				$insertonly=1;
+				
+				
+				if($this->validateImport())
+				{  // import form validate start
+				
+				 if ((isset($this->request->files['file'])) && (is_uploaded_file($this->request->files['file']['tmp_name']))) 
+				 { //file upload start
+				 
+							@set_time_limit(3600);
+						if (substr(@ini_get("memory_limit"), 0, -1) < "512") {
+									@ini_set("memory_limit", "512M");
+								}
+						ini_set("memory_limit", "512M");
+						ini_set("max_execution_time", 180);
+						ini_set('display_errors', 1);
+						ini_set('log_errors', 1);
+						error_reporting(E_ALL);
+						//set_time_limit( 60 );
+						
+						$filename = $this->request->files['file']['tmp_name'];
+						
+						//chdir('../system/library/PHPExcel'); // change directory to PHPExcel library
+						//require_once( 'Classes/PHPExcel.php' );
+						//chdir('../../../admin');
+						require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+						$inputFileType = PHPExcel_IOFactory::identify($filename);
+						$objReader = PHPExcel_IOFactory::createReader($inputFileType);
+						//$objReader->setReadDataOnly(true);
+						$reader = $objReader->load($filename);
+						$reader = &$reader;						
+					//			$this->clearCache();
+					
+						$data = $reader->getSheet(0);
+						
+						$isFirstRow = TRUE;
+						
+						$i = 0;
+						
+						$k = $data->getHighestRow();
+						
+						$columns = PHPExcel_Cell::columnIndexFromString($data->getHighestColumn());
+						
+						$category_list_data = array();
+					
+						if($columns == 4)
+						{
+						
+						$customer_list_array=array();
+						for ($i = 0; $i < $k; $i++) {  // Excel row loop start
+							//Skip the header row
+							if ($isFirstRow) {
+								$isFirstRow = FALSE;
+								continue;
+							}			
+							
+							// Collect Detail
+							$categoryname = trim($this->getCell($data, $i, 1));
+							$description = $this->getCell($data, $i, 2);
+							
+							//parent category
+							$parentcategoryname = trim($this->getCell($data, $i, 3));	 							
+							$parentcategory = $this->model_catalog_category->getCategoryId($parentcategoryname);
+							
+							$status = ($this->getCell($data, $i, 4));
+							$status = ($status == "Enabled")?1:0;
+							
+							$category_array = array();
+							
+							$custom_language_id=is_numeric($this->config->get('config_language_id'))?$this->config->get('config_language_id'):1;
+														
+						    $category_description[$custom_language_id]['name'] = $categoryname;
+						    $category_description[$custom_language_id]['description'] = $description;
+							
+							$category_array['category_description'] = $category_description;
+							
+							
+							$category_array['parent_id'] = $parentcategory;
+							$category_array['parent'] = $parentcategoryname;
+							$category_array['category_store'] = array(0);
+							$category_array['column'] = 0;
+							$category_array['sort_order'] = 1;
+							
+							$category_array['status'] = $status;
+							
+							$category_list_data[]=$category_array;
+						
+						} // Excel row loop end
+						}
+						else
+						{
+							$excel_field_error = 1;
+						}
+								
+						//chdir('../../..');	// change directory to site
+						
+						} //file upload end		
+						
+						if(!$excel_field_error)
+						{
+							$this->data['sampletabledata']=$category_list_data;
+							
+							$_SESSION['categorylist'] = $category_list_data;
+						}
+												
+					//	print_r($category_list_data);
+					//	break;
+						
+						
+
+				} // import form validate end		
+		
+		}
+		
+		if (isset($this->error['warning'])) {
+			$this->data['error_warning'] = $this->error['warning'];
+		} else {
+			$this->data['error_warning'] = '';
+		}
+		
+		if (isset($this->error['errorfile'])) {
+			$this->data['error_file'] = $this->error['errorfile'];
+		} else {
+			$this->data['error_file'] = '';
+		}
+		
+		if($excel_field_error)
+			{
+			$this->data['error_fields'] = 'Upload like our Sample Excel File';			
+			}
+		else
+			{
+			$this->data['error_fields'] = '';			
+			}
+		
+		
+		$this->template = 'catalog/category_import.tpl';
+		
+		$this->children = array(
+			'common/header',
+			'common/footer'
+		);
+		$this->response->setOutput($this->render());
+		
+	}
+	
+	public function importcategories()
+	{
+	
+		$this->load->model('catalog/category');
+		
+	if(isset($_SESSION['categorylist']) && is_array($_SESSION['categorylist']))
+	{
+	
+						foreach($_SESSION['categorylist'] as $categorydata)
+						{
+						
+							$categoryexist = $this->model_catalog_category->getCategoryId($categorydata['category_description'][1]['name']);
+							
+							if($categoryexist != 0)
+							{	
+							
+							$category_id = $categoryexist;	
+									
+							$this->model_catalog_category->editCategory($category_id,$categorydata);
+							
+							}
+							else
+							{
+							
+							$this->model_catalog_category->addCategory($categorydata);
+						
+							}				
+						
+						}
+					
+			unset($_SESSION['categorylist']);
+			$url = '';			
+								$this->redirect($this->url->link('catalog/category', 'token=' . $this->session->data['token'] . $url, 'SSL'));	
+	
+	}
+	
+	}
+	
+	
+    function getCell(&$worksheet, $row, $col, $default_val = '') {
+        $col -= 1; // we use 1-based, PHPExcel uses 0-based column index
+        $row += 1; // we use 0-based, PHPExcel used 1-based row index
+        return ($worksheet->cellExistsByColumnAndRow($col, $row)) ? $worksheet->getCellByColumnAndRow($col, $row)->getValue() : $default_val;
+    }
+	
+	
+	public function categoriessampleexport()
+	{
+		/* Include PHPExcel class */
+		//chdir('../system/library/PHPExcel');
+		//require_once( 'Classes/PHPExcel.php' );
+		//chdir('../../../admin');
+		require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+		
+		// Instantiate a new PHPExcel object
+		$objPHPExcel = new PHPExcel(); 
+		// Set the active Excel worksheet to sheet 0
+		$objPHPExcel->setActiveSheetIndex(0); 
+		// Initialise the Excel row number
+		$rowCount = 1; 
+		
+		/* Add Heading Row */ 
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Category Name'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Category Description');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Parent Category');   		
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Status');
+			
+			
+			
+		/* Add data Rows */		
+        $rowCount = 2;
+		
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Sample Category'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Sample category by IRS');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'None');   		
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Enabled'); 
+			
+		// Redirect output to a client’s web browser (Excel5) 
+		//header('Content-Type: application/vnd.ms-excel'); 
+header("Content-Type: text/csv; charset=utf-8");
+		header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.csv"'); 
+		//header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.xlsx"'); 
+		header('Cache-Control: max-age=0'); 
+			
+		// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+		//$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'CSV');
+		// Write the Excel file to filename some_excel_file.xlsx in the current directory
+		//$objWriter->save('some_excel_file.xlsx'); 
+		
+		/* Download CsV file in downloads */
+		$objWriter->save('php://output'); 
+					
+        //chdir('../../..');
+	}
+	protected function validateImport() {
+		if (!$this->user->hasPermission('modify', 'sale/customer')) {
+				$this->error['warning'] = $this->language->get('error_permission');
+		}
+		
+		if (!$this->request->files['file']['tmp_name']) {
+				$this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+		}
+		elseif($_FILES["file"]["name"])
+		{
+			$allowedExts = array("csv", "xlsx", "xls");
+			$temp = explode(".", $_FILES["file"]["name"]);
+			$extension = end($temp);
+			
+			if(!in_array($extension, $allowedExts))
+				$this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');	
+		}
+		
+		if (!$this->error) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	]]></add>
+		</operation>  
+        
+	</file>
+	
+	
+	
+	
+	
+   
+<!-- Category Model -->
+
+	<file name="admin/model/catalog/category.php">
+		<operation>
+			<search position="before"><![CDATA[public function getCategory($category_id) {]]></search>
+			<add><![CDATA[//public function getCategoryId($category) {
+public function getCategoryId($category,$parentid=0) {
+			
+		if($parentid==0){
+		$query = $this->db->query("SELECT category_id FROM " . DB_PREFIX . "category_description WHERE name LIKE '".$category."'");
+		}else{$query = $this->db->query("SELECT cd.category_id,cp.parent_id FROM " . DB_PREFIX . "category_description AS cd LEFT JOIN " . DB_PREFIX . "category AS cp ON cd.category_id=cp.category_id WHERE cd.name LIKE '".$category."' AND cp.parent_id='".$parentid."'");
+		}
+
+		if($query->row)
+		{
+			return $query->row['category_id'];
+		}
+		else
+		{
+			return 0;		
+		}	
+	} 
+	]]></add>
+		</operation>
+	</file>
+	
+<!-- Category View -->
+
+	<file name="admin/view/template/catalog/category_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<a href="<?php echo $insert; ?>" class="button"><?php echo $button_insert; ?></a>]]></search>
+			<add><![CDATA[<a href="<?php echo $import; ?>" class="button"><?php echo $button_import; ?></a><a href="<?php echo $insert; ?>" class="button"><?php echo $button_insert; ?></a>]]></add>
+		</operation>
+	</file>
+		
+		
+		 
+</modification>

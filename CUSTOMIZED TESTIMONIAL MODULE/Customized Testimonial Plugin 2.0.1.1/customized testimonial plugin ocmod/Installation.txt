@@ -1,0 +1,83 @@
+---------------------------------------------------------------------------------------------
+         Module : Customized Testimonial 
+---------------------------------------------------------------------------------------------
+
+The Advanced Customer Testimonial module allows the admin user to do add and approve customers Testimonial
+
+Given by customers and make it display on store front using install/uninstall like others modules.
+
+
+[b]This module Main features:[/b]
+
+	
+	- Admin to Approve or Delete the customer's testimonial.
+	- Admin also enter the testimonials.
+	- This widget/module has to display various pages(Home,Account,etc) and layouts(Top,Bottom,Left,Right).
+	- Admin Settings page to set Colors for widget (Background,Heading,Content) using color picker.
+	- Widget Height also set in  Admin Settings page.
+	- Character Limit to display testimonial content.
+	- Registered user only put the Testimonial Content. 
+
+
+Installation
+============
+
+1. First You must backup your opencart site/cart and also database. Because add a new files and new tables.
+
+		The new database tables are :
+			(i)  testimonial
+			(ii) testimonial_setting
+
+
+2. Before install this addon you have to install testimonial_menu.ocmod.xml file given in Extensions root directory via Extension Installer
+
+3. Click Refresh in right top corner of modification 
+
+			
+4. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+5. Login to Admin panel 
+		Extensions -> Modules
+		
+		 See the "Testimonial" Module then Click [install] link to install this Plugin.
+		 
+6. Edit the Testimonial [Extensions -> Modules]
+		
+		   a) Pick Colors for Name, Content, Background For Testimonial Widget/Module to display Store Front.
+		   b) Enter Character Limit and Widget Height For Testimonial Widget/Module to display Store Front.
+		   c) Add Module Position For Testimonial Widget/Module to display Store Front.		 
+		 
+7. Go to 
+        System -> Users -> User Groups
+		  
+		  Select Top Administrator -> Edit
+		  
+		  Enable the following checkbox
+		  
+		     Access Permission : localisation/testimonial
+			 
+			 Modify Permission : localisation/testimonial
+			 
+		  Then Click the Save button.
+		  
+		  
+8. Go to Testimonial List Page
+        System -> Localisation -> Testimonial
+		
+			a) Click Add Button to Enter the Testimonial.
+				NOTE :- ( Initially Testimonials List is empty, if you want to add first testimonial because the widget cannot display empty content )
+			b) You have Testimonial List to Click Edit to Approve and DisApprove the testimonial and also remove the unnecessary Testimonial content.
+			
+9. To Display Testimonials in front-end, 
+	go to admin panel,
+		settings -> Design -> Layouts
+		clcik where your testimonial want to be displayed, from module select your testimonial, position, sort order and save.   
+
+			
+10. If you want to Testimonial Menu in Store Front Add Menu In 
+		
+		catalog -> view -> theme -> default -> template -> Common -> header.tpl
+		
+		Following Link : 
+		
+		<a href="<?php echo $base; ?>index.php?route=information/testimonial">Testimonial</a>

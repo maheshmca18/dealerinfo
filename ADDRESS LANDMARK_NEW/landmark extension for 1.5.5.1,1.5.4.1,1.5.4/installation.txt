@@ -1,0 +1,14 @@
+==========================================
+Installation
+==========================================
+
+1. Before install have a backup of your existing file and db
+
+2. install this addon you have to install "vQmod" latest version
+
+3. Upload "vqmod" & "admin" to your root folder (No file are replaced, all files are new)
+Done.
+
+
+
+

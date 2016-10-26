@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name><![CDATA[Product Sale]]></name>
+    <code><![CDATA[irsproductsale]]></code>
+    <version><![CDATA[2.0x]]></version>
+    <author><![CDATA[IRSSOFT]]></author>
+    <link><![CDATA[http://www.irssoft.com/]]></link>
+    <!-- Add menu to admin -->
+    <file path="admin/controller/common/menu.php">
+        <operation>
+            <search><![CDATA[$data['order'] = $this->url->link('sale/order', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+            <add position="after"><![CDATA[$this->load->model('extension/extension');
+            $installed_name = $this->model_extension_extension->getInstalledCheck('module','dashboard_chart');
+            if($installed_name == 'dashboard_chart'){
+                $data['show_chart'] = "yes";
+            }else{
+                $data['show_chart'] = "no";
+            }
+            if($data['show_chart'] == "yes"){$data['product_filter'] = $this->url->link('sale/product_sale', 'token=' . $this->session->data['token'], 'SSL');}]]></add>
+        </operation>
+        <operation>
+            <search><![CDATA[$data['text_affiliate'] = $this->language->get('text_affiliate');]]></search>
+            <add position="before"><![CDATA[$data['text_product_sale'] = $this->language->get('Product Sale');]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/view/template/common/menu.tpl">
+        <operation>
+            <search><![CDATA[<li><a href="<?php echo $order; ?>"><?php echo $text_order; ?></a></li>]]></search>
+            <add position="after"><![CDATA[
+            <?php if($show_chart == "yes"){ ?>
+            <li><a href="<?php echo $product_filter; ?>"><?php echo $text_product_sale; ?></a></li>
+            <?php } ?>
+            ]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/view/template/common/dashboard.tpl">
+        <operation>
+            <search><![CDATA[<div class="col-lg-4 col-md-12 col-sm-12 col-sx-12"><?php echo $activity; ?></div>]]></search>
+            <add position="before" offset="1"><![CDATA[
+            <?php if($show_chart == "yes"){ ?>
+            <div class="row">
+        <div class="col-lg-6 col-md-12 col-sx-12 col-sm-12"><?php echo $order_donut; ?></div>
+        <div class="col-lg-6 col-md-12 col-sx-12 col-sm-12"><?php echo $sale_pie; ?></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 col-md-12 col-sx-12 col-sm-12"><?php echo $sale_spline; ?></div>
+        <div class="col-lg-12 col-md-12 col-sx-12 col-sm-12"><?php echo $order_bar; ?></div>
+    </div>
+    <?php } ?>
+
+    ]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/common/dashboard.php">
+        <operation>
+            <search><![CDATA[$data['chart'] = $this->load->controller('dashboard/chart');]]></search>
+            <add position="after"><![CDATA[$this->load->model('extension/extension');
+        $installed_name = $this->model_extension_extension->getInstalledCheck('module','dashboard_chart');
+        if($installed_name == 'dashboard_chart'){
+            $data['sale_spline'] = $this->load->controller('dashboard/sale_spline');
+            $data['order_bar'] = $this->load->controller('dashboard/order_bar');
+            $data['order_donut'] = $this->load->controller('dashboard/order_donut');
+            $data['sale_pie'] = $this->load->controller('dashboard/sale_pie');
+            $data['show_chart'] = "yes";
+        }else{
+            $data['show_chart'] = "no";
+        }]]></add>
+        </operation>
+    </file>
+
+	<file path="admin/model/extension/extension.php">
+		<operation>
+		    <search><![CDATA[public function uninstall($type, $code) {]]></search>
+		    <add position="after" offset="2"><![CDATA[public function getInstalledCheck($type='', $code='') {
+		$query = $this->db->query("SELECT code FROM " . DB_PREFIX . "extension WHERE `type` = '" . $this->db->escape($type) . "' AND code='$code'");
+		if(isset($query->row['code']))
+		    return $query->row['code'];
+	    }]]></add>
+		</operation>
+	    </file>
+
+
+	<file path="admin/view/template/extension/module.tpl">
+		<operation>
+		    <search><![CDATA[<?php if ($extension['installed']) { ?>]]></search>
+		    <add position="after"><![CDATA[<?php if($extension['name'] != "Order Sale Charts and Excel Ajax reports" ){ ?>]]></add>
+		</operation>
+		<operation>
+		    <search><![CDATA[<a href="<?php echo $extension['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a>]]></search>
+		    <add position="replace" offset="1"><![CDATA[<a href="<?php echo $extension['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a>
+		    <?php } } else { ?>]]></add>
+		</operation>
+	    </file>
+
+
+    <file path="admin/model/report/sale.php">
+        <operation>
+            <search><![CDATA[public function getOrders($data = array()) {]]></search>
+            <add position="before"><![CDATA[public function getTotalSalesByDay() {
+
+            $language_id = $this->getLanguageID();
+
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $order_data = array();
+        for ($i = 0; $i < 24; $i++) {
+            $order_data[$i] = array(
+                'hour'  => $i,
+                'total' => 0
+            );
+        }
+        $query = $this->db->query("SELECT sum(ocp.quantity) as total, HOUR(date_added) AS hour, o.date_added FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id where o.order_status_id in(" . implode(",", $implode) . ") AND o.language_id IN($language_id) AND DATE(date_added) = DATE(NOW()) GROUP BY HOUR(date_added)");
+        foreach ($query->rows as $result) {
+            $order_data[$result['hour']] = array(
+                'hour'  => $result['hour'],
+                'total' => $result['total']
+            );
+        }
+        return $order_data;
+    }
+
+    public function getTotalSalesByWeek() {
+    $language_id = $this->getLanguageID();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $order_data = array();
+        $date_start = strtotime('-' . date('w') . ' days');
+        for ($i = 0; $i < 7; $i++) {
+            $date = date('Y-m-d', $date_start + ($i * 86400));
+            $order_data[date('w', strtotime($date))] = array(
+                'day'   => date('D', strtotime($date)),
+                'total' => 0
+            );
+        }
+        $query = $this->db->query("SELECT sum(ocp.quantity) as total, o.date_added FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id where o.order_status_id in(" . implode(",", $implode) . ") AND o.language_id IN($language_id) AND DATE(date_added) >= DATE('" . $this->db->escape(date('Y-m-d', $date_start)) . "')");
+        foreach ($query->rows as $result) {
+            $order_data[date('w', strtotime($result['date_added']))] = array(
+                'day'   => date('D', strtotime($result['date_added'])),
+                'total' => $result['total']
+            );
+        }
+        return $order_data;
+    }
+
+    public function getTotalSalesByMonth() {
+    $language_id = $this->getLanguageID();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $order_data = array();
+        for ($i = 1; $i <= date('t'); $i++) {
+            $date = date('Y') . '-' . date('m') . '-' . $i;
+
+            $order_data[date('j', strtotime($date))] = array(
+                'day'   => date('d', strtotime($date)),
+                'total' => 0
+            );
+        }
+        $query = $this->db->query("SELECT sum(ocp.quantity) as total, o.date_added FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id where o.order_status_id in(" . implode(",", $implode) . ") AND o.language_id IN($language_id) AND DATE(o.date_added) >= '" . $this->db->escape(date('Y') . '-' . date('m') . '-1') . "'");
+        foreach ($query->rows as $result) {
+            $order_data[date('j', strtotime($result['date_added']))] = array(
+                'day'   => date('d', strtotime($result['date_added'])),
+                'total' => $result['total']
+            );
+        }
+        return $order_data;
+    }
+
+    public function getTotalSalesByYear() {
+    $language_id = $this->getLanguageID();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $order_data = array();
+        for ($i = 1; $i <= 12; $i++) {
+            $order_data[$i] = array(
+                'month' => date('M', mktime(0, 0, 0, $i)),
+                'total' => 0
+            );
+        }
+        $query = $this->db->query("SELECT sum(ocp.quantity) as total, o.date_added FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id where o.order_status_id in(" . implode(",", $implode) . ") AND o.language_id IN($language_id) AND YEAR(date_added) = YEAR(NOW())");
+        foreach ($query->rows as $result) {
+            $order_data[date('n', strtotime($result['date_added']))] = array(
+                'month' => date('M', strtotime($result['date_added'])),
+                'total' => $result['total']
+            );
+        }
+        return $order_data;
+    }
+
+    public function getLanguageID() {
+        $language = $this->config->get('config_language');
+        $query = $this->db->query("SELECT language_id FROM " . DB_PREFIX . "language where code = '$language'");
+        return $query->row['language_id'];
+    }]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/order.php">
+        <operation>
+            <search><![CDATA[public function getTotalEmailsByProductsOrdered($products) {]]></search>
+            <add position="before"><![CDATA[public function getOrderStatusByAll() {
+            $language_id = $this->getLanguageID();
+        $order_data = array();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $query = $this->db->query("SELECT ocp.name, ocp.product_id, sum(ocp.quantity) as total, o.date_added, count(*) as order_count FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id WHERE o.order_status_id IN(" . implode(",", $implode) . ") AND o.language_id IN($language_id) group by product_id order by total desc limit 10");
+        foreach ($query->rows as $result) {
+            $order_data[$result['product_id']] = array(
+                'product_name' => $result['name'],
+                'day'   => date('d', strtotime($result['date_added'])),
+                'total' => $result['total'],
+                'order_count' => $result['order_count'],
+                'product_id' => $result['product_id']
+            );
+        } // eo foreach
+        return $order_data;
+    }// eo function
+
+
+    public function getOrderStatusByMonth() {
+    $language_id = $this->getLanguageID();
+        $order_data = array();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $query = $this->db->query("SELECT ocp.name, ocp.product_id, sum(ocp.quantity) as total, o.date_added, count(*) as order_count FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id WHERE o.order_status_id IN(" . implode(",", $implode) . ") AND o.language_id IN($language_id) AND DATE(o.date_added) >= '" . $this->db->escape(date('Y') . '-' . date('m') . '-1') . "' group by product_id order by total desc limit 10");
+        foreach ($query->rows as $result) {
+            $order_data[$result['product_id']] = array(
+                'product_name' => $result['name'],
+                'day'   => date('d', strtotime($result['date_added'])),
+                'total' => $result['total'],
+                'order_count' => $result['order_count'],
+                'product_id' => $result['product_id']
+            );
+        } // eo foreach
+        return $order_data;
+    }// eo function
+
+
+    public function getOrderStatusByWeek() {
+    $language_id = $this->getLanguageID();
+        $order_data = array();
+        $date_start = strtotime('-' . date('w') . ' days');
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $query = $this->db->query("SELECT ocp.name, ocp.product_id, sum(ocp.quantity) as total, o.date_added, count(*) as order_count FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id WHERE o.order_status_id IN(" . implode(",", $implode) . ") AND o.language_id IN($language_id) AND DATE(o.date_added) >= DATE('" . $this->db->escape(date('Y-m-d', $date_start)) . "') group by product_id order by total desc limit 10");
+        foreach ($query->rows as $result) {
+            $order_data[$result['product_id']] = array(
+                'product_name' => $result['name'],
+                'day'   => date('d', strtotime($result['date_added'])),
+                'total' => $result['total'],
+                'order_count' => $result['order_count'],
+                'product_id' => $result['product_id']
+            );
+        } // eo foreach
+        return $order_data;
+    }// eo function
+
+    public function getOrderStatusByDay() {
+    $language_id = $this->getLanguageID();
+        $order_data = array();
+        $date_start = strtotime('-' . date('w') . ' days');
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $query = $this->db->query("SELECT ocp.name, ocp.product_id, sum(ocp.quantity) as total, o.date_added, count(*) as order_count FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id WHERE o.order_status_id IN(" . implode(",", $implode) . ") AND o.language_id IN($language_id) AND DATE(o.date_added) = DATE(NOW()) group by product_id order by total desc limit 10");
+        foreach ($query->rows as $result) {
+            $order_data[$result['product_id']] = array(
+                'product_name' => $result['name'],
+                'day'   => date('d', strtotime($result['date_added'])),
+                'total' => $result['total'],
+                'order_count' => $result['order_count'],
+                'product_id' => $result['product_id']
+            );
+        } // eo foreach
+        return $order_data;
+    }// eo function
+
+    public function getOrderStatusByYear() {
+    $language_id = $this->getLanguageID();
+        $order_data = array();
+        $date_start = strtotime('-' . date('w') . ' days');
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $query = $this->db->query("SELECT ocp.name, ocp.product_id, sum(ocp.quantity) as total, o.date_added, count(*) as order_count FROM " . DB_PREFIX . "order_product ocp inner join " . DB_PREFIX . "order o on o.order_id = ocp.order_id WHERE o.order_status_id IN(" . implode(",", $implode) . ") AND o.language_id IN($language_id) AND YEAR(date_added) = YEAR(NOW()) group by product_id order by total desc limit 10");
+        foreach ($query->rows as $result) {
+            $order_data[$result['product_id']] = array(
+                'product_name' => $result['name'],
+                'day'   => date('d', strtotime($result['date_added'])),
+                'total' => $result['total'],
+                'order_count' => $result['order_count'],
+                'product_id' => $result['product_id']
+            );
+        } // eo foreach
+        return $order_data;
+    }// eo function
+
+    // get products which has order_status_id = 5
+    function getOrderStatus($where = ''){
+        $query = $this->db->query("select order_status_id,name from " . DB_PREFIX . "order_status $where");
+        return $query->rows;
+    }
+
+    // get product_category and name
+    function getProductCategory($where = ''){
+        $query = $this->db->query("select * from " . DB_PREFIX . "category_description $where");
+        return $query->rows;
+    }
+
+    // function for pagination and all
+    function getAllProductSaleDetails($where=''){
+        $query = $this->db->query("SELECT opr.name, cad.name as cat_name, sum(opr.quantity) as tot_quantity, count(*) AS total_orders FROM " . DB_PREFIX . "order_product opr INNER JOIN " . DB_PREFIX . "order ord ON (opr.order_id=ord.order_id) INNER JOIN " . DB_PREFIX . "product_to_category ptc ON (ptc.product_id = opr.product_id) INNER JOIN " . DB_PREFIX . "category_description cad ON (ptc.category_id = cad.category_id ) " .$where);
+        return $query->rows;
+    }
+
+    /* For donut order */
+    public function getTotalCategoryOrdersByAll() {
+    $language_id = $this->getLanguageID();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $order_data = array();
+        $parent_id_lev = array();
+        $parent_ids = array();
+        $query = $this->db->query("SELECT cad.name, t1.category_id AS lev1, t2.category_id as lev2, t3.category_id as lev3, t4.category_id as lev4 FROM " . DB_PREFIX . "category t1 left join " . DB_PREFIX . "category_description cad on(cad.category_id = t1.category_id) LEFT JOIN " . DB_PREFIX . "category AS t2 ON t2.parent_id = t1.category_id LEFT JOIN " . DB_PREFIX . "category AS t3 ON t3.parent_id = t2.category_id LEFT JOIN " . DB_PREFIX . "category AS t4 ON t4.parent_id = t3.category_id WHERE t1.parent_id = 0 group by t1.category_id");
+        foreach ($query->rows as $result) {
+            $parent_id_lev[] = array(
+                'cat_name' => $result['name'],
+                'parent1' => $result['lev1'],
+                'parent2' => $result['lev2'],
+                'parent3' => $result['lev3'],
+                'parent4' => $result['lev4']
+            );
+        } // eo foreach
+        $k = 0;
+        foreach($parent_id_lev as $def_key => $value) // def_key starts from 0 to n
+        {
+            if(empty($value['parent1'])){
+                $parent_ids[$k] = array();
+            }
+            if(empty($value['parent2'])){
+                $parent_ids[$k] = array($value['parent1']);
+            }elseif(empty($value['parent3'])){
+                $parent_ids[$k] = array($value['parent1'],$value['parent2']);
+            }elseif(empty($value['parent4'])){
+                $parent_ids[$k] = array($value['parent1'],$value['parent2'],$value['parent3']);
+            }else{
+                $parent_ids[$k] = array($value['parent1'],$value['parent2'],$value['parent3'],$value['parent4']);
+            }
+            $parent_ids_implode = implode(',',$parent_ids[$k]);
+            $query1 = $this->db->query("SELECT count(*) AS total_orders, cat.parent_id, cad.category_id, cad.name as cat_name, ord.date_added FROM " . DB_PREFIX . "order_product opr INNER JOIN " . DB_PREFIX . "order ord ON (opr.order_id=ord.order_id) INNER JOIN " . DB_PREFIX . "product_to_category ptc ON (ptc.product_id = opr.product_id) INNER JOIN " . DB_PREFIX . "category_description cad ON (ptc.category_id = cad.category_id ) inner join " . DB_PREFIX . "category cat on (cat.category_id = cad.category_id) where ord.order_status_id in(" . implode(",", $implode) . ") AND ord.language_id IN($language_id) AND cat.parent_id in($parent_ids_implode)");
+            foreach ($query1->rows as $result) {
+                $order_data[] = array(
+                    'total' => $result['total_orders'],
+                    'categoryid' => $result['category_id'],
+                    'cat_name' => $value['cat_name']
+                );
+            }
+            $k++;
+        }// eo foreach
+        return $order_data;
+    }
+
+    public function getTotalCategoryOrdersByCategoryName($category_name) {
+    $language_id = $this->getLanguageID();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $parent_id_query = $this->db->query("SELECT cad.category_id FROM " . DB_PREFIX . "category_description cad where name="."'$category_name'");
+        $parent_id =  $parent_id_query->row['category_id'];
+        $order_data = array();
+        $query = $this->db->query("SELECT count(*) AS total_orders, cat.parent_id, cad.category_id, cad.name as cat_name, ord.date_added FROM " . DB_PREFIX . "order_product opr INNER JOIN " . DB_PREFIX . "order ord ON (opr.order_id=ord.order_id) INNER JOIN " . DB_PREFIX . "product_to_category ptc ON (ptc.product_id = opr.product_id) INNER JOIN " . DB_PREFIX . "category_description cad ON (ptc.category_id = cad.category_id ) inner join " . DB_PREFIX . "category cat on (cat.category_id = cad.category_id) where ord.order_status_id in(" . implode(",", $implode) . ") AND ord.language_id IN($language_id) AND cat.parent_id = $parent_id GROUP BY ptc.category_id");
+        foreach ($query->rows as $result) {
+            $order_data[] = array(
+                'total' => $result['total_orders'],
+                'categoryid' => $result['category_id'],
+                'cat_name' => $result['cat_name']
+            );
+        }
+        return $order_data;
+    }
+
+/* for pie order */
+    public function getTotalCategorySalesByAll() {
+    $language_id = $this->getLanguageID();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $order_data = array();
+        $parent_id_lev = array();
+        $parent_ids = array();
+        $query = $this->db->query("SELECT cad.name, t1.category_id AS lev1, t2.category_id as lev2, t3.category_id as lev3, t4.category_id as lev4 FROM " . DB_PREFIX . "category t1 left join " . DB_PREFIX . "category_description cad on(cad.category_id = t1.category_id) LEFT JOIN " . DB_PREFIX . "category AS t2 ON t2.parent_id = t1.category_id LEFT JOIN " . DB_PREFIX . "category AS t3 ON t3.parent_id = t2.category_id LEFT JOIN " . DB_PREFIX . "category AS t4 ON t4.parent_id = t3.category_id WHERE t1.parent_id = 0 group by t1.category_id");
+        foreach ($query->rows as $result) {
+            $parent_id_lev[] = array(
+                'cat_name' => $result['name'],
+                'parent1' => $result['lev1'],
+                'parent2' => $result['lev2'],
+                'parent3' => $result['lev3'],
+                'parent4' => $result['lev4']
+            );
+        } // eo foreach
+        $k = 0;
+        foreach($parent_id_lev as $def_key => $value) // def_key starts from 0 to n
+        {
+          if(empty($value['parent1'])){
+              $parent_ids[$k] = array();
+          }
+          if(empty($value['parent2'])){
+              $parent_ids[$k] = array($value['parent1']);
+          }elseif(empty($value['parent3'])){
+              $parent_ids[$k] = array($value['parent1'],$value['parent2']);
+          }elseif(empty($value['parent4'])){
+              $parent_ids[$k] = array($value['parent1'],$value['parent2'],$value['parent3']);
+          }else{
+              $parent_ids[$k] = array($value['parent1'],$value['parent2'],$value['parent3'],$value['parent4']);
+          }
+            $parent_ids_implode = implode(',',$parent_ids[$k]);
+            $query1 = $this->db->query("SELECT sum(quantity) AS tot_quantity, cat.parent_id, cad.category_id, cad.name as cat_name, ord.date_added FROM " . DB_PREFIX . "order_product opr INNER JOIN " . DB_PREFIX . "order ord ON (opr.order_id=ord.order_id) INNER JOIN " . DB_PREFIX . "product_to_category ptc ON (ptc.product_id = opr.product_id) INNER JOIN " . DB_PREFIX . "category_description cad ON (ptc.category_id = cad.category_id ) inner join " . DB_PREFIX . "category cat on (cat.category_id = cad.category_id) where ord.order_status_id in(" . implode(",", $implode) . ") AND ord.language_id IN($language_id) AND cat.parent_id in($parent_ids_implode)");
+            foreach ($query1->rows as $result) {
+                $order_data[] = array(
+                    'total' => $result['tot_quantity'],
+                    'categoryid' => $result['category_id'],
+                    'cat_name' => $value['cat_name']
+                );
+            }
+            $k++;
+        }// eo foreach
+        return $order_data;
+    }
+
+    public function getTotalCategorySalesByCategoryName($category_name) {
+    $language_id = $this->getLanguageID();
+        $implode = array();
+        foreach ($this->config->get('config_complete_status') as $order_status_id) {
+            $implode[] = "'" . (int)$order_status_id . "'";
+        }
+        $order_data = array();
+        $parent_id_query = $this->db->query("SELECT category_id FROM " . DB_PREFIX . "category_description where name="."'$category_name'");
+        $parent_id =  $parent_id_query->row['category_id'];
+        $query = $this->db->query("SELECT sum(quantity) AS tot_quantity, cat.parent_id, cad.category_id, cad.name as cat_name, ord.date_added FROM " . DB_PREFIX . "order_product opr INNER JOIN " . DB_PREFIX . "order ord ON (opr.order_id=ord.order_id) INNER JOIN " . DB_PREFIX . "product_to_category ptc ON (ptc.product_id = opr.product_id) INNER JOIN " . DB_PREFIX . "category_description cad ON (ptc.category_id = cad.category_id ) inner join " . DB_PREFIX . "category cat on (cat.category_id = cad.category_id) where ord.order_status_id in(" . implode(",", $implode) . ") AND ord.language_id IN($language_id) AND cat.parent_id = $parent_id GROUP BY ptc.category_id");
+        foreach ($query->rows as $result) {
+            $order_data[] = array(
+                'total' => $result['tot_quantity'],
+                'categoryid' => $result['category_id'],
+                'cat_name' => $result['cat_name']
+            );
+        }
+        return $order_data;
+    }
+
+    public function getLanguageID() {
+        $language = $this->config->get('config_language');
+        $query = $this->db->query("SELECT language_id FROM " . DB_PREFIX . "language where code = '$language'");
+        return $query->row['language_id'];
+    }]]></add>
+        </operation>
+    </file>
+
+</modification>

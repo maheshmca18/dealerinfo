@@ -1,0 +1,14 @@
+==========================================
+Installation
+==========================================
+
+
+1. Upload the irs_export_bulk1.ocmod.xml and irs_export_bulk2.ocmod.xml files using extension installer.
+
+2. Click refresh in top corner of modification .
+
+
+
+
+
+

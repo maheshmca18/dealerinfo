@@ -1,0 +1,1355 @@
+
+<modification>
+
+	<id>Export sales list</id>
+	<version>2.0</version>
+	<vqmver>2.4.1</vqmver>
+	<author>IRSSOFT</author>
+	
+	<!-- Language -->
+
+	<file path="admin/language/english/english.php">
+		<operation>
+			<search position="after"><![CDATA[$_['button_approve']                = 'Approve';]]></search>
+			<add><![CDATA[$_['button_export']                = 'Export';]]></add>
+		</operation>
+	</file>
+    
+<!-- Controller --> 
+  
+    <file path="admin/controller/sale/customer.php">
+		<operation>
+			<search position="before"><![CDATA[$data['add'] = $this->url->link('sale/customer/add', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></search>
+			<add><![CDATA[$data['export'] = $this->url->link('sale/customer/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>
+	
+        	<operation>
+			<search position="before"><![CDATA[$data['button_approve'] = $this->language->get('button_approve');]]></search>
+            <add><![CDATA[$data['button_export'] = $this->language->get('button_export');]]></add>
+		</operation>
+        
+        
+        	<operation>
+			<search position="before"><![CDATA[public function address() {]]></search>
+            <add><![CDATA[ public function export() {
+        
+       	if (isset($this->request->get['filter_name'])) {
+
+			$filter_name = $this->request->get['filter_name'];
+
+		} else {
+
+			$filter_name = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_email'])) {
+
+			$filter_email = $this->request->get['filter_email'];
+
+		} else {
+
+			$filter_email = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_customer_group_id'])) {
+
+			$filter_customer_group_id = $this->request->get['filter_customer_group_id'];
+
+		} else {
+
+			$filter_customer_group_id = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_status'])) {
+
+			$filter_status = $this->request->get['filter_status'];
+
+		} else {
+
+			$filter_status = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_approved'])) {
+
+			$filter_approved = $this->request->get['filter_approved'];
+
+		} else {
+
+			$filter_approved = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_ip'])) {
+
+			$filter_ip = $this->request->get['filter_ip'];
+
+		} else {
+
+			$filter_ip = null;
+
+		}
+
+				
+
+		if (isset($this->request->get['filter_date_added'])) {
+
+			$filter_date_added = $this->request->get['filter_date_added'];
+
+		} else {
+
+			$filter_date_added = null;
+
+		}		
+
+		
+
+		if (isset($this->request->get['sort'])) {
+
+			$sort = $this->request->get['sort'];
+
+		} else {
+
+			$sort = 'name'; 
+
+		}
+
+		
+
+		if (isset($this->request->get['order'])) {
+
+			$order = $this->request->get['order'];
+
+		} else {
+
+			$order = 'ASC';
+
+		}
+
+		
+
+		if (isset($this->request->get['page'])) {
+
+			$page = $this->request->get['page'];
+
+		} else {
+
+			$page = 1;
+
+		}
+        
+        	$data = array(
+
+			'filter_name'              => $filter_name, 
+
+			'filter_email'             => $filter_email, 
+
+			'filter_customer_group_id' => $filter_customer_group_id, 
+
+			'filter_status'            => $filter_status, 
+
+			'filter_approved'          => $filter_approved, 
+
+			'filter_date_added'        => $filter_date_added,
+
+			'filter_ip'                => $filter_ip,
+
+			'sort'                     => $sort,
+
+			'order'                    => $order,
+
+		);
+        
+        $customers = array();
+        
+        $customers_column=array();
+        
+        $this->load->model('sale/customer');
+        
+        $customers_column['customer_id'] = 'Customer ID';
+        $customers_column['name'] = 'Customer Name';
+        $customers_column['email'] = 'Email';
+        $customers_column['telephone'] = 'Telephone';
+        $customers_column['address'] = 'Address';
+        $customers_column['city'] = 'City';
+        $customers_column['postcode'] = 'Post Code';
+        $customers_column['Country'] = 'Country';
+        $customers_column['ip'] = 'IP';
+        $customers_column['status'] = 'Status';
+        $customers_column['approved'] = 'Approved';
+        $customers_column['date_added'] = 'Date Added';
+        $customers_column['customer_group'] = 'Customer Group';
+
+        $customers[0] = $customers_column;  
+
+        $customers_list = $this->model_sale_customer->getCustomerstoexport($data);
+        
+        foreach($customers_list as $customer_row)
+        {
+            $customers[]=$customer_row;
+        }
+	
+	// include path to export datas
+	require_once(DIR_SYSTEM . 'library/PHPExcel/Classes/PHPExcel.php');
+	// Instantiate a new PHPExcel object
+	$objPHPExcel = new PHPExcel(); 
+	// Set the active Excel worksheet to sheet 0
+	$objPHPExcel->setActiveSheetIndex(0); 
+	// Initialise the Excel row number
+	$rowCount = 1;
+
+	/* Add Heading and values Row */ 
+	foreach($customers as $key => $value){
+		$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $customers[$key]['customer_id']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $customers[$key]['name']);  
+		$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $customers[$key]['email']);   		
+		$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $customers[$key]['telephone']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, $customers[$key]['address']);  
+		$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $customers[$key]['city']); 	
+		$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $customers[$key]['postcode']);
+		$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, $customers[$key]['Country']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, $customers[$key]['ip']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, $customers[$key]['status']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, $customers[$key]['approved']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, $customers[$key]['date_added']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, $customers[$key]['customer_group']); 
+
+		$rowCount++;
+	}	
+
+	// Redirect output to a client’s web browser (Excel5) 
+	header('Content-Type: application/vnd.ms-excel'); 
+	header('Content-Disposition: attachment;filename="customer_order_list_'.date("Y m d G i s").'.csv"'); 
+	//header('Content-Disposition: attachment;filename="customer_order_list_'.date("Y m d G i s").'.xlsx"'); 
+	header('Cache-Control: max-age=0'); 
+	
+	// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+	$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+	// Write the Excel file to filename some_excel_file.xlsx in the current directory
+	//$objWriter->save('some_excel_file.xlsx'); 
+
+	/* Download CsV file in downloads */
+	$objWriter->save('php://output');
+	}]]></add>
+		</operation>
+        
+        
+        
+        
+	</file>
+    
+<!-- Model -->
+
+	<file path="admin/model/sale/customer.php">
+		<operation>
+			<search position="before"><![CDATA[public function getCustomers($data = array()) {]]></search>
+			<add><![CDATA[public function getCustomerstoexport($data = array()) {
+    	 
+$sql = "SELECT c.customer_id, CONCAT(c.firstname, ' ', c.lastname) AS name, c.email, c.telephone, CONCAT(oca.address_1,oca.address_2) AS address, oca.city, oca.postcode, occ.name as Country, c.ip, IF( c.status = 1, 'Enabled', 'Disabled' ) AS status, IF( c.approved = 1, 'Yes', 'No' ) AS approved, c.date_added, cgd.name AS customer_group FROM " . DB_PREFIX . "customer c LEFT JOIN " . DB_PREFIX . "customer_group_description cgd ON (c.customer_group_id = cgd.customer_group_id) LEFT JOIN " . DB_PREFIX . "address oca ON (c.address_id=oca.address_id) LEFT JOIN " . DB_PREFIX . "country occ ON (oca.country_id=occ.country_id) WHERE cgd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+
+		$implode = array();
+		
+		if (!empty($data['filter_name'])) {
+			$implode[] = "CONCAT(c.firstname, ' ', c.lastname) LIKE '%" . $this->db->escape($data['filter_name']) . "%'";
+		}
+		
+		if (!empty($data['filter_email'])) {
+			$implode[] = "c.email LIKE '" . $this->db->escape($data['filter_email']) . "%'";
+		}
+
+		if (isset($data['filter_newsletter']) && !is_null($data['filter_newsletter'])) {
+			$implode[] = "c.newsletter = '" . (int)$data['filter_newsletter'] . "'";
+		}	
+				
+		if (!empty($data['filter_customer_group_id'])) {
+			$implode[] = "c.customer_group_id = '" . (int)$data['filter_customer_group_id'] . "'";
+		}	
+			
+		if (!empty($data['filter_ip'])) {
+			$implode[] = "c.customer_id IN (SELECT customer_id FROM " . DB_PREFIX . "customer_ip WHERE ip = '" . $this->db->escape($data['filter_ip']) . "')";
+		}	
+				
+		if (isset($data['filter_status']) && !is_null($data['filter_status'])) {
+			$implode[] = "c.status = '" . (int)$data['filter_status'] . "'";
+		}	
+		
+		if (isset($data['filter_approved']) && !is_null($data['filter_approved'])) {
+			$implode[] = "c.approved = '" . (int)$data['filter_approved'] . "'";
+		}	
+				
+		if (!empty($data['filter_date_added'])) {
+			$implode[] = "DATE(c.date_added) = DATE('" . $this->db->escape($data['filter_date_added']) . "')";
+		}
+		
+		if ($implode) {
+			$sql .= " AND " . implode(" AND ", $implode);
+		}
+		
+		$sort_data = array(
+			'name',
+			'c.email',
+			'customer_group',
+			'c.status',
+			'c.approved',
+			'c.ip',
+			'c.date_added'
+		);	
+			
+		if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
+			$sql .= " ORDER BY " . $data['sort'];	
+		} else {
+			$sql .= " ORDER BY name";	
+		}
+			
+		if (isset($data['order']) && ($data['order'] == 'DESC')) {
+			$sql .= " DESC";
+		} else {
+			$sql .= " ASC";
+		}
+		
+		if (isset($data['start']) || isset($data['limit'])) {
+			if ($data['start'] < 0) {
+				$data['start'] = 0;
+			}			
+
+			if ($data['limit'] < 1) {
+				$data['limit'] = 20;
+			}	
+			
+			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+		}		
+
+		$query = $this->db->query($sql);
+        
+		return $query->rows;	
+	}]]></add>
+		</operation>
+	</file>
+
+<!-- View -->
+
+	<file path="admin/view/template/sale/customer_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo "Export"; ?>" class="btn btn-success"><i class="fa fa-file-excel-o"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+    
+    
+<!-- Order list -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/sale/order.php">
+		<operation>
+			<search position="before"><![CDATA[$data['invoice'] = $this->url->link('sale/order/invoice', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+			<add><![CDATA[$data['export'] = $this->url->link('sale/order/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>
+        
+        	<operation>
+			<search position="before"><![CDATA[$data['button_invoice_print'] = $this->language->get('button_invoice_print');]]></search>
+            <add><![CDATA[$data['button_export'] = $this->language->get('button_export');]]></add>
+		</operation>
+        
+        
+        	<operation>
+			<search position="before"><![CDATA[protected function getList() {]]></search>
+            <add><![CDATA[public function export() {
+        
+        	if (isset($this->request->get['filter_order_id'])) {
+
+			$filter_order_id = $this->request->get['filter_order_id'];
+
+		} else {
+
+			$filter_order_id = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_customer'])) {
+
+			$filter_customer = $this->request->get['filter_customer'];
+
+		} else {
+
+			$filter_customer = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_order_status_id'])) {
+
+			$filter_order_status_id = $this->request->get['filter_order_status_id'];
+
+		} else {
+
+			$filter_order_status_id = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_total'])) {
+
+			$filter_total = $this->request->get['filter_total'];
+
+		} else {
+
+			$filter_total = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_date_added'])) {
+
+			$filter_date_added = $this->request->get['filter_date_added'];
+
+		} else {
+
+			$filter_date_added = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_date_modified'])) {
+
+			$filter_date_modified = $this->request->get['filter_date_modified'];
+
+		} else {
+
+			$filter_date_modified = null;
+
+		}
+
+
+
+		if (isset($this->request->get['sort'])) {
+
+			$sort = $this->request->get['sort'];
+
+		} else {
+
+			$sort = 'o.order_id';
+
+		}
+
+
+
+		if (isset($this->request->get['order'])) {
+
+			$order = $this->request->get['order'];
+
+		} else {
+
+			$order = 'DESC';
+
+		}
+
+		
+
+		if (isset($this->request->get['page'])) {
+
+			$page = $this->request->get['page'];
+
+		} else {
+
+			$page = 1;
+
+		}
+        
+        
+
+		$data = array(
+
+			'filter_order_id'        => $filter_order_id,
+
+			'filter_customer'	     => $filter_customer,
+
+			'filter_order_status_id' => $filter_order_status_id,
+
+			'filter_total'           => $filter_total,
+
+			'filter_date_added'      => $filter_date_added,
+
+			'filter_date_modified'   => $filter_date_modified,
+
+			'sort'                   => $sort,
+
+			'order'                  => $order,
+		);
+        
+        
+        $orders = array();
+        
+        $orders_column=array();
+        
+        $this->load->model('sale/order');
+        
+        $results = $this->model_sale_order->getOrdersexport($data); 
+        
+        $orders_list = array();
+        
+        	foreach ($results as $result) {
+
+			$orders_list[] = array(
+				'order_id'      => $result['order_id'],
+				'customer_group'=> $result['customer_group'],
+				'customer_name'      => $result['customer_name'],
+				'email'=> $result['email'],
+				'telephone'      => $result['telephone'],
+				'payment_address'=> $result['payment_address'],
+				'shipping_address'      => $result['shipping_address'],
+				'payment_method'=> $result['payment_method'],
+				'shipping_method'        => $result['shipping_method'],
+				'total'         => $this->currency->format($result['total'], $result['currency_code'], $result['currency_value']),
+				'currency_code'    => $result['currency_code'],
+				'date_added'  =>  $result['date_added'],
+				'order_status' => $result['order_status'],
+				
+			);
+		}
+        
+        
+        
+       
+        $orders_column['order_id'] = 'Order ID';
+        $orders_column['customer_group'] = 'Customer Group';
+        $orders_column['customer_name'] = 'Customer Name';
+        $orders_column['email'] = 'Email';
+        $orders_column['telephone'] = 'Telephone';
+        $orders_column['payment_address'] = 'Payment Address';
+        $orders_column['shipping_address'] = 'Shipping Address';
+        $orders_column['payment_method'] = 'Payment Method';
+        $orders_column['shipping_method'] = 'Shipping Method';
+        $orders_column['total'] = 'Total';
+        $orders_column['currency_code'] = 'Currency Code';
+        $orders_column['date_added'] = 'Date Added';
+        $orders_column['order_status'] = 'Order Status';
+            
+        $orders[0]=   $orders_column;   
+        
+        foreach($orders_list as $orders_row)
+        {
+            $orders[]=   $orders_row;            
+        }   
+        
+	// include path to export datas
+	require_once(DIR_SYSTEM . 'library/PHPExcel/Classes/PHPExcel.php');
+	// Instantiate a new PHPExcel object
+	$objPHPExcel = new PHPExcel(); 
+	// Set the active Excel worksheet to sheet 0
+	$objPHPExcel->setActiveSheetIndex(0); 
+	// Initialise the Excel row number
+	$rowCount = 1;
+
+	/* Add Heading and values Row */ 
+	foreach($orders as $key => $value){
+		$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $orders[$key]['order_id']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $orders[$key]['customer_group']);  
+		$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $orders[$key]['customer_name']);   		
+		$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $orders[$key]['email']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, $orders[$key]['telephone']);  
+		$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $orders[$key]['payment_address']); 	
+		$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $orders[$key]['shipping_address']);
+		$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, $orders[$key]['payment_method']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, $orders[$key]['shipping_method']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, $orders[$key]['total']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, $orders[$key]['currency_code']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, $orders[$key]['date_added']); 
+		$objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, $orders[$key]['order_status']); 
+
+		$rowCount++;
+	}	
+
+	// Redirect output to a client’s web browser (Excel5) 
+	header('Content-Type: application/vnd.ms-excel'); 
+	header('Content-Disposition: attachment;filename="order_list_'.date("Y m d G i s").'.csv"'); 
+	//header('Content-Disposition: attachment;filename="customer_order_list_'.date("Y m d G i s").'.xlsx"'); 
+	header('Cache-Control: max-age=0'); 
+	
+	// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+	$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+	// Write the Excel file to filename some_excel_file.xlsx in the current directory
+	//$objWriter->save('some_excel_file.xlsx'); 
+
+	/* Download CsV file in downloads */
+	$objWriter->save('php://output');
+
+	}]]></add>
+		</operation>
+        
+	</file>
+    
+<!-- Model -->
+
+	<file path="admin/model/sale/order.php">
+		<operation>
+			<search position="before"><![CDATA[public function getOrders($data = array()) {]]></search>
+			<add><![CDATA[public function getOrdersexport($data = array()) {
+ $sql = "SELECT o.order_id, cgd.name as customer_group, CONCAT(o.firstname, ' ', o.lastname) AS customer_name,
+email, telephone, CONCAT(o.payment_firstname, ' ', o.payment_lastname,',',o.payment_address_1,',',o.payment_address_2,',',o.payment_city,'-',o.payment_postcode) AS payment_address,
+CONCAT(o.shipping_firstname, ' ', o.shipping_lastname,',',o.shipping_address_1,',',o.shipping_address_2,',', o.shipping_city,'-',o.shipping_postcode) AS shipping_address,
+ o.payment_method, o.shipping_method, o.total, o.currency_code,o.currency_value,
+ o.date_added, oos.name as order_status
+FROM `" . DB_PREFIX . "order` o
+LEFT JOIN " . DB_PREFIX . "customer_group_description cgd ON (o.customer_group_id = cgd.customer_group_id)
+LEFT JOIN " . DB_PREFIX . "order_status oos ON (o.order_status_id = oos.order_status_id) WHERE cgd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+
+
+
+
+		if (isset($data['filter_order_status_id']) && !is_null($data['filter_order_status_id'])) {
+
+			$sql .= " AND o.order_status_id = '" . (int)$data['filter_order_status_id'] . "'";
+
+		} else {
+
+			$sql .= " AND o.order_status_id > '0'";
+
+		}
+
+
+
+		if (!empty($data['filter_order_id'])) {
+
+			$sql .= " AND o.order_id = '" . (int)$data['filter_order_id'] . "'";
+
+		}
+
+
+
+		if (!empty($data['filter_customer'])) {
+
+			$sql .= " AND CONCAT(o.firstname, ' ', o.lastname) LIKE '%" . $this->db->escape($data['filter_customer']) . "%'";
+
+		}
+
+
+
+		if (!empty($data['filter_date_added'])) {
+
+			$sql .= " AND DATE(o.date_added) = DATE('" . $this->db->escape($data['filter_date_added']) . "')";
+
+		}
+
+		
+
+		if (!empty($data['filter_date_modified'])) {
+
+			$sql .= " AND DATE(o.date_modified) = DATE('" . $this->db->escape($data['filter_date_modified']) . "')";
+
+		}
+
+		
+
+		if (!empty($data['filter_total'])) {
+
+			$sql .= " AND o.total = '" . (float)$data['filter_total'] . "'";
+
+		}
+
+
+
+		$sort_data = array(
+
+			'o.order_id',
+
+			'customer',
+
+			'status',
+
+			'o.date_added',
+
+			'o.date_modified',
+
+			'o.total'
+
+		);
+
+
+
+		if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
+
+			$sql .= " ORDER BY " . $data['sort'];
+
+		} else {
+
+			$sql .= " ORDER BY o.order_id";
+
+		}
+
+
+
+		if (isset($data['order']) && ($data['order'] == 'DESC')) {
+
+			$sql .= " DESC";
+
+		} else {
+
+			$sql .= " ASC";
+
+		}
+
+
+
+		if (isset($data['start']) || isset($data['limit'])) {
+
+			if ($data['start'] < 0) {
+
+				$data['start'] = 0;
+
+			}
+
+
+
+			if ($data['limit'] < 1) {
+
+				$data['limit'] = 20;
+
+			}
+
+
+
+			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+
+		}
+
+		$query = $this->db->query($sql);
+
+
+
+		return $query->rows;
+
+	}]]></add>
+		</operation>
+	</file>
+
+<!-- View -->
+
+	<file path="admin/view/template/sale/order_list.tpl">
+		<operation>
+			<search position="before"><![CDATA[<button type="submit" id="button-shipping" form="form-order" formaction="<?php echo $shipping; ?>" data-toggle="tooltip" title="<?php echo $button_shipping_print; ?>" class="btn btn-info"><i class="fa fa-truck"></i></button>]]></search>
+			<add><![CDATA[<a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo "Export"; ?>" class="btn btn-success"><i class="fa fa-file-excel-o"></i></a>]]></add>
+		</operation>
+	</file>
+	
+<!-- Product Returns -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/sale/return.php">
+		
+    <operation>
+			<search position="before"><![CDATA[$data['button_filter'] = $this->language->get('button_filter');]]></search>
+            <add><![CDATA[$data['button_export'] = $this->language->get('button_export');
+			$data['export'] = $this->url->link('sale/return/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search position="before"><![CDATA[public function index() { ]]></search>
+            <add><![CDATA[public function export() {
+				if (isset($this->request->get['filter_return_id'])) {
+					$filter_return_id = $this->request->get['filter_return_id'];
+				} else {
+					$filter_return_id = null;
+				}
+
+				if (isset($this->request->get['filter_order_id'])) {
+					$filter_order_id = $this->request->get['filter_order_id'];
+				} else {
+					$filter_order_id = null;
+				}
+
+				if (isset($this->request->get['filter_customer'])) {
+					$filter_customer = $this->request->get['filter_customer'];
+				} else {
+					$filter_customer = null;
+				}
+
+				if (isset($this->request->get['filter_product'])) {
+					$filter_product = $this->request->get['filter_product'];
+				} else {
+					$filter_product = null;
+				}
+
+				if (isset($this->request->get['filter_model'])) {
+					$filter_model = $this->request->get['filter_model'];
+				} else {
+					$filter_model = null;
+				}
+
+				if (isset($this->request->get['filter_return_status_id'])) {
+					$filter_return_status_id = $this->request->get['filter_return_status_id'];
+				} else {
+					$filter_return_status_id = null;
+				}
+
+				if (isset($this->request->get['filter_date_added'])) {
+					$filter_date_added = $this->request->get['filter_date_added'];
+				} else {
+					$filter_date_added = null;
+				}
+
+				if (isset($this->request->get['filter_date_modified'])) {
+					$filter_date_modified = $this->request->get['filter_date_modified'];
+				} else {
+					$filter_date_modified = null;
+				}	
+
+				if (isset($this->request->get['sort'])) {
+					$sort = $this->request->get['sort'];
+				} else {
+					$sort = 'r.return_id'; 
+				}
+
+				if (isset($this->request->get['order'])) {
+					$order = $this->request->get['order'];
+				} else {
+					$order = 'DESC';
+				}
+
+				if (isset($this->request->get['page'])) {
+					$page = $this->request->get['page'];
+				} else {
+					$page = 1;
+				}
+				
+				
+				$this->load->model('sale/return');
+
+				
+				$returns= array();
+
+				$data = array(
+					'filter_return_id'        => $filter_return_id, 
+					'filter_order_id'         => $filter_order_id, 
+					'filter_customer'         => $filter_customer, 
+					'filter_product'          => $filter_product, 
+					'filter_model'            => $filter_model, 
+					'filter_return_status_id' => $filter_return_status_id, 
+					'filter_date_added'       => $filter_date_added,
+					'filter_date_modified'    => $filter_date_modified,
+					'sort'                    => $sort,
+					'order'                   => $order,
+				//	'start'                   => ($page - 1) * $this->config->get('config_admin_limit'),
+				//	'limit'                   => $this->config->get('config_admin_limit')
+				);
+
+				$results = $this->model_sale_return->getReturns($data);
+
+				foreach ($results as $result) {
+					$returns[] = array(
+						'return_id'     => $result['return_id'],
+						'order_id'      => $result['order_id'],
+						'customer'      => $result['customer'],
+						'product'       => $result['product'],
+						'model'         => $result['model'],
+						'status'        => $result['status'],
+						'date_added'    => date($this->language->get('date_format_short'), strtotime($result['date_added'])),	
+						'date_modified' => date($this->language->get('date_format_short'), strtotime($result['date_modified'])),				
+						'selected'      => isset($this->request->post['selected']) && in_array($result['return_id'], $this->request->post['selected'])
+					);
+				}	
+						
+						$returns_data = array();
+						
+						$returns_column=array();
+						
+						$returns_column['return_id'] = 'Return ID';
+			$returns_column['order_id'] = 'Order ID';
+			$returns_column['customer'] = 'Customer';
+			$returns_column['product'] = 'Product';
+			$returns_column['model'] = 'Model';
+			$returns_column['date_added'] = 'Date Added';
+			$returns_column['date_modified'] = 'Date Modified';
+
+			$returns_data[0]=   $returns_column;   
+			
+			foreach($returns as $returns_row)
+			{
+				$returns_data[]=   $returns_row;            
+			}     
+
+			// include path to export datas
+			require_once(DIR_SYSTEM . 'library/PHPExcel/Classes/PHPExcel.php');
+			// Instantiate a new PHPExcel object
+			$objPHPExcel = new PHPExcel(); 
+			// Set the active Excel worksheet to sheet 0
+			$objPHPExcel->setActiveSheetIndex(0); 
+			// Initialise the Excel row number
+			$rowCount = 1;
+
+			/* Add Heading and values Row */ 
+			foreach($returns_data as $key => $value){
+				$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $returns_data[$key]['return_id']); 
+				$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $returns_data[$key]['order_id']);  
+				$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $returns_data[$key]['customer']); 
+				$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $returns_data[$key]['product']);
+				$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, $returns_data[$key]['model']);
+				$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $returns_data[$key]['date_added']); 
+				$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $returns_data[$key]['date_modified']);  
+				$rowCount++;
+			}	
+
+			// Redirect output to a client’s web browser (Excel5) 
+			header('Content-Type: application/vnd.ms-excel'); 
+			header('Content-Disposition: attachment;filename="returns_list_'.date("Y m d G i s").'.csv"'); 
+			//header('Content-Disposition: attachment;filename="customer_order_list_'.date("Y m d G i s").'.xlsx"'); 
+			header('Cache-Control: max-age=0'); 
+
+			// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+			$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+			// Write the Excel file to filename some_excel_file.xlsx in the current directory
+			//$objWriter->save('some_excel_file.xlsx'); 
+
+			/* Download CsV file in downloads */
+			$objWriter->save('php://output');	
+
+					}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file path="admin/view/template/sale/return_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo $button_export; ?>" class="btn btn-success"><i class="fa fa-file-excel-o"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+	
+<!-- Affliate List -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/marketing/affiliate.php">
+		
+    <operation>
+			<search position="before"><![CDATA[$data['button_filter'] = $this->language->get('button_filter');]]></search>
+            <add><![CDATA[$data['button_export'] = $this->language->get('button_export');
+			$data['export'] = $this->url->link('marketing/affiliate/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search position="before"><![CDATA[protected function getList() {]]></search>
+            <add><![CDATA[public function export() {
+		if (isset($this->request->get['filter_name'])) {
+			$filter_name = $this->request->get['filter_name'];
+		} else {
+			$filter_name = null;
+		}
+
+		if (isset($this->request->get['filter_email'])) {
+			$filter_email = $this->request->get['filter_email'];
+		} else {
+			$filter_email = null;
+		}
+
+		if (isset($this->request->get['filter_status'])) {
+			$filter_status = $this->request->get['filter_status'];
+		} else {
+			$filter_status = null;
+		}
+
+		if (isset($this->request->get['filter_approved'])) {
+			$filter_approved = $this->request->get['filter_approved'];
+		} else {
+			$filter_approved = null;
+		}
+
+		if (isset($this->request->get['filter_date_added'])) {
+			$filter_date_added = $this->request->get['filter_date_added'];
+		} else {
+			$filter_date_added = null;
+		}	
+
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'name'; 
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'ASC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+		
+		$data = array(
+			'filter_name'       => $filter_name, 
+			'filter_email'      => $filter_email, 
+			'filter_status'     => $filter_status, 
+			'filter_approved'   => $filter_approved, 
+			'filter_date_added' => $filter_date_added,
+			'sort'              => $sort,
+			'order'             => $order,
+		//	'start'             => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit'             => $this->config->get('config_admin_limit')
+		);
+		
+		$this->load->model('marketing/affiliate');
+		
+		$results = $this->model_marketing_affiliate->getAffiliates($data);
+		
+		$affiliates = array();
+		
+		foreach ($results as $result) {
+			$affiliates[] = array(
+				'affiliate_id' => $result['affiliate_id'],
+				'name'         => $result['name'],
+				'email'        => $result['email'],
+				'balance'      => $this->currency->format($result['balance'], $this->config->get('config_currency')),
+				'status'       => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled')),
+				'approved'     => ($result['approved'] ? $this->language->get('text_yes') : $this->language->get('text_no')),
+				'date_added'   => date($this->language->get('date_format_short'), strtotime($result['date_added'])),
+				'selected'     => isset($this->request->post['selected']) && in_array($result['affiliate_id'], $this->request->post['selected'])
+			);
+		}	
+				
+				$affiliates_data = array();
+				
+				$affiliates_column=array();
+				
+				$affiliates_column['affiliate_id'] = 'Affliate ID';
+				$affiliates_column['name'] = 'Affliate Name';
+				$affiliates_column['email'] = 'Email';
+				$affiliates_column['balance'] = 'Balance';
+				$affiliates_column['status'] = 'Status';
+				$affiliates_column['approved'] = 'Approved';
+				$affiliates_column['date_added'] = 'Date Added';
+
+
+				$affiliates_data[0]=   $affiliates_column;   
+				
+				foreach($affiliates as $affiliates_row)
+				{
+					$affiliates_data[]=   $affiliates_row;            
+				}     
+				
+
+				// include path to export datas
+				require_once(DIR_SYSTEM . 'library/PHPExcel/Classes/PHPExcel.php');
+				// Instantiate a new PHPExcel object
+				$objPHPExcel = new PHPExcel(); 
+				// Set the active Excel worksheet to sheet 0
+				$objPHPExcel->setActiveSheetIndex(0); 
+				// Initialise the Excel row number
+				$rowCount = 1;
+
+				/* Add Heading and values Row */ 
+				foreach($affiliates_data as $key => $value){
+					$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $affiliates_data[$key]['affiliate_id']); 
+					$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $affiliates_data[$key]['name']);  
+					$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $affiliates_data[$key]['email']);   		
+					$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $affiliates_data[$key]['balance']); 
+					$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, $affiliates_data[$key]['status']);  
+					$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $affiliates_data[$key]['approved']); 	
+					$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $affiliates_data[$key]['date_added']);
+					$rowCount++;
+				}	
+
+				// Redirect output to a client’s web browser (Excel5) 
+				header('Content-Type: application/vnd.ms-excel'); 
+				header('Content-Disposition: attachment;filename="affiliate_list_'.date("Y m d G i s").'.csv"'); 
+				//header('Content-Disposition: attachment;filename="customer_order_list_'.date("Y m d G i s").'.xlsx"'); 
+				header('Cache-Control: max-age=0'); 
+	
+				// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+				$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+				// Write the Excel file to filename some_excel_file.xlsx in the current directory
+				//$objWriter->save('some_excel_file.xlsx'); 
+
+				/* Download CsV file in downloads */
+				$objWriter->save('php://output'); 	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file path="admin/view/template/marketing/affiliate_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo $button_export; ?>" class="btn btn-success"><i class="fa fa-file-excel-o"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+   
+<!-- Coupon List -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/marketing/coupon.php">
+		
+    <operation>
+			<search position="before"><![CDATA[$data['button_add'] = $this->language->get('button_add');]]></search>
+            <add><![CDATA[$data['button_export'] = $this->language->get('button_export');
+			$data['export'] = $this->url->link('marketing/coupon/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search position="before"><![CDATA[protected function getList() {]]></search>
+            <add><![CDATA[public function export() {
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'name';
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'ASC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+
+		$data['coupons'] = array();
+
+		$data = array(
+			'sort'  => $sort,
+			'order' => $order,
+		//	'start' => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit' => $this->config->get('config_admin_limit')
+		);
+		
+		
+		$this->load->model('marketing/coupon');
+				
+		$coupon_total = $this->model_marketing_coupon->getTotalCoupons();
+
+		$results = $this->model_marketing_coupon->getCoupons($data);
+
+		
+		$coupons = array();
+		
+		foreach ($results as $result) {
+			$coupons[] = array(
+				'coupon_id'  => $result['coupon_id'],
+				'name'       => $result['name'],
+				'code'       => $result['code'],
+				'discount'   => $result['discount'],
+				'date_start' => date($this->language->get('date_format_short'), strtotime($result['date_start'])),
+				'date_end'   => date($this->language->get('date_format_short'), strtotime($result['date_end'])),
+				'status'     => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled'))
+			);
+		}	
+				
+				$coupons_data = array();
+				
+				$coupons_column=array();
+				
+				$coupons_column['coupon_id'] = 'Coupon ID';
+				$coupons_column['name'] = 'Coupon Name';
+				$coupons_column['code'] = 'Coupon Code';
+				$coupons_column['discount'] = 'Discount';
+				$coupons_column['date_start'] = 'Start Date';
+				$coupons_column['date_end'] = 'End Date';
+				$coupons_column['status'] = 'Status';
+					
+				$coupons_data[0]=   $coupons_column;   
+				
+				foreach($coupons as $coupons_row)
+				{
+					$coupons_data[]=   $coupons_row;            
+				}     
+
+				// include path to export datas
+				require_once(DIR_SYSTEM . 'library/PHPExcel/Classes/PHPExcel.php');
+				// Instantiate a new PHPExcel object
+				$objPHPExcel = new PHPExcel(); 
+				// Set the active Excel worksheet to sheet 0
+				$objPHPExcel->setActiveSheetIndex(0); 
+				// Initialise the Excel row number
+				$rowCount = 1;
+
+					/* Add Heading and values Row */ 
+					foreach($coupons_data as $key => $value){
+						$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $coupons_data[$key]['coupon_id']); 
+						$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $coupons_data[$key]['name']);  
+						$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $coupons_data[$key]['code']);   		
+						$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $coupons_data[$key]['discount']); 
+						$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, $coupons_data[$key]['date_start']);  
+						$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $coupons_data[$key]['date_end']); 	
+						$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $coupons_data[$key]['status']);
+
+						$rowCount++;
+					}	
+
+					// Redirect output to a client’s web browser (Excel5) 
+					header('Content-Type: application/vnd.ms-excel'); 
+					header('Content-Disposition: attachment;filename="coupons_list_'.date("Y m d G i s").'.csv"'); 
+					//header('Content-Disposition: attachment;filename="coupons_list_'.date("Y m d G i s").'.xlsx"');
+					header('Cache-Control: max-age=0'); 
+	
+					// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+					$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+					// Write the Excel file to filename some_excel_file.xlsx in the current directory
+					//$objWriter->save('some_excel_file.xlsx'); 
+
+					/* Download CsV file in downloads */
+					$objWriter->save('php://output');	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file path="admin/view/template/marketing/coupon_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo $button_export; ?>" class="btn btn-success"><i class="fa fa-file-excel-o"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+    	
+    	
+<!-- Gift Voucher List -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/sale/voucher.php">
+		
+    <operation>
+			<search position="before"><![CDATA[$data['button_add'] = $this->language->get('button_add');]]></search>
+            <add><![CDATA[$data['button_export'] = $this->language->get('button_export');
+			$data['export'] = $this->url->link('sale/voucher/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search position="before"><![CDATA[protected function getList() {]]></search>
+            <add><![CDATA[public function export() {
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'v.date_added';
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'DESC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+
+		$data = array(
+			'sort'  => $sort,
+			'order' => $order,
+		//	'start' => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit' => $this->config->get('config_admin_limit')
+		);
+
+		$this->load->model('sale/voucher');
+		
+		$results = $this->model_sale_voucher->getVouchers($data);
+		
+		$vouchers = array();
+		
+		foreach ($results as $result) {
+			$vouchers[] = array(
+				'voucher_id' => $result['voucher_id'],
+				'code'       => $result['code'],
+				'from'       => $result['from_name'],
+				'to'         => $result['to_name'],
+				'theme'      => $result['theme'],
+				'amount'     => $this->currency->format($result['amount'], $this->config->get('config_currency')),
+				'status'     => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled')),
+				'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added']))
+			);
+		}	
+				
+				$vouchers_data = array();
+				
+				$vouchers_column=array();
+				
+				$vouchers_column['voucher_id'] = 'Voucher ID';
+				$vouchers_column['code'] = 'Voucher Code';
+				$vouchers_column['from'] = 'From';
+				$vouchers_column['to'] = 'To';
+				$vouchers_column['theme'] = 'Theme';
+				$vouchers_column['amount'] = 'Amount';
+				$vouchers_column['status'] = 'Status';
+				$vouchers_column['date_added'] = 'Date Added';
+
+				$vouchers_data[0]=   $vouchers_column;   
+				
+				foreach($vouchers as $vouchers_row)
+				{
+					$vouchers_data[]=   $vouchers_row;            
+				}
+
+				// include path to export datas
+				require_once(DIR_SYSTEM . 'library/PHPExcel/Classes/PHPExcel.php');
+				// Instantiate a new PHPExcel object
+				$objPHPExcel = new PHPExcel(); 
+				// Set the active Excel worksheet to sheet 0
+				$objPHPExcel->setActiveSheetIndex(0); 
+				// Initialise the Excel row number
+				$rowCount = 1;
+
+					/* Add Heading and values Row */ 
+					foreach($vouchers_data as $key => $value){
+						$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $vouchers_data[$key]['voucher_id']); 
+						$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $vouchers_data[$key]['code']);  
+						$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $vouchers_data[$key]['from']);   		
+						$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $vouchers_data[$key]['to']); 
+						$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, $vouchers_data[$key]['theme']);  
+						$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $vouchers_data[$key]['amount']); 	
+						$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $vouchers_data[$key]['status']);
+						$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, $vouchers_data[$key]['date_added']); 	
+
+						$rowCount++;
+					}	
+
+					// Redirect output to a client’s web browser (Excel5) 
+					header('Content-Type: application/vnd.ms-excel'); 
+					header('Content-Disposition: attachment;filename="vouchers_list_'.date("Y m d G i s").'.csv"'); 
+					//header('Content-Disposition: attachment;filename="vouchers_list_'.date("Y m d G i s").'.xlsx"'); 
+					header('Cache-Control: max-age=0'); 
+	
+					// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+					$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+					// Write the Excel file to filename some_excel_file.xlsx in the current directory
+					//$objWriter->save('some_excel_file.xlsx'); 
+
+					/* Download CsV file in downloads */
+					$objWriter->save('php://output');	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file path="admin/view/template/sale/voucher_list.tpl">
+		<operation>
+			<search position="before"><![CDATA[<button type="button" id="button-send" data-toggle="tooltip" title="<?php echo $button_send; ?>" class="btn btn-primary"><i class="fa fa-envelope"></i></button>]]></search>
+			<add><![CDATA[<a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo $button_export; ?>" class="btn btn-success"><i class="fa fa-file-excel-o"></i></a>]]></add>
+		</operation>
+	</file>
+	
+</modification>

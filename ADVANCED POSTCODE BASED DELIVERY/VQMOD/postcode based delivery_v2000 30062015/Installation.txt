@@ -1,0 +1,70 @@
+---------------------------------------------------------------------------------------------
+         Module : Advanced Postcode Based Delivery  
+--------------------------------------------------------------------------------------------
+
+The Advanced Postcode based delivery module allows the admin user to do add/edit/delete the postcodes
+
+It display on store front using install/uninstall like other modules.
+
+
+[b]This module Main features:[/b]
+	
+	- Admin to Add, Edit and Delete the Postcodes.
+	- Add Postcode with minimum purchase amount.
+	- Postcode search widget/module has to display various pages(Home,Account,etc) and layouts(Top,Bottom,Left,Right).
+	- It also validate on checkout the cart page.
+=================================================================================================
+Installation
+=================================================================================================
+
+1. First You must backup your opencart site/cart and also database. Because add a new files and new tables.
+
+		The new database table is:
+			(i)  postcode_delivery
+
+2. Before install this addon you have to install "vQmod" in your shop.
+
+[NOTE : Opencart version - 1.5.4X ] install vQmod 2.4.1 version.
+			
+3. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+4. Login to Admin panel 
+		Extensions -> Modules
+		
+		 See the "Postcode" Module then Click [install] link to install this Plugin.
+		 
+5. Edit the Postcode [Extensions -> Modules]
+	(i) In postcode based delivery form, customize postcode based delivery widget
+	(ii) Click Save button 
+
+6. Go to 
+        System -> Users -> User Groups
+		  
+		  Select Top Administrator -> Edit
+		  
+		  Enable the following checkbox
+		  
+		     Access Permission : localisation/postcode
+			 
+		     Modify Permission : localisation/postcode
+			 
+		  Then Click the Save button. 
+		
+7.  Go to 
+	System -> Design -> Layouts
+		(i) select the layout from list where you want to display postcode based delivery widget
+		(ii) Add postcode based delivery module from list
+		(iii) Click save button
+		  
+		  
+8. Go to Postcode List Page
+
+        System -> Localisation -> Postcode
+		
+			a) Click Insert Button to Enter a new Postcode.
+
+			b) You have Postcode List to Click Edit to Enable/Disable the Postcode and also remove the unnecessary Postcode.
+
+9. Reload Your opencart site and view Postcode widget in appropriate area and check the postcode based minimum purchase amount and delivery location.
+
+10. Try checkout page for validate the postcode based minimum purchase amount and delivery location.

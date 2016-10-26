@@ -1,0 +1,1119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+
+	<name><![CDATA[Export Data Sales]]></name>
+	<code><![CDATA[irs_exportdatasales]]></code>	
+	<version><![CDATA[2.0]]></version>
+	<author><![CDATA[IRSSOFT]]></author> 
+	<link><![CDATA[http://www.irssoft.com/]]></link>
+  
+	<!-- Language -->
+
+	<file path="admin/language/english/default.php">
+		<operation>
+			<search><![CDATA[$_['button_approve']                = 'Approve';]]></search>
+			<add position="after"><![CDATA[$_['button_export']                = 'Export';]]></add>
+		</operation>
+	</file>
+	
+	
+	   
+<!-- Controller --> 
+  
+    <file path="admin/controller/sale/customer.php">
+		<operation>
+			<search><![CDATA[$data['add'] = $this->url->link('sale/customer/add', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></search>
+			<add position="before"><![CDATA[$data['export'] = $this->url->link('sale/customer/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>
+	
+        	<operation>
+			<search><![CDATA[$data['button_approve'] = $this->language->get('button_approve');]]></search>
+            <add position="before"><![CDATA[$data['button_export'] = $this->language->get('button_export');]]></add>
+		</operation>
+        
+        
+        	<operation>
+			<search><![CDATA[public function address() {]]></search>
+            <add position="before"><![CDATA[ public function export($getarr='') {
+        
+       	if (isset($this->request->get['filter_name'])) {
+
+			$filter_name = $this->request->get['filter_name'];
+
+		} else {
+
+			$filter_name = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_email'])) {
+
+			$filter_email = $this->request->get['filter_email'];
+
+		} else {
+
+			$filter_email = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_customer_group_id'])) {
+
+			$filter_customer_group_id = $this->request->get['filter_customer_group_id'];
+
+		} else {
+
+			$filter_customer_group_id = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_status'])) {
+
+			$filter_status = $this->request->get['filter_status'];
+
+		} else {
+
+			$filter_status = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_approved'])) {
+
+			$filter_approved = $this->request->get['filter_approved'];
+
+		} else {
+
+			$filter_approved = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_ip'])) {
+
+			$filter_ip = $this->request->get['filter_ip'];
+
+		} else {
+
+			$filter_ip = null;
+
+		}
+
+				
+
+		if (isset($this->request->get['filter_date_added'])) {
+
+			$filter_date_added = $this->request->get['filter_date_added'];
+
+		} else {
+
+			$filter_date_added = null;
+
+		}		
+
+		
+
+		if (isset($this->request->get['sort'])) {
+
+			$sort = $this->request->get['sort'];
+
+		} else {
+
+			$sort = 'name'; 
+
+		}
+
+		
+
+		if (isset($this->request->get['order'])) {
+
+			$order = $this->request->get['order'];
+
+		} else {
+
+			$order = 'ASC';
+
+		}
+
+		
+
+		if (isset($this->request->get['page'])) {
+
+			$page = $this->request->get['page'];
+
+		} else {
+
+			$page = 1;
+
+		}
+        
+        	$data = array(
+
+			'filter_name'              => $filter_name, 
+
+			'filter_email'             => $filter_email, 
+
+			'filter_customer_group_id' => $filter_customer_group_id, 
+
+			'filter_status'            => $filter_status, 
+
+			'filter_approved'          => $filter_approved, 
+
+			'filter_date_added'        => $filter_date_added,
+
+			'filter_ip'                => $filter_ip,
+
+			'sort'                     => $sort,
+
+			'order'                    => $order,
+
+		);
+        
+        $customers = array();
+        
+        $customers_column=array();
+        
+        $this->load->model('sale/customer');
+        
+        $customers_column = array('Customer ID', 'Customer Name', 'Email', 'Telephone', 'Address', 'City', 'Post Code', 'Country', 'IP', 'Status', 'Approved', 'Date Added', 'Customer Group');
+            
+        $customers[0] = $customers_column;  
+        
+        $customers_list = $this->model_sale_customer->getCustomerstoexport($data);
+        
+        foreach($customers_list as $customer_row)
+        {
+            $customers[]=$customer_row;
+        }
+        require_once(DIR_SYSTEM . 'library/excel_xml.php');
+        $xls = new Excel_XML('UTF-8', false, 'Customers List');
+        $xls->addArray($customers);
+        $xls->generateXML('customerlist_'.date('Y-m-d _ H:i:s'));
+	}]]></add>
+		</operation>
+        
+        
+        
+        
+	</file>
+    
+<!-- Model -->
+
+	<file path="admin/model/sale/customer.php">
+		<operation>
+			<search><![CDATA[public function getCustomers($data = array()) {]]></search>
+			<add position="before"><![CDATA[public function getCustomerstoexport($data = array()) {
+    	 
+$sql = "SELECT c.customer_id, CONCAT(c.firstname, ' ', c.lastname) AS name, c.email, c.telephone, CONCAT(oca.address_1,oca.address_2) AS address, oca.city, oca.postcode, occ.name as Country, c.ip, IF( c.status = 1, 'Enabled', 'Disabled' ) AS status, IF( c.approved = 1, 'Yes', 'No' ) AS approved, c.date_added, cgd.name AS customer_group FROM " . DB_PREFIX . "customer c LEFT JOIN " . DB_PREFIX . "customer_group_description cgd ON (c.customer_group_id = cgd.customer_group_id) LEFT JOIN " . DB_PREFIX . "address oca ON (c.address_id=oca.address_id) LEFT JOIN " . DB_PREFIX . "country occ ON (oca.country_id=occ.country_id) WHERE cgd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+
+		$implode = array();
+		
+		if (!empty($data['filter_name'])) {
+			$implode[] = "CONCAT(c.firstname, ' ', c.lastname) LIKE '%" . $this->db->escape($data['filter_name']) . "%'";
+		}
+		
+		if (!empty($data['filter_email'])) {
+			$implode[] = "c.email LIKE '" . $this->db->escape($data['filter_email']) . "%'";
+		}
+
+		if (isset($data['filter_newsletter']) && !is_null($data['filter_newsletter'])) {
+			$implode[] = "c.newsletter = '" . (int)$data['filter_newsletter'] . "'";
+		}	
+				
+		if (!empty($data['filter_customer_group_id'])) {
+			$implode[] = "c.customer_group_id = '" . (int)$data['filter_customer_group_id'] . "'";
+		}	
+			
+		if (!empty($data['filter_ip'])) {
+			$implode[] = "c.customer_id IN (SELECT customer_id FROM " . DB_PREFIX . "customer_ip WHERE ip = '" . $this->db->escape($data['filter_ip']) . "')";
+		}	
+				
+		if (isset($data['filter_status']) && !is_null($data['filter_status'])) {
+			$implode[] = "c.status = '" . (int)$data['filter_status'] . "'";
+		}	
+		
+		if (isset($data['filter_approved']) && !is_null($data['filter_approved'])) {
+			$implode[] = "c.approved = '" . (int)$data['filter_approved'] . "'";
+		}	
+				
+		if (!empty($data['filter_date_added'])) {
+			$implode[] = "DATE(c.date_added) = DATE('" . $this->db->escape($data['filter_date_added']) . "')";
+		}
+		
+		if ($implode) {
+			$sql .= " AND " . implode(" AND ", $implode);
+		}
+		
+		$sort_data = array(
+			'name',
+			'c.email',
+			'customer_group',
+			'c.status',
+			'c.approved',
+			'c.ip',
+			'c.date_added'
+		);	
+			
+		if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
+			$sql .= " ORDER BY " . $data['sort'];	
+		} else {
+			$sql .= " ORDER BY name";	
+		}
+			
+		if (isset($data['order']) && ($data['order'] == 'DESC')) {
+			$sql .= " DESC";
+		} else {
+			$sql .= " ASC";
+		}
+		
+		if (isset($data['start']) || isset($data['limit'])) {
+			if ($data['start'] < 0) {
+				$data['start'] = 0;
+			}			
+
+			if ($data['limit'] < 1) {
+				$data['limit'] = 20;
+			}	
+			
+			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+		}		
+
+		$query = $this->db->query($sql);
+        
+		return $query->rows;	
+	}]]></add>
+		</operation>
+	</file>
+
+<!-- View -->
+
+	<file path="admin/view/template/sale/customer_list.tpl">
+		<operation>
+			<search><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo "Export"; ?>" class="btn btn-success"><i class="glyphicon glyphicon-export"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+    
+    
+<!-- Order list -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/sale/order.php">
+		<operation>
+			<search><![CDATA[$data['invoice'] = $this->url->link('sale/order/invoice', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+			<add position="before"><![CDATA[$data['export'] = $this->url->link('sale/order/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>
+        
+        	<operation>
+			<search><![CDATA[$data['button_invoice_print'] = $this->language->get('button_invoice_print');]]></search>
+            <add position="before"><![CDATA[$data['button_export'] = $this->language->get('button_export');]]></add>
+		</operation>
+        
+        
+        	<operation>
+			<search><![CDATA[protected function getList() {]]></search>
+            <add position="before"><![CDATA[public function export() {
+        
+        	if (isset($this->request->get['filter_order_id'])) {
+
+			$filter_order_id = $this->request->get['filter_order_id'];
+
+		} else {
+
+			$filter_order_id = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_customer'])) {
+
+			$filter_customer = $this->request->get['filter_customer'];
+
+		} else {
+
+			$filter_customer = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_order_status_id'])) {
+
+			$filter_order_status_id = $this->request->get['filter_order_status_id'];
+
+		} else {
+
+			$filter_order_status_id = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_total'])) {
+
+			$filter_total = $this->request->get['filter_total'];
+
+		} else {
+
+			$filter_total = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_date_added'])) {
+
+			$filter_date_added = $this->request->get['filter_date_added'];
+
+		} else {
+
+			$filter_date_added = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_date_modified'])) {
+
+			$filter_date_modified = $this->request->get['filter_date_modified'];
+
+		} else {
+
+			$filter_date_modified = null;
+
+		}
+
+
+
+		if (isset($this->request->get['sort'])) {
+
+			$sort = $this->request->get['sort'];
+
+		} else {
+
+			$sort = 'o.order_id';
+
+		}
+
+
+
+		if (isset($this->request->get['order'])) {
+
+			$order = $this->request->get['order'];
+
+		} else {
+
+			$order = 'DESC';
+
+		}
+
+		
+
+		if (isset($this->request->get['page'])) {
+
+			$page = $this->request->get['page'];
+
+		} else {
+
+			$page = 1;
+
+		}
+        
+        
+
+		$data = array(
+
+			'filter_order_id'        => $filter_order_id,
+
+			'filter_customer'	     => $filter_customer,
+
+			'filter_order_status_id' => $filter_order_status_id,
+
+			'filter_total'           => $filter_total,
+
+			'filter_date_added'      => $filter_date_added,
+
+			'filter_date_modified'   => $filter_date_modified,
+
+			'sort'                   => $sort,
+
+			'order'                  => $order,
+		);
+        
+        
+        $orders = array();
+        
+        $orders_column=array();
+        
+        $this->load->model('sale/order');
+        
+        $results = $this->model_sale_order->getOrdersexport($data); 
+        
+        $orders_list = array();
+        
+        	foreach ($results as $result) {
+
+			$orders_list[] = array(
+				'order_id'      => $result['order_id'],
+				'customer_group'=> $result['customer_group'],
+				'customer_name'      => $result['customer_name'],
+				'email'=> $result['email'],
+				'telephone'      => $result['telephone'],
+				'payment_address'=> $result['payment_address'],
+				'shipping_address'      => $result['shipping_address'],
+				'payment_method'=> $result['payment_method'],
+				'shipping_method'        => $result['shipping_method'],
+				'total'         => $this->currency->format($result['total'], $result['currency_code'], $result['currency_value']),
+				'currency_code'    => $result['currency_code'],
+				'date_added'  =>  $result['date_added'],
+				'order_status' => $result['order_status'],
+				
+			);
+		}
+        
+        
+        
+       
+        $orders_column = array('Order ID', 'Customer Group', 'Customer Name', 'Email', 'Telephone', 'Payment Address', 'Shipping Address', 'Payment Method', 'Shipping Method', 'Total', 'Currency Code', 'Date Added', 'Order Status');
+            
+        $orders[0]=   $orders_column;   
+        
+        foreach($orders_list as $orders_row)
+        {
+            $orders[]=   $orders_row;            
+        }     
+        require_once(DIR_SYSTEM . 'library/excel_xml.php');
+        $xls = new Excel_XML('UTF-8', false, 'Orders List');
+        
+        $xls->addArray($orders);
+        
+        $xls->generateXML('orderslist_'.date('Y-m-d _ H:i:s'));	
+
+	}]]></add>
+		</operation>
+        
+	</file>
+    
+<!-- Model -->
+
+	<file path="admin/model/sale/order.php">
+		<operation>
+			<search><![CDATA[public function getOrders($data = array()) {]]></search>
+			<add position="before"><![CDATA[public function getOrdersexport($data = array()) {
+ $sql = "SELECT o.order_id, cgd.name as customer_group, CONCAT(o.firstname, ' ', o.lastname) AS customer_name,
+email, telephone, CONCAT(o.payment_firstname, ' ', o.payment_lastname,',',o.payment_address_1,',',o.payment_address_2,',',o.payment_city,'-',o.payment_postcode) AS payment_address,
+CONCAT(o.shipping_firstname, ' ', o.shipping_lastname,',',o.shipping_address_1,',',o.shipping_address_2,',', o.shipping_city,'-',o.shipping_postcode) AS shipping_address,
+ o.payment_method, o.shipping_method, o.total, o.currency_code,o.currency_value,
+ o.date_added, oos.name as order_status
+FROM `" . DB_PREFIX . "order` o
+LEFT JOIN " . DB_PREFIX . "customer_group_description cgd ON (o.customer_group_id = cgd.customer_group_id)
+LEFT JOIN " . DB_PREFIX . "order_status oos ON (o.order_status_id = oos.order_status_id) WHERE cgd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+
+
+
+
+		if (isset($data['filter_order_status_id']) && !is_null($data['filter_order_status_id'])) {
+
+			$sql .= " AND o.order_status_id = '" . (int)$data['filter_order_status_id'] . "'";
+
+		} else {
+
+			$sql .= " AND o.order_status_id > '0'";
+
+		}
+
+
+
+		if (!empty($data['filter_order_id'])) {
+
+			$sql .= " AND o.order_id = '" . (int)$data['filter_order_id'] . "'";
+
+		}
+
+
+
+		if (!empty($data['filter_customer'])) {
+
+			$sql .= " AND CONCAT(o.firstname, ' ', o.lastname) LIKE '%" . $this->db->escape($data['filter_customer']) . "%'";
+
+		}
+
+
+
+		if (!empty($data['filter_date_added'])) {
+
+			$sql .= " AND DATE(o.date_added) = DATE('" . $this->db->escape($data['filter_date_added']) . "')";
+
+		}
+
+		
+
+		if (!empty($data['filter_date_modified'])) {
+
+			$sql .= " AND DATE(o.date_modified) = DATE('" . $this->db->escape($data['filter_date_modified']) . "')";
+
+		}
+
+		
+
+		if (!empty($data['filter_total'])) {
+
+			$sql .= " AND o.total = '" . (float)$data['filter_total'] . "'";
+
+		}
+
+
+
+		$sort_data = array(
+
+			'o.order_id',
+
+			'customer',
+
+			'status',
+
+			'o.date_added',
+
+			'o.date_modified',
+
+			'o.total'
+
+		);
+
+
+
+		if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
+
+			$sql .= " ORDER BY " . $data['sort'];
+
+		} else {
+
+			$sql .= " ORDER BY o.order_id";
+
+		}
+
+
+
+		if (isset($data['order']) && ($data['order'] == 'DESC')) {
+
+			$sql .= " DESC";
+
+		} else {
+
+			$sql .= " ASC";
+
+		}
+
+
+
+		if (isset($data['start']) || isset($data['limit'])) {
+
+			if ($data['start'] < 0) {
+
+				$data['start'] = 0;
+
+			}
+
+
+
+			if ($data['limit'] < 1) {
+
+				$data['limit'] = 20;
+
+			}
+
+
+
+			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+
+		}
+
+		$query = $this->db->query($sql);
+
+
+
+		return $query->rows;
+
+	}]]></add>
+		</operation>
+	</file>
+
+<!-- View -->
+
+	<file path="admin/view/template/sale/order_list.tpl">
+		<operation>
+			<search><![CDATA[<button type="submit" id="button-shipping" form="form-order" formaction="<?php echo $shipping; ?>" data-toggle="tooltip" title="<?php echo $button_shipping_print; ?>" class="btn btn-info"><i class="fa fa-truck"></i></button>]]></search>
+			<add position="before"><![CDATA[<a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo "Export"; ?>" class="btn btn-success"><i class="glyphicon glyphicon-export"></i></a>]]></add>
+		</operation>
+	</file>
+	
+<!-- Product Returns -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/sale/return.php">
+		
+    <operation>
+			<search><![CDATA[$data['button_filter'] = $this->language->get('button_filter');]]></search>
+            <add position="before"><![CDATA[$data['button_export'] = $this->language->get('button_export');
+			$data['export'] = $this->url->link('sale/return/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search><![CDATA[public function index() { ]]></search>
+            <add position="before"><![CDATA[public function export() {
+				if (isset($this->request->get['filter_return_id'])) {
+					$filter_return_id = $this->request->get['filter_return_id'];
+				} else {
+					$filter_return_id = null;
+				}
+
+				if (isset($this->request->get['filter_order_id'])) {
+					$filter_order_id = $this->request->get['filter_order_id'];
+				} else {
+					$filter_order_id = null;
+				}
+
+				if (isset($this->request->get['filter_customer'])) {
+					$filter_customer = $this->request->get['filter_customer'];
+				} else {
+					$filter_customer = null;
+				}
+
+				if (isset($this->request->get['filter_product'])) {
+					$filter_product = $this->request->get['filter_product'];
+				} else {
+					$filter_product = null;
+				}
+
+				if (isset($this->request->get['filter_model'])) {
+					$filter_model = $this->request->get['filter_model'];
+				} else {
+					$filter_model = null;
+				}
+
+				if (isset($this->request->get['filter_return_status_id'])) {
+					$filter_return_status_id = $this->request->get['filter_return_status_id'];
+				} else {
+					$filter_return_status_id = null;
+				}
+
+				if (isset($this->request->get['filter_date_added'])) {
+					$filter_date_added = $this->request->get['filter_date_added'];
+				} else {
+					$filter_date_added = null;
+				}
+
+				if (isset($this->request->get['filter_date_modified'])) {
+					$filter_date_modified = $this->request->get['filter_date_modified'];
+				} else {
+					$filter_date_modified = null;
+				}	
+
+				if (isset($this->request->get['sort'])) {
+					$sort = $this->request->get['sort'];
+				} else {
+					$sort = 'r.return_id'; 
+				}
+
+				if (isset($this->request->get['order'])) {
+					$order = $this->request->get['order'];
+				} else {
+					$order = 'DESC';
+				}
+
+				if (isset($this->request->get['page'])) {
+					$page = $this->request->get['page'];
+				} else {
+					$page = 1;
+				}
+				
+				
+				$this->load->model('sale/return');
+
+				
+				$returns= array();
+
+				$data = array(
+					'filter_return_id'        => $filter_return_id, 
+					'filter_order_id'         => $filter_order_id, 
+					'filter_customer'         => $filter_customer, 
+					'filter_product'          => $filter_product, 
+					'filter_model'            => $filter_model, 
+					'filter_return_status_id' => $filter_return_status_id, 
+					'filter_date_added'       => $filter_date_added,
+					'filter_date_modified'    => $filter_date_modified,
+					'sort'                    => $sort,
+					'order'                   => $order,
+				//	'start'                   => ($page - 1) * $this->config->get('config_admin_limit'),
+				//	'limit'                   => $this->config->get('config_admin_limit')
+				);
+
+				$results = $this->model_sale_return->getReturns($data);
+
+				foreach ($results as $result) {
+					$returns[] = array(
+						'return_id'     => $result['return_id'],
+						'order_id'      => $result['order_id'],
+						'customer'      => $result['customer'],
+						'product'       => $result['product'],
+						'model'         => $result['model'],
+						'status'        => $result['status'],
+						'date_added'    => date($this->language->get('date_format_short'), strtotime($result['date_added'])),	
+						'date_modified' => date($this->language->get('date_format_short'), strtotime($result['date_modified'])),				
+						'selected'      => isset($this->request->post['selected']) && in_array($result['return_id'], $this->request->post['selected'])
+					);
+				}	
+						
+						$returns_data = array();
+						
+						$returns_column=array();
+						
+						$returns_column = array('Return ID', 'Order ID', 'Customer', 'Product', 'Model', 'Date Added', 'Date Modified');
+							
+						$returns_data[0]=   $returns_column;   
+						
+						foreach($returns as $returns_row)
+						{
+							$returns_data[]=   $returns_row;            
+						}     
+						require_once(DIR_SYSTEM . 'library/excel_xml.php');
+						$xls = new Excel_XML('UTF-8', false, 'Product Returns List');
+						
+						$xls->addArray($returns_data);
+						
+						$xls->generateXML('product_returns_list_'.date('Y-m-d _ H:i:s'));	
+
+					}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file path="admin/view/template/sale/return_list.tpl">
+		<operation>
+			<search><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo $button_export; ?>" class="btn btn-success"><i class="glyphicon glyphicon-export"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+	
+	
+	
+	<!-- Affliate List -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/marketing/affiliate.php">
+		
+    <operation>
+			<search><![CDATA[$data['button_filter'] = $this->language->get('button_filter');]]></search>
+            <add position="before"><![CDATA[$data['button_export'] = $this->language->get('button_export');
+			$data['export'] = $this->url->link('marketing/affiliate/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search><![CDATA[protected function getList() {]]></search>
+            <add position="before"><![CDATA[public function export() {
+		if (isset($this->request->get['filter_name'])) {
+			$filter_name = $this->request->get['filter_name'];
+		} else {
+			$filter_name = null;
+		}
+
+		if (isset($this->request->get['filter_email'])) {
+			$filter_email = $this->request->get['filter_email'];
+		} else {
+			$filter_email = null;
+		}
+
+		if (isset($this->request->get['filter_status'])) {
+			$filter_status = $this->request->get['filter_status'];
+		} else {
+			$filter_status = null;
+		}
+
+		if (isset($this->request->get['filter_approved'])) {
+			$filter_approved = $this->request->get['filter_approved'];
+		} else {
+			$filter_approved = null;
+		}
+
+		if (isset($this->request->get['filter_date_added'])) {
+			$filter_date_added = $this->request->get['filter_date_added'];
+		} else {
+			$filter_date_added = null;
+		}	
+
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'name'; 
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'ASC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+		
+		$data = array(
+			'filter_name'       => $filter_name, 
+			'filter_email'      => $filter_email, 
+			'filter_status'     => $filter_status, 
+			'filter_approved'   => $filter_approved, 
+			'filter_date_added' => $filter_date_added,
+			'sort'              => $sort,
+			'order'             => $order,
+		//	'start'             => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit'             => $this->config->get('config_admin_limit')
+		);
+		
+		$this->load->model('marketing/affiliate');
+		
+		$results = $this->model_marketing_affiliate->getAffiliates($data);
+		
+		$affiliates = array();
+		
+		foreach ($results as $result) {
+			$affiliates[] = array(
+				'affiliate_id' => $result['affiliate_id'],
+				'name'         => $result['name'],
+				'email'        => $result['email'],
+				'balance'      => $this->currency->format($result['balance'], $this->config->get('config_currency')),
+				'status'       => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled')),
+				'approved'     => ($result['approved'] ? $this->language->get('text_yes') : $this->language->get('text_no')),
+				'date_added'   => date($this->language->get('date_format_short'), strtotime($result['date_added'])),
+				'selected'     => isset($this->request->post['selected']) && in_array($result['affiliate_id'], $this->request->post['selected'])
+			);
+		}	
+				
+				$affiliates_data = array();
+				
+				$affiliates_column=array();
+				
+				$affiliates_column = array('Affliate ID', 'Affliate Name', 'Email', 'Balance', 'Status', 'Approved', 'Date Added');
+					
+				$affiliates_data[0]=   $affiliates_column;   
+				
+				foreach($affiliates as $affiliates_row)
+				{
+					$affiliates_data[]=   $affiliates_row;            
+				}     
+				require_once(DIR_SYSTEM . 'library/excel_xml.php');
+				$xls = new Excel_XML('UTF-8', false, 'Affliates List');
+				
+				$xls->addArray($affiliates_data);
+				
+				$xls->generateXML('affliate_list_'.date('Y-m-d _ H:i:s'));	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file path="admin/view/template/marketing/affiliate_list.tpl">
+		<operation>
+			<search><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo $button_export; ?>" class="btn btn-success"><i class="glyphicon glyphicon-export"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+	
+	
+	   
+<!-- Coupon List -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/marketing/coupon.php">
+		
+    <operation>
+			<search><![CDATA[$data['button_add'] = $this->language->get('button_add');]]></search>
+            <add position="before"><![CDATA[$data['button_export'] = $this->language->get('button_export');
+			$data['export'] = $this->url->link('marketing/coupon/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search><![CDATA[protected function getList() {]]></search>
+            <add position="before"><![CDATA[public function export() {
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'name';
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'ASC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+
+		$data['coupons'] = array();
+
+		$data = array(
+			'sort'  => $sort,
+			'order' => $order,
+		//	'start' => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit' => $this->config->get('config_admin_limit')
+		);
+		
+		
+		$this->load->model('marketing/coupon');
+				
+		$coupon_total = $this->model_marketing_coupon->getTotalCoupons();
+
+		$results = $this->model_marketing_coupon->getCoupons($data);
+
+		
+		$coupons = array();
+		
+		foreach ($results as $result) {
+			$coupons[] = array(
+				'coupon_id'  => $result['coupon_id'],
+				'name'       => $result['name'],
+				'code'       => $result['code'],
+				'discount'   => $result['discount'],
+				'date_start' => date($this->language->get('date_format_short'), strtotime($result['date_start'])),
+				'date_end'   => date($this->language->get('date_format_short'), strtotime($result['date_end'])),
+				'status'     => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled'))
+			);
+		}	
+				
+				$coupons_data = array();
+				
+				$coupons_column=array();
+				
+				$coupons_column = array('Coupon ID', 'Coupon Name', 'Coupon Code', 'Discount', 'Start Date', 'End Date', 'Status');
+					
+				$coupons_data[0]=   $coupons_column;   
+				
+				foreach($coupons as $coupons_row)
+				{
+					$coupons_data[]=   $coupons_row;            
+				}     
+				require_once(DIR_SYSTEM . 'library/excel_xml.php');
+				$xls = new Excel_XML('UTF-8', false, 'Coupons List');
+				
+				$xls->addArray($coupons_data);
+				
+				$xls->generateXML('coupons_list_'.date('Y-m-d _ H:i:s'));	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file path="admin/view/template/marketing/coupon_list.tpl">
+		<operation>
+			<search><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo $button_export; ?>" class="btn btn-success"><i class="glyphicon glyphicon-export"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+	
+	
+	    	
+<!-- Gift Voucher List -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/sale/voucher.php">
+		
+    <operation>
+			<search><![CDATA[$data['button_add'] = $this->language->get('button_add');]]></search>
+            <add position="before"><![CDATA[$data['button_export'] = $this->language->get('button_export');
+			$data['export'] = $this->url->link('sale/voucher/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search><![CDATA[protected function getList() {]]></search>
+            <add position="before"><![CDATA[public function export() {
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'v.date_added';
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'DESC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+
+		$data = array(
+			'sort'  => $sort,
+			'order' => $order,
+		//	'start' => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit' => $this->config->get('config_admin_limit')
+		);
+
+		$this->load->model('sale/voucher');
+		
+		$results = $this->model_sale_voucher->getVouchers($data);
+		
+		$vouchers = array();
+		
+		foreach ($results as $result) {
+			$vouchers[] = array(
+				'voucher_id' => $result['voucher_id'],
+				'code'       => $result['code'],
+				'from'       => $result['from_name'],
+				'to'         => $result['to_name'],
+				'theme'      => $result['theme'],
+				'amount'     => $this->currency->format($result['amount'], $this->config->get('config_currency')),
+				'status'     => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled')),
+				'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added']))
+			);
+		}	
+				
+				$vouchers_data = array();
+				
+				$vouchers_column=array();
+				
+				$vouchers_column = array('Voucher ID', 'Voucher Code', 'From', 'To', 'Theme', 'Amount', 'Status', 'Date Added');
+					
+				$vouchers_data[0]=   $vouchers_column;   
+				
+				foreach($vouchers as $vouchers_row)
+				{
+					$vouchers_data[]=   $vouchers_row;            
+				}     
+				require_once(DIR_SYSTEM . 'library/excel_xml.php');
+				$xls = new Excel_XML('UTF-8', false, 'Vouchers List');
+				
+				$xls->addArray($vouchers_data);
+				
+				$xls->generateXML('vouchers_list_'.date('Y-m-d _ H:i:s'));	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file path="admin/view/template/sale/voucher_list.tpl">
+		<operation>
+			<search><![CDATA[<button type="button" id="button-send" data-toggle="tooltip" title="<?php echo $button_send; ?>" class="btn btn-primary"><i class="fa fa-envelope"></i></button>]]></search>
+			<add position="before"><![CDATA[<a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo $button_export; ?>" class="btn btn-success"><i class="glyphicon glyphicon-export"></i></a>]]></add>
+		</operation>
+	</file>
+	
+</modification>

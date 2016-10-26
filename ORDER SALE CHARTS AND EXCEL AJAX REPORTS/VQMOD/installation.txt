@@ -1,0 +1,79 @@
+---------------------------------------------------------------------------------------------
+         Module : Order Sale Charts and Excel Ajax reports (VQMOD)
+---------------------------------------------------------------------------------------------
+
+The Advanced Order Sale Charts and Excel Ajax reports module allows the admin to view Orders & sales of all 
+products & categories ordered by customers and make it display on dashboard using install/uninstall like others modules.
+
+
+[b]This module Main features:[/b]
+	- This module will be displayed at the dashboard based on Order Sale Charts(Customized)
+	- Different types of charts to view the orders & sales
+		- Donut Chart
+		- Pie Chart
+		- Spline Chart
+		- Bar Chart
+
+Allows admin to,
+	- View total no.of various products Ordered by category in Donut Chart view
+	- View the second level of no.of products Ordered by category in Donut Chart view
+		- ex: Desktops -> Mac
+	- View total no.of various products Sold by category in Pie Chart view
+	- View the second level of no.of products Sold by category in Pie Chart view
+		- ex: Components -> Monitors
+	- View Order count and total sales by day, week, month, year in Spline Chart view
+	- View Order product ratio for today, week, month, year in Spline Chart view
+	- View Top 10 selling products and its no.of orders in Bar Chart view
+	- View Top 10 selling products for today, week, month, year in Bar Chart view		
+	- View Reports as a table with AJAX pagination
+	- Filters Ordered products by,
+		- Category based Ajax filters
+		- From Date & To Date based Ajax filters
+		- Status based Ajax filters
+	- Ajax pagination for Reports table
+	- Export datas as CSV format from Reports table
+	- Admin can view total number of orders and total number of products soled in table view
+
+Note : We used c3 js for charts
+	http://c3js.org/examples.html
+
+Installation
+============
+
+1. First You must backup your opencart site/cart
+			
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin panel 
+		 Go to Extensions -> Modules
+		
+		 See the "Order Sale Charts and Excel Ajax reports" Module then Click [install] link to install this Plugin.
+		 
+4. Go to 
+        System -> Users -> User Groups
+		  
+		  Select Top Administrator -> Edit
+		  
+		  Enable the following checkbox
+		  
+		     Access Permission : dashboard/order_bar
+					 dashboard/order_donut
+					 dashboard/sale_pie
+					 dashboard/sale_spline
+					 sale/product_sale
+
+			 
+		     Modify Permission : dashboard/order_bar
+					 dashboard/order_donut
+					 dashboard/sale_pie
+					 dashboard/sale_spline
+					 sale/product_sale
+			 
+		  Then Click the Save button
+			
+5. If you want to View Report table
+		
+		Go to dashboard -> sales -> Product Sale.(This page will be displayed only after installed "Order Sale Charts and Excel Ajax reports" module)
+
+6. For more details demo images given upload->demo folder
+		

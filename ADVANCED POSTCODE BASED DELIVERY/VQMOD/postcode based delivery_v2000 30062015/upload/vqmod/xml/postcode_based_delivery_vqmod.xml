@@ -1,0 +1,418 @@
+<modification>
+	<id>Postcode Based delivery with minimum Purchase Amount VQMOD</id>
+	<version>2.0</version>
+	<vqmver>2.4.1</vqmver>
+	<author>IRSSOFT</author>
+
+<!-- Admin Menu Code -->
+
+<!-- Language File -->
+    <!--
+    <file path="">
+        <operation>
+            <search><![CDATA[]]></search>
+            <add><![CDATA[]]></add>
+        </operation>
+    </file>
+    -->
+
+<!-- Controller --> 
+    <file path="admin/controller/common/menu.php">
+	
+		<operation>
+			<search position="after"><![CDATA[$data['text_zone'] = $this->language->get('text_zone');]]></search>
+			<add><![CDATA[$data['text_postcode'] = $this->language->get('text_postcode');]]></add>
+		</operation> 
+
+		<operation>
+			<search position="after"><![CDATA[$data['zone'] = $this->url->link('localisation/zone', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+			<add><![CDATA[$data['postcode'] = $this->url->link('localisation/postcode', 'token=' . $this->session->data['token'], 'SSL');]]></add>
+		</operation>  
+		
+	</file> 
+<!-- View --> 
+    <file path="admin/view/template/common/menu.tpl">
+	
+		<operation>
+			<search position="before"><![CDATA[<li><a href="<?php echo $zone; ?>"><?php echo $text_zone; ?></a></li>]]></search>
+			<add><![CDATA[<li><a href="<?php echo $postcode; ?>"><?php echo "Postcode"; ?></a></li>]]></add>
+		</operation>         
+ 		
+	</file> 
+	
+	
+<!-- Catalog Validation Code -->
+
+<!-- Controller --> 
+  
+    <file path="catalog/controller/checkout/shipping_address.php">
+		
+		<operation>
+			<search position="before"><![CDATA[public function index() {]]></search>
+			<add><![CDATA[private function getTotal(){
+        
+        // Totals
+		$this->load->model('extension/extension');
+		
+		$total_data = array();					
+		$total = 0;
+		$taxes = $this->cart->getTaxes();
+		
+		// Display prices
+		if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+			$sort_order = array(); 
+			
+			$results = $this->model_extension_extension->getExtensions('total');
+			
+			foreach ($results as $key => $value) {
+				$sort_order[$key] = $this->config->get($value['code'] . '_sort_order');
+			}
+			
+			array_multisort($sort_order, SORT_ASC, $results);
+			
+			foreach ($results as $result) {
+				if ($this->config->get($result['code'] . '_status')) {
+					$this->load->model('total/' . $result['code']);
+		
+					$this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes);
+				}
+				
+				$sort_order = array(); 
+			  
+				foreach ($total_data as $key => $value) {
+					$sort_order[$key] = $value['sort_order'];
+				}
+	
+				array_multisort($sort_order, SORT_ASC, $total_data);			
+			}		
+		}
+		
+		return $total_data;
+        
+    }]]></add>
+		</operation>  
+
+		<operation>
+			<search position="after"><![CDATA[$this->session->data['shipping_address'] = $this->model_account_address->getAddress($this->request->post['address_id']);]]></search>
+			<add><![CDATA[$this->load->model('checkout/postcode');
+
+                    $totalarray=$this->getTotal();
+                    $total=0;
+                    foreach($totalarray as $row_total){
+                        if(isset($row_total['code']) && $row_total['code']=='total'){
+                            $total=$row_total['value'];
+                        }
+                    }
+                    //print_r($totalarray);
+
+                    $postcode_availability=$this->model_checkout_postcode->checkAvailability($this->request->post['postcode']);
+
+                    $postcode_row=$postcode_availability->num_rows;
+                    if(isset($postcode_availability->row['min_shipping'])){
+                        $min_shipping=$postcode_availability->row['min_shipping'];
+                    }
+                    if($postcode_row==0 && !isset($json['error']['warning'])){
+                        $json['error']['warning'] ="Delivery Not Available to Your Existing Location. Please Choose Some other Locations.";
+                    }else if($total<$min_shipping){
+                        $json['error']['warning']="Order sholud be atleast ".$this->currency->format($min_shipping)." for delivery to this location";
+                    }]]></add>
+		</operation>
+
+				<operation>
+			<search position="after" offset="2" ><![CDATA[if ($country_info && $country_info['postcode_required'] && (utf8_strlen(trim($this->request->post['postcode'])) < 2 || utf8_strlen(trim($this->request->post['postcode'])) > 10)) {]]></search>
+			<add><![CDATA[else {  //else start
+                $this->load->model('checkout/postcode');
+                
+                $totalarray=$this->getTotal();
+                //print_r($totalarray);
+                $total=0;
+                foreach($totalarray as $row_total){
+                    if(isset($row_total['code']) && $row_total['code']=='total'){
+                        $total=$row_total['value'];
+                    }
+                }
+                
+                $postcode_availability=$this->model_checkout_postcode->checkAvailability($this->request->post['postcode']);
+                
+                $postcode_row=$postcode_availability->num_rows;
+                             
+                if(isset($postcode_availability->row['min_shipping'])){
+                    $min_shipping=$postcode_availability->row['min_shipping'];
+                }
+                //print_r($postcode_availability);
+				if($postcode_row==0 && !isset($json['error']['postcode'])){
+				    $json['error']['postcode'] ="Delivery Not Available in this Location. Please Enter Some other Location.";
+				}else if($total<$min_shipping){
+				    $json['error']['warning']="Order sholud be atleast ".$this->currency->format($min_shipping)." for delivery to this location";
+				}
+                }]]></add>
+		</operation> 
+</file>
+
+<!-- Guest Shipping -->
+
+	  <file path="catalog/controller/checkout/guest_shipping.php">
+		
+		<operation>
+			<search position="before"><![CDATA[public function index() {]]></search>
+			<add><![CDATA[private function getTotal(){
+        
+        // Totals
+		$this->load->model('extension/extension');
+		
+		$total_data = array();					
+		$total = 0;
+		$taxes = $this->cart->getTaxes();
+		
+		// Display prices
+		if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+			$sort_order = array(); 
+			
+			$results = $this->model_extension_extension->getExtensions('total');
+			
+			foreach ($results as $key => $value) {
+				$sort_order[$key] = $this->config->get($value['code'] . '_sort_order');
+			}
+			
+			array_multisort($sort_order, SORT_ASC, $results);
+			
+			foreach ($results as $result) {
+				if ($this->config->get($result['code'] . '_status')) {
+					$this->load->model('total/' . $result['code']);
+		
+					$this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes);
+				}
+				
+				$sort_order = array(); 
+			  
+				foreach ($total_data as $key => $value) {
+					$sort_order[$key] = $value['sort_order'];
+				}
+	
+				array_multisort($sort_order, SORT_ASC, $total_data);			
+			}		
+		}
+		
+		return $total_data;
+        
+    }]]></add>
+		</operation>  
+		
+		
+		<operation>
+			<search position="after" offset="6"><![CDATA[if (isset($this->session->data['shipping_address']['postcode'])) {]]></search>
+			<add><![CDATA[$this->load->model('checkout/postcode');
+
+                    $totalarray=$this->getTotal();
+                    $total=0;
+                    foreach($totalarray as $row_total){
+                        if(isset($row_total['code']) && $row_total['code']=='total'){
+                            $total=$row_total['value'];
+                        }
+                    }
+                    //print_r($totalarray);
+
+                    if($data['postcode'] != '')
+					{
+					$postcode_availability=$this->model_checkout_postcode->checkAvailability($data['postcode']);
+
+                    $postcode_row=$postcode_availability->num_rows;
+                    if(isset($postcode_availability->row['min_shipping'])){
+                        $min_shipping=$postcode_availability->row['min_shipping'];
+                    }
+                    if($postcode_row==0 && !isset($json['error']['warning'])){
+                        $json['error']['warning'] ="Delivery Not Available to Your Existing Location. Please Choose Some other Locations.";
+                    }else if($total<$min_shipping){
+                        $json['error']['warning']="Order sholud be atleast ".$this->currency->format($min_shipping)." for delivery to this location";
+                    }
+					}]]></add>
+		</operation>  
+		
+		
+				<operation>
+			<search position="after" offset="2" ><![CDATA[if ($country_info && $country_info['postcode_required'] && (utf8_strlen(trim($this->request->post['postcode'])) < 2 || utf8_strlen(trim($this->request->post['postcode'])) > 10)) {]]></search>
+			<add><![CDATA[else {  //else start
+                $this->load->model('checkout/postcode');
+                
+                $totalarray=$this->getTotal();
+                //print_r($totalarray);
+                $total=0;
+                foreach($totalarray as $row_total){
+                    if(isset($row_total['code']) && $row_total['code']=='total'){
+                        $total=$row_total['value'];
+                    }
+                }
+                
+                $postcode_availability=$this->model_checkout_postcode->checkAvailability($this->request->post['postcode']);
+                
+                $postcode_row=$postcode_availability->num_rows;
+                             
+                if(isset($postcode_availability->row['min_shipping'])){
+                    $min_shipping=$postcode_availability->row['min_shipping'];
+                }
+                //print_r($postcode_availability);
+				if($postcode_row==0 && !isset($json['error']['postcode'])){
+				    $json['error']['postcode'] ="Delivery Not Available in this Location. Please Enter Some other Location.";
+				}else if($total<$min_shipping){
+				    $json['error']['warning']="Order sholud be atleast ".$this->currency->format($min_shipping)." for delivery to this location";
+				}
+                }]]></add>
+		</operation>  
+	</file>
+	
+	
+<!-- Guest -->
+
+	  <file path="catalog/controller/checkout/guest.php">
+		
+		<operation>
+			<search position="before" offset="0"><![CDATA[public function index() {]]></search>
+			<add><![CDATA[private function getTotal(){
+        
+        // Totals
+		$this->load->model('extension/extension');
+		
+		$total_data = array();					
+		$total = 0;
+		$taxes = $this->cart->getTaxes();
+		
+		// Display prices
+		if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+			$sort_order = array(); 
+			
+			$results = $this->model_extension_extension->getExtensions('total');
+			
+			foreach ($results as $key => $value) {
+				$sort_order[$key] = $this->config->get($value['code'] . '_sort_order');
+			}
+			
+			array_multisort($sort_order, SORT_ASC, $results);
+			
+			foreach ($results as $result) {
+				if ($this->config->get($result['code'] . '_status')) {
+					$this->load->model('total/' . $result['code']);
+		
+					$this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes);
+				}
+				
+				$sort_order = array(); 
+			  
+				foreach ($total_data as $key => $value) {
+					$sort_order[$key] = $value['sort_order'];
+				}
+	
+				array_multisort($sort_order, SORT_ASC, $total_data);			
+			}		
+		}
+		
+		return $total_data;
+        
+    }]]></add>
+		</operation>  
+		
+		<operation>
+			<search position="after" offset="2" ><![CDATA[if ($country_info && $country_info['postcode_required'] && (utf8_strlen(trim($this->request->post['postcode'])) < 2 || utf8_strlen(trim($this->request->post['postcode'])) > 10)) {]]></search>
+			<add><![CDATA[else {  //else start
+                $this->load->model('checkout/postcode');
+                
+                $totalarray=$this->getTotal();
+                //print_r($totalarray);
+                $total=0;
+                foreach($totalarray as $row_total){
+                    if(isset($row_total['code']) && $row_total['code']=='total'){
+                        $total=$row_total['value'];
+                    }
+                }
+                
+                $postcode_availability=$this->model_checkout_postcode->checkAvailability($this->request->post['postcode']);
+                
+                $postcode_row=$postcode_availability->num_rows;
+                             
+                if(isset($postcode_availability->row['min_shipping'])){
+                    $min_shipping=$postcode_availability->row['min_shipping'];
+                }
+                //print_r($postcode_availability);
+				if(isset($this->request->post['shipping_address'])){
+				if($postcode_row==0 && !isset($json['error']['postcode'])){
+				    $json['error']['postcode'] ="Delivery Not Available in this Location. Please Enter Some other Location.";
+				}else if($total<$min_shipping){
+				    $json['error']['warning']="Order sholud be atleast ".$this->currency->format($min_shipping)." for delivery to this location";
+				}
+				}
+                }]]></add>
+		</operation>  
+	</file>
+
+<!-- To display widget permanently in product description page -->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search position="after" offset="1"><![CDATA[<button type="button" id="button-cart" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary btn-lg btn-block"><?php echo $button_cart; ?></button>]]></search>
+            <add><![CDATA[<div>
+        <div class="box" >
+                <span style="font-size:20px;" class="glyphicon glyphicon-map-marker"><?php echo "Check Availability"; ?></span>
+                <table>
+                <tr>
+                    <td><input type='text' name="postcode" id="postcodetest-product" placeholder="<?php echo 'Type Your Postcode'; ?>" class="form-control"/></td>
+                    <td class="postcodesearch_input_td"><input type="button" value="search" id="postcodesearch-product" class="btn btn-primary"/></td>
+                </tr>
+                </table>
+                <b><span id="postcoderesult-product"></span></b>
+        </div>
+    </div>]]></add>
+        </operation>
+
+        <operation>
+            <search position="before"><![CDATA[$('button[id^=\'button-upload\']').on('click', function() {]]></search>
+            <add><![CDATA[$("#postcodesearch-product").click(function(){
+        $("#postcoderesult-product").html('');
+        $postcode=$("#postcodetest-product").val();
+
+        if($postcode != '')
+        {
+            $.ajax({
+                url: 'index.php?route=module/postcode/searchpostcode',
+                type: "post",
+                dataType:'json',
+                data: {postcode:$postcode},
+                success: function($data){
+                    $("#postcoderesult-product").html($data);
+                },
+                error:function(){
+                    //   $("#postcoderesult-product").html();
+                }
+            });
+        }
+        else
+        {
+            $("#postcoderesult-product").html('<div class="warning">Enter Your Postcode</div>');
+            return false;
+        }
+
+    });]]></add>
+        </operation>
+
+        <operation>
+            <search position="before"><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[<style>
+    #postcoderesult-product .warning{
+        color : red !important;
+        font-size: 15px !important;
+    }
+    #postcoderesult-product .success{
+        color : green !important;
+        font-size: 15px !important;
+    }
+    .postcodesearch_input_td{
+        text-align : center !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+        padding-left: 50px !important;
+    }
+</style>]]></add>
+        </operation>
+
+
+
+    </file>
+
+</modification>

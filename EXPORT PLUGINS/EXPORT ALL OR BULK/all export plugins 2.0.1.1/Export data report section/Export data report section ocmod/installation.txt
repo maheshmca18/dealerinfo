@@ -1,0 +1,7 @@
+==========================================
+Installation
+==========================================
+
+1. Upload irs_export_report_data.ocmod file on your root folder via Extension installer.
+
+2.Click refresh in top corner of modifications .

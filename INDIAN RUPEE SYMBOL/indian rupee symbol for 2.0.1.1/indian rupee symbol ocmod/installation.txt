@@ -1,0 +1,19 @@
+==========================================
+Installation
+==========================================
+
+1. Upload the "irsgroup" to your root folder. (No file are replaced, all files are new)
+Done.
+
+2. Install ocmod file in your root folder via Extension Installer
+
+3. Go to Modification and click refresh button at the right top corner
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1001 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+
+	<id>Import Category and Product data</id>
+	<version>2.0</version>
+	<vqmver>2.4.1</vqmver>
+	<author>IRSSOFT</author>
+	 
+<!-- Language -->
+
+	<file path="admin/language/english/english.php">
+		<operation>
+			<search position="after"><![CDATA[$_['button_approve']                = 'Approve';]]></search>
+			<add><![CDATA[$_['button_import']                = 'Import';]]></add>
+		</operation>
+	</file>
+	
+
+<!-- Category -->    
+<!-- Controller --> 
+  
+    <file path="admin/controller/catalog/category.php">
+	<operation>
+			<search position="before"><![CDATA[$data['button_add'] = $this->language->get('button_add');]]></search>
+            <add><![CDATA[$data['button_import'] = $this->language->get('button_import');
+			$data['import'] = $this->url->link('catalog/category/import', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>  
+	
+		<operation>
+			<search position="before"><![CDATA[public function add() {]]></search>
+			<add><![CDATA[
+	public function import() {
+	
+		$excel_field_error = 0;
+		$_SESSION['categorylist']=array();
+	
+		$this->language->load('catalog/category');
+		
+		$this->load->model('catalog/category');
+		
+		$data['heading_title'] = "Import Category Data";
+
+		$data['entry_import'] = $this->language->get('Upload CSV File');
+		
+		$data['entry_insertonly'] = $this->language->get('Insert Only');	
+				
+		$data['action'] = $this->url->link('catalog/category/import', 'token=' . $this->session->data['token'], 'SSL');
+		
+		$data['importdataurl'] = $this->url->link('catalog/category/importcategories', 'token=' . $this->session->data['token'], 'SSL');
+		
+		$data['sampleexport'] = $this->url->link('catalog/category/categoriessampleexport', 'token=' . $this->session->data['token'], 'SSL');
+		
+		$data['sample_export'] = $this->language->get('Sample Csv File');
+		
+  		$data['breadcrumbs'] = array();
+
+   		$data['breadcrumbs'][] = array(
+       		'text'      => $this->language->get('text_home'),
+			'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),  		
+   		);
+
+   		$data['breadcrumbs'][] = array(
+       		'text'      => $this->language->get('heading_title'),
+			'href'      => $this->url->link('catalog/category', 'token=' . $this->session->data['token'], 'SSL'),
+   		);
+		
+		if(isset($_POST['submit']))
+		{
+				$insertonly=0;
+					
+				if(isset($_POST['insertonly']) && $_POST['insertonly']==1)
+				$insertonly=1;
+				
+				
+				if($this->validateImport())
+				{  // import form validate start
+				 if ((isset($this->request->files['file'])) && (is_uploaded_file($this->request->files['file']['tmp_name'])))
+				 { //file upload start
+				 
+							@set_time_limit(3600);
+						if (substr(@ini_get("memory_limit"), 0, -1) < "512") {
+									@ini_set("memory_limit", "512M");
+								}
+						ini_set("memory_limit", "512M");
+						ini_set("max_execution_time", 180);
+						ini_set('display_errors', 1);
+						ini_set('log_errors', 1);
+						error_reporting(E_ALL);
+						//set_time_limit( 60 );
+						
+						$filename = $this->request->files['file']['tmp_name'];
+
+						//chdir('../system/library/PHPExcel'); // change directory to PHPExcel library
+						//require_once( 'Classes/PHPExcel.php' );
+						//chdir('../../../admin');
+						require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+						$inputFileType = PHPExcel_IOFactory::identify($filename);
+						$objReader = PHPExcel_IOFactory::createReader($inputFileType);
+						//$objReader->setReadDataOnly(true);
+						$reader = $objReader->load($filename);
+						$reader = &$reader;						
+					//			$this->clearCache();
+					
+						$xldata = $reader->getSheet(0);
+						
+						$isFirstRow = TRUE;
+						
+						$i = 0;
+						
+						$k = $xldata->getHighestRow();
+						
+						$columns = PHPExcel_Cell::columnIndexFromString($xldata->getHighestColumn());
+
+						$category_list_data = array();
+
+						if($columns == 7)
+						{
+						
+						$customer_list_array=array();
+						for ($i = 0; $i < $k; $i++) {  // Excel row loop start
+							//Skip the header row
+							if ($isFirstRow) {
+								$isFirstRow = FALSE;
+								continue;
+							}			
+							
+							// Collect Detail
+							$categoryname = trim($this->getCell($xldata, $i, 1));
+
+							$description = $this->getCell($xldata, $i, 2);
+							
+							//parent category
+							$parentcategoryname = trim($this->getCell($xldata, $i, 3));	 							
+							$parentcategory = $this->model_catalog_category->getCategoryId($parentcategoryname);
+							
+							$meta_title = $this->getCell($xldata, $i, 4);
+							$meta_keyword = $this->getCell($xldata, $i, 5);
+							$meta_description = $this->getCell($xldata, $i, 6);
+
+							$status = ($this->getCell($xldata, $i, 7));
+							$status = ($status == "Enabled")?1:0;
+							
+							$category_array = array();
+							
+							$custom_language_id=is_numeric($this->config->get('config_language_id'))?$this->config->get('config_language_id'):1;
+														
+						    $category_description[$custom_language_id]['name'] = $categoryname;
+						    $category_description[$custom_language_id]['description'] = $description;
+							
+							$category_array['category_description'] = $category_description;
+							
+							
+							$category_array['parent_id'] = $parentcategory;
+							$category_array['parent'] = $parentcategoryname;
+							$category_array['category_store'] = array(0);
+							$category_array['column'] = 0;
+							$category_array['sort_order'] = 1;
+
+
+							 $category_array['meta_title'] = $meta_title;
+							
+							$category_array['meta_description'] = $meta_description;
+							$category_array['meta_keyword'] = $meta_keyword;
+							
+							$category_array['status'] = $status;
+							
+							$category_list_data[]=$category_array;
+							
+						
+						} // Excel row loop end
+					}
+						else
+						{
+							$excel_field_error = 1;
+						}
+								
+						//chdir('../../..');	// change directory to site
+						
+						} //file upload end
+						
+						if(!$excel_field_error)
+						{
+							$data['sampletabledata']=$category_list_data;
+
+							$_SESSION['categorylist'] = $category_list_data;
+						}
+												
+			} // import form validate end
+		
+		}
+		
+		if (isset($this->error['warning'])) {
+			$data['error_warning'] = $this->error['warning'];
+		} else {
+			$data['error_warning'] = '';
+		}
+		
+		if (isset($this->error['errorfile'])) {
+			$data['error_file'] = $this->error['errorfile'];
+		} else {
+			$data['error_file'] = '';
+		}
+		
+		if($excel_field_error)
+			{
+			$data['error_fields'] = 'Upload like our Sample Excel File';			
+			}
+		else
+			{
+			$data['error_fields'] = '';			
+			}
+			
+		$this->load->model('design/layout');
+		$data['layouts']= $this->model_design_layout->getLayouts();
+		
+		$data['header'] = $this->load->controller('common/header');
+		$data['column_left'] = $this->load->controller('common/column_left');
+		$data['footer'] = $this->load->controller('common/footer');
+		
+		$this->response->setOutput($this->load->view('catalog/category_import.tpl',$data));
+		
+		
+	}
+	
+	public function importcategories()
+	{
+	
+		$this->load->model('catalog/category');
+		
+	if(isset($_SESSION['categorylist']) && is_array($_SESSION['categorylist']))
+	{
+	
+						foreach($_SESSION['categorylist'] as $categorydata)
+                        {
+						    foreach($categorydata['category_description'] as $langkey => $langval) {
+                                $categoryexist = $this->model_catalog_category->getCategoryId($langval['name'],$categorydata['parent_id']);
+                                if($categoryexist != 0)
+                                {
+                                $category_id = $categoryexist;
+                                $this->model_catalog_category->editCategory($category_id,$categorydata);
+                                }
+                                else
+                                {
+                                $this->model_catalog_category->addCategory($categorydata);
+                                }
+                            } // eo foreach2
+						} // eo foreach1
+					
+			unset($_SESSION['categorylist']);
+			$url = '';			
+			$this->response->redirect($this->url->link('catalog/category', 'token=' . $this->session->data['token'] . $url, 'SSL'));	
+	
+	}
+	
+	}
+	
+	
+    function getCell(&$worksheet, $row, $col, $default_val = '') {
+        $col -= 1; // we use 1-based, PHPExcel uses 0-based column index
+        $row += 1; // we use 0-based, PHPExcel used 1-based row index
+        return ($worksheet->cellExistsByColumnAndRow($col, $row)) ? $worksheet->getCellByColumnAndRow($col, $row)->getValue() : $default_val;
+    }
+	
+	
+	public function categoriessampleexport()
+	{
+		/* Include PHPExcel class */
+		//chdir('../system/library/PHPExcel');
+		//require_once( 'Classes/PHPExcel.php' );
+		//chdir('../../../admin');
+		require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+		
+		// Instantiate a new PHPExcel object
+		$objPHPExcel = new PHPExcel(); 
+		// Set the active Excel worksheet to sheet 0
+		$objPHPExcel->setActiveSheetIndex(0); 
+		// Initialise the Excel row number
+		$rowCount = 1; 
+		
+		/* Add Heading Row */ 
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Category Name'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Category Description');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Parent Category');   		
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Status');
+			
+			
+			
+		/* Add data Rows */		
+      /*  $rowCount = 2;
+		
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Sample Category'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Sample category by IRS');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'None');   		
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Enabled'); */
+			
+		// Redirect output to a client’s web browser (Excel5) 
+		//header('Content-Type: application/vnd.ms-excel'); 
+		header("Content-Type: text/csv; charset=utf-8");
+		header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.csv"'); 
+		//header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.xlsx"'); 
+		header('Cache-Control: max-age=0'); 
+		
+		
+		
+		$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'CSV');
+			
+		// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+	//	$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+		// Write the Excel file to filename some_excel_file.xlsx in the current directory
+		//$objWriter->save('some_excel_file.xlsx'); 
+		
+		/* Download CsV file in downloads */
+		$objWriter->save('php://output'); 
+					
+        //chdir('../../..');
+	}
+	protected function validateImport() {
+		if (!$this->user->hasPermission('modify', 'sale/customer')) {
+				$this->error['warning'] = $this->language->get('error_permission');
+		}
+		
+		if (!$this->request->files['file']['tmp_name']) {
+				$this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+		}
+		elseif($_FILES["file"]["name"])
+		{
+			$allowedExts = array("csv", "xlsx", "xls");
+			$temp = explode(".", $_FILES["file"]["name"]);
+			$extension = end($temp);
+			
+			if(!in_array($extension, $allowedExts))
+				$this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');	
+		}
+		
+		return !$this->error;
+	}
+	]]></add>
+		</operation>  
+        
+	</file>
+	
+<!-- Category Model -->
+
+	<file path="admin/model/catalog/category.php">
+		<operation>
+			<search position="before"><![CDATA[public function getCategory($category_id) {]]></search>
+			<add><![CDATA[public function getCategoryId($category,$parentid=0) {
+			
+		if($parentid==0){
+		$query = $this->db->query("SELECT category_id FROM " . DB_PREFIX . "category_description WHERE name LIKE '".$category."'");
+		}else{$query = $this->db->query("SELECT cd.category_id,cp.parent_id FROM " . DB_PREFIX . "category_description AS cd LEFT JOIN " . DB_PREFIX . "category AS cp ON cd.category_id=cp.category_id WHERE cd.name LIKE '".$category."' AND cp.parent_id='".$parentid."'");
+		}
+		if($query->row)
+		{
+			return $query->row['category_id'];
+		}
+		else
+		{
+			return 0;		
+		}	
+	} 
+	]]></add>
+		</operation>
+	</file>
+	
+<!-- Category View -->
+
+	<file path="admin/view/template/catalog/category_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a> <a href="<?php echo $repair; ?>" data-toggle="tooltip" title="<?php echo $button_rebuild; ?>" class="btn btn-default"><i class="fa fa-refresh"></i></a>]]></search>
+			<add><![CDATA[<div class="pull-right"><a href="<?php echo $import; ?>" data-toggle="tooltip" title="<?php echo $button_import; ?>" class="btn btn-success"><i class="glyphicon glyphicon-import"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a> <a href="<?php echo $repair; ?>" data-toggle="tooltip" title="<?php echo $button_rebuild; ?>" class="btn btn-default"><i class="fa fa-refresh"></i></a>]]></add>
+		</operation>
+	</file>
+		
+		
+	
+<!-- product -->    
+<!-- Controller --> 
+  
+    <file path="admin/controller/catalog/product.php">
+	<operation>
+			<search position="before"><![CDATA[$data['button_add'] = $this->language->get('button_add');]]></search>
+            <add><![CDATA[$data['button_import'] = $this->language->get('button_import');
+			$data['import'] = $this->url->link('catalog/product/import', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>  
+	
+		<operation>
+			<search position="before"><![CDATA[public function add() {]]></search>
+			<add><![CDATA[public function import() {
+		
+		$excel_field_error = 0;
+		$_SESSION['productlist']=array();
+	
+		$this->load->language('catalog/product');
+		
+		$this->load->model('catalog/product');
+		$this->load->model('catalog/category');
+		$this->load->model('catalog/manufacturer');
+		$this->load->model('localisation/stock_status');
+		$this->load->model('localisation/length_class');
+		$this->load->model('localisation/weight_class');
+		$this->load->model('localisation/tax_class');
+		$this->load->model('tool/image');
+		
+		$data['heading_title'] = "Import Product Data";
+		
+		
+
+		$data['entry_import'] = $this->language->get('Upload CSV File');
+		
+		$data['entry_insertonly'] = $this->language->get('Insert Only');	
+				
+		$data['action'] = $this->url->link('catalog/product/import', 'token=' . $this->session->data['token'], 'SSL');
+		
+		$data['importdataurl'] = $this->url->link('catalog/product/importproducts', 'token=' . $this->session->data['token'], 'SSL');
+		
+		
+		$data['sampleexport'] = $this->url->link('catalog/product/productsampleexport', 'token=' . $this->session->data['token'], 'SSL');
+		$data['sample_export'] = $this->language->get('Sample Csv File');
+		
+  		$data['breadcrumbs'] = array();
+
+   		$data['breadcrumbs'][] = array(
+       		'text'      => $this->language->get('text_home'),
+			'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),  		
+      		'separator' => false
+   		);
+
+   		$data['breadcrumbs'][] = array(
+       		'text'      => $this->language->get('heading_title'),
+			'href'      => $this->url->link('catalog/product', 'token=' . $this->session->data['token'], 'SSL'),
+      		'separator' => ' :: '
+   		);
+		
+		
+		if(isset($_POST['submit']))
+		{		
+				$insertonly=0;
+				
+				if(isset($_POST['insertonly']) && $_POST['insertonly']==1)
+				$insertonly=1;
+				
+				
+				if($this->validateImport())
+				{  // import form validate start
+				
+				 if ((isset($this->request->files['file'])) && (is_uploaded_file($this->request->files['file']['tmp_name']))) 
+				 { //file upload start
+				 
+							@set_time_limit(3600);
+						if (substr(@ini_get("memory_limit"), 0, -1) < "512") {
+									@ini_set("memory_limit", "512M");
+								}
+						ini_set("memory_limit", "512M");
+						ini_set("max_execution_time", 180);
+						ini_set('display_errors', 1);
+						ini_set('log_errors', 1);
+						error_reporting(E_ALL);
+						//set_time_limit( 60 );
+						
+						$filename = $this->request->files['file']['tmp_name'];
+
+						//chdir('../system/library/PHPExcel'); // change directory to PHPExcel library
+						//require_once( 'Classes/PHPExcel.php' );
+						//chdir('../../../admin');
+
+						require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+						$inputFileType = PHPExcel_IOFactory::identify($filename);
+						$objReader = PHPExcel_IOFactory::createReader($inputFileType);
+						//$objReader->setReadDataOnly(true);
+						$reader = $objReader->load($filename);
+						$reader = &$reader;						
+					//			$this->clearCache();
+					
+						$xldata = $reader->getSheet(0);
+						
+						$isFirstRow = TRUE;
+						
+						$i = 0;
+						
+						$k = $xldata->getHighestRow();
+						
+						$columns = PHPExcel_Cell::columnIndexFromString($xldata->getHighestColumn());
+
+						$product_list_data = array();
+						
+						
+					
+						if($columns == 35)
+						{
+						
+						$customer_list_array=array();
+						for ($i = 0; $i < $k; $i++) {  // Excel row loop start
+							//Skip the header row
+							if ($isFirstRow) {
+								$isFirstRow = FALSE;
+								continue;
+							}			
+							
+							$product_categories=array();				
+							
+							// Collect Detail
+							$productname = trim($this->getCell($xldata, $i, 1));
+							$model = trim($this->getCell($xldata, $i, 2));
+							$description = $this->getCell($xldata, $i, 3);
+							
+							//parent category
+							$categorynames = $this->getCell($xldata, $i, 4);	
+							$categorynamesloop = explode(',',$categorynames);
+							foreach($categorynamesloop as $categoryname) {
+							$product_categories[] = $this->model_catalog_category->getCategoryId(trim($categoryname));
+
+							}
+							
+							$sku = $this->getCell($xldata, $i, 5);
+							$upc = $this->getCell($xldata, $i, 6);
+							$ean = $this->getCell($xldata, $i, 7);
+							$jan = $this->getCell($xldata, $i, 8);
+							$isbn = $this->getCell($xldata, $i, 9);
+							$mpn = $this->getCell($xldata, $i, 10);
+							
+							$location = $this->getCell($xldata, $i, 11);
+							$quantity = $this->getCell($xldata, $i, 12);
+							$minimum = $this->getCell($xldata, $i, 13);
+							$subtract = trim($this->getCell($xldata, $i, 14));
+							$subtract = ($subtract == "Yes")?1:0;;
+							
+							//Stock Status
+							$stock_status = trim($this->getCell($xldata, $i, 15));
+							$stock_status_id = $this->model_localisation_stock_status->getStockStatusId($stock_status);
+							
+							$date_available = $this->getCell($xldata, $i, 16);
+							
+							//Maufacturer
+							$manufacturer = trim($this->getCell($xldata, $i, 17));
+							$manufacturer_id = $this->model_catalog_manufacturer->getManufacturerId($manufacturer);
+							
+							$shipping = $this->getCell($xldata, $i, 18);
+							$shipping = ($shipping == "Yes")?1:0;;
+							$price = $this->getCell($xldata, $i, 19);
+							$weight = $this->getCell($xldata, $i, 20);							
+							
+							$weight_class = trim($this->getCell($xldata, $i, 21));
+							$weight_class_id = $this->model_localisation_weight_class->getWeightClassId($weight_class);
+							
+							$length = $this->getCell($xldata, $i, 22);
+							$width = $this->getCell($xldata, $i, 23);
+							$height = $this->getCell($xldata, $i, 24);
+							
+							$length_class = trim($this->getCell($xldata, $i, 25));
+							$length_class_id = $this->model_localisation_length_class->getLengthClassId($length_class);
+							
+							$tax_class = $this->getCell($xldata, $i, 26);
+							$tax_class_id = $this->model_localisation_tax_class->getTaxClassId($tax_class);
+							
+							$sort_order = $this->getCell($xldata, $i, 27);
+							$meta_title = $this->getCell($xldata, $i, 28);
+							$meta_keyword = $this->getCell($xldata, $i, 29);
+							$meta_description = $this->getCell($xldata, $i, 30);
+							
+							$tag = $this->getCell($xldata, $i, 31);
+							$keyword = $this->getCell($xldata, $i, 32);	
+							
+							//Images
+							$product_images = array();
+							$mainimage = $this->getCell($xldata, $i, 33);							
+							$additionalimages = $this->getCell($xldata, $i, 34);
+							
+							
+							if ($mainimage && file_exists(DIR_IMAGE . $mainimage)) {
+								$thumbimage = $this->model_tool_image->resize($mainimage, 40, 40);
+							} else {
+								$thumbimage = $this->model_tool_image->resize('no_image.jpg', 40, 40);
+							}
+							
+							
+							if($additionalimages != '')
+							{
+							$sort_order_loop=1;							
+							$additionalimagesloop = explode(',',$additionalimages);
+							
+							foreach($additionalimagesloop as $additionalimage) {
+							$product_images[$sort_order_loop]['image'] = $additionalimage;
+							$product_images[$sort_order_loop]['sort_order'] = 0;
+							$sort_order_loop +=1;
+							}
+							}
+							
+							$status = trim($this->getCell($xldata, $i, 35));
+							$status = ($status == "Enabled")?1:0;
+							
+							$product_array = array();
+							
+							$custom_language_id=is_numeric($this->config->get('config_language_id'))?$this->config->get('config_language_id'):1;
+							
+							//loop name and description by language
+						    $product_description[$custom_language_id]['name'] = $productname;
+						    $product_description[$custom_language_id]['description'] = $description;
+						    $product_description[$custom_language_id]['meta_title'] = $meta_title;
+							$product_description[$custom_language_id]['meta_keyword'] = $meta_keyword;
+							$product_description[$custom_language_id]['meta_description'] = $meta_description;
+							$product_description[$custom_language_id]['tag'] = $tag;
+							
+							$product_array['product_description'] = $product_description;
+							
+							// loop categories
+							$product_array['product_category'] = $product_categories;
+							
+							$product_array['thumbimage'] = $thumbimage;
+							$product_array['product_image'] = $product_images;
+							$product_array['image'] = $mainimage;
+							
+							
+							$product_array['categorynames'] = $categorynames;
+							
+							$product_array['product_store'] = array(0);
+							
+							$product_array['model'] = $model;
+							$product_array['sku'] = $sku;
+							$product_array['upc'] = $upc;
+							$product_array['ean'] = $ean;
+							$product_array['jan'] = $jan;
+							$product_array['isbn'] = $isbn;
+							$product_array['mpn'] = $mpn;
+							
+							$product_array['location'] = $location;
+							$product_array['quantity'] = $quantity;
+							$product_array['minimum'] = $minimum;
+							$product_array['subtract'] = $subtract;
+							$product_array['points'] = 0;
+							
+							$product_array['stock_status_id'] = $stock_status_id;
+							
+							$product_array['date_available'] = $date_available;
+							$product_array['manufacturer_id'] = $manufacturer_id;
+							
+							$product_array['shipping'] = $shipping;
+							$product_array['price'] = $price;
+							
+							$product_array['weight'] = $weight;
+							$product_array['weight_class_id'] = $weight_class_id;
+							$product_array['length'] = $length;
+							$product_array['width'] = $width;
+							$product_array['height'] = $height;							
+							$product_array['length_class_id'] = $length_class_id;
+							
+							$product_array['tax_class_id'] = $tax_class_id;
+							$product_array['sort_order'] = $sort_order;
+							
+							
+							$product_array['keyword'] = $keyword;
+														
+							$product_array['status'] = $status;
+						
+							$product_list_data[]=$product_array;
+						
+						} // Excel row loop end
+							
+						}
+						else
+						{
+							$excel_field_error = 1;
+						}
+
+								
+						//chdir('../../..');	// change directory to site
+						
+						} //file upload end		
+						
+						
+						if(!$excel_field_error)
+						{
+
+
+							$data['sampletabledata']=$product_list_data;
+							
+							$_SESSION['productlist'] = $product_list_data;
+						}
+
+				} // import form validate end		
+		
+		}
+		
+		if (isset($this->error['warning'])) {
+			$data['error_warning'] = $this->error['warning'];
+		} else {
+			$data['error_warning'] = '';
+		}
+		
+		if (isset($this->error['errorfile'])) {
+			$data['error_file'] = $this->error['errorfile'];
+		} else {
+			$data['error_file'] = '';
+		}
+		
+		if($excel_field_error)
+			{
+			$data['error_fields'] = 'Upload like our Sample Excel File';			
+			}
+		else
+			{
+			$data['error_fields'] = '';			
+			}
+		
+		
+		
+		$this->load->model('design/layout');
+		$data['layouts']=$this->model_design_layout->getLayouts();
+		
+		$data['header']=$this->load->controller('common/header');
+		$data['footer']=$this->load->controller('common/footer');
+		$data['column_left']=$this->load->controller('common/column_left');
+
+		
+		$this->response->setOutput($this->load->view('catalog/product_import.tpl',$data));
+		
+	}
+	
+	public function importproducts()
+	{
+		$this->load->model('catalog/product');
+		
+	if(isset($_SESSION['productlist']) && is_array($_SESSION['productlist']))
+	{
+						foreach($_SESSION['productlist'] as $productdata)
+						{
+                            foreach($productdata['product_description'] as $langkey => $langval)
+                            {
+                                $productexist = $this->model_catalog_product->getProductId($langval['name'],$productdata['product_category']['0']);
+                                if($productexist != 0)
+                                {
+                                $product_id = $productexist;
+                                $this->model_catalog_product->editProduct($product_id,$productdata);
+                                }
+                                else
+                                {
+                                $this->model_catalog_product->addProduct($productdata);
+                                }
+                            } // foreach2
+                        } // foreach1
+					
+			unset($_SESSION['productlist']);
+			$url = '';			
+			$this->response->redirect($this->url->link('catalog/product', 'token=' . $this->session->data['token'] . $url, 'SSL'));	
+	
+	}
+	
+	
+	}
+	
+	
+    function getCell(&$worksheet, $row, $col, $default_val = '') {
+        $col -= 1; // we use 1-based, PHPExcel uses 0-based column index
+        $row += 1; // we use 0-based, PHPExcel used 1-based row index
+        return ($worksheet->cellExistsByColumnAndRow($col, $row)) ? $worksheet->getCellByColumnAndRow($col, $row)->getValue() : $default_val;
+    }
+	
+	
+	public function productsampleexport()
+	{
+		/* Include PHPExcel class */
+		//chdir('../system/library/PHPExcel');
+		//require_once( 'Classes/PHPExcel.php' );
+		//chdir('../../../admin');
+
+		require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+		
+		// Instantiate a new PHPExcel object
+		$objPHPExcel = new PHPExcel(); 
+		// Set the active Excel worksheet to sheet 0
+		$objPHPExcel->setActiveSheetIndex(0); 
+		// Initialise the Excel row number
+		$rowCount = 1; 
+		
+		/* Add Heading Row */ 
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Product Name'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Model'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Product Description'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Categories');   
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, 'SKU'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, 'UPC'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, 'EAN');      
+			$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, 'JAN'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, 'ISBN'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, 'MPN');   
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, 'Location'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, 'Quantity'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, 'Minimum');   
+			$objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, 'Subtract');      
+			$objPHPExcel->getActiveSheet()->SetCellValue('O'.$rowCount, 'Stock Status'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('P'.$rowCount, 'Date Available'); 
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('Q'.$rowCount, 'Manufacturer');  
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('R'.$rowCount, 'Shipping'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('S'.$rowCount, 'Price'); 
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('T'.$rowCount, 'Weight');      
+			$objPHPExcel->getActiveSheet()->SetCellValue('U'.$rowCount, 'Weight Class'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('V'.$rowCount, 'Length');       
+			$objPHPExcel->getActiveSheet()->SetCellValue('W'.$rowCount, 'Width');       
+			$objPHPExcel->getActiveSheet()->SetCellValue('X'.$rowCount, 'Height');      
+			$objPHPExcel->getActiveSheet()->SetCellValue('Y'.$rowCount, 'Length Class'); 
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('Z'.$rowCount, 'Tax Class'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('AA'.$rowCount, 'Sort Order');
+
+            $objPHPExcel->getActiveSheet()->SetCellValue('AB'.$rowCount, 'Meta Title');
+			$objPHPExcel->getActiveSheet()->SetCellValue('AC'.$rowCount, 'Meta Key');
+			$objPHPExcel->getActiveSheet()->SetCellValue('AD'.$rowCount, 'Meta Description');
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('AE'.$rowCount, 'Tag');
+			$objPHPExcel->getActiveSheet()->SetCellValue('AF'.$rowCount, 'Keyword');
+			//Images
+			$objPHPExcel->getActiveSheet()->SetCellValue('AG'.$rowCount, 'Image');
+			$objPHPExcel->getActiveSheet()->SetCellValue('AH'.$rowCount, 'Additional Images');
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('AI'.$rowCount, 'Status');
+			
+		/* Add data Rows */		
+    //  $rowCount = 2;
+
+
+		
+		/*	$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Sample '); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Model1'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Sample Product by IRS');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Category names');   		
+			$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, 'Enabled'); 
+	*/		
+		// Redirect output to a client’s web browser (Excel5) 
+		//header('Content-Type: application/vnd.ms-excel'); 
+		header("Content-Type: text/csv; charset=utf-8");
+		header('Content-Disposition: attachment;filename="product_list_'.date("Y m d G i s").'.csv"'); 
+		//header('Content-Disposition: attachment;filename="category_list_'.date("Y m d G i s").'.xlsx"'); 
+		header('Cache-Control: max-age=0'); 
+			
+		// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+		//$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+		$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'CSV');
+		// Write the Excel file to filename some_excel_file.xlsx in the current directory
+		//$objWriter->save('some_excel_file.xlsx'); 
+		
+		/* Download CsV file in downloads */
+		$objWriter->save('php://output'); 
+					
+//        chdir('../../..');
+	}
+	protected function validateImport() {
+		if (!$this->user->hasPermission('modify', 'sale/customer')) {
+				$this->error['warning'] = $this->language->get('error_permission');
+		}
+		
+		if (!$this->request->files['file']['tmp_name']) {
+				$this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+		}
+		elseif($_FILES["file"]["name"])
+		{
+			$allowedExts = array("csv", "xlsx", "xls");
+			$temp = explode(".", $_FILES["file"]["name"]);
+			$extension = end($temp);
+			
+			if(!in_array($extension, $allowedExts))
+				$this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');	
+		}
+		
+		if (!$this->error) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	]]></add>
+		</operation>  
+        
+	</file>
+	
+	
+	
+	
+	
+   
+<!-- Product Model -->
+
+	<file path="admin/model/catalog/product.php">
+		<operation>
+			<search position="before"><![CDATA[public function getProduct($product_id) {]]></search>
+			<add><![CDATA[public function getProductId($product,$categoryid) {
+			
+		/*$query = $this->db->query("SELECT product_id FROM " . DB_PREFIX . "product_description WHERE name LIKE '".$product."' OR categorynames");*/
+
+$query = $this->db->query("SELECT pd.product_id,pc.category_id FROM " . DB_PREFIX . "product_description AS pd 
+LEFT JOIN " . DB_PREFIX . "product_to_category AS pc ON pd.product_id = pc.product_id WHERE pd.name LIKE '".$product."' AND  pc.category_id='".$categoryid."'");
+
+		if($query->row)
+		{
+			return $query->row['product_id'];
+		}
+		else
+		{
+			return 0;		
+		}	
+	} 
+	]]></add>
+		</operation>
+	</file>
+	
+<!-- Product View -->
+
+	<file path="admin/view/template/catalog/product_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add><![CDATA[<div class="pull-right"><a href="<?php echo $import; ?>" data-toggle="tooltip" title="<?php echo $button_import; ?>" class="btn btn-success"><i class="glyphicon glyphicon-import"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+
+<!-- Stock Status Model -->
+
+	<file path="admin/model/localisation/stock_status.php">
+		<operation>
+			<search position="before"><![CDATA[public function getStockStatus($stock_status_id) {]]></search>
+			<add><![CDATA[public function getStockStatusId($stock_status) {
+		$query = $this->db->query("SELECT stock_status_id FROM " . DB_PREFIX . "stock_status WHERE name LIKE '" . $stock_status . "' AND language_id = '" . (int)$this->config->get('config_language_id') . "'");
+		if($query->row)
+		return $query->row['stock_status_id'];
+		else
+		return 0;
+	}]]></add>
+		</operation>
+	</file>
+	
+<!-- Manufacturer Model -->
+
+	<file path="admin/model/catalog/manufacturer.php">
+		<operation>
+			<search position="before"><![CDATA[public function getManufacturer($manufacturer_id) {]]></search>
+			<add><![CDATA[public function getManufacturerId($manufacturer) {
+		$query = $this->db->query("SELECT manufacturer_id FROM " . DB_PREFIX . "manufacturer WHERE name LIKE '" . $manufacturer . "'");
+		if($query->row)
+		return $query->row['manufacturer_id'];
+		else
+		return 0;
+	}]]></add>
+		</operation>
+	</file>
+	
+		
+<!-- Weight Class Model -->
+
+	<file path="admin/model/localisation/weight_class.php">
+		<operation>
+			<search position="before"><![CDATA[public function getWeightClass($weight_class_id) {]]></search>
+			<add><![CDATA[public function getWeightClassId($weight_class) {
+		$query = $this->db->query("SELECT weight_class_id FROM " . DB_PREFIX . "weight_class_description wcd WHERE wcd.title LIKE '" . $weight_class . "' AND wcd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+		if($query->row)
+		return $query->row['weight_class_id'];
+		else
+		return 0;
+	}]]></add>
+		</operation>
+	</file>
+	
+		
+<!-- Length Class Model -->
+
+	<file path="admin/model/localisation/length_class.php">
+		<operation>
+			<search position="before"><![CDATA[public function getLengthClass($length_class_id) {]]></search>
+			<add><![CDATA[public function getLengthClassId($length_class) {
+		$query = $this->db->query("SELECT length_class_id FROM " . DB_PREFIX . "length_class_description lcd WHERE lcd.title  LIKE '" . $length_class . "' AND lcd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+		if($query->row)
+		return $query->row['length_class_id'];
+		else
+		return 0;
+	}]]></add>
+		</operation>
+	</file>
+		
+<!-- TAX Class Model -->
+
+	<file path="admin/model/localisation/tax_class.php">
+		<operation>
+			<search position="before"><![CDATA[public function getTaxClass($tax_class_id) {]]></search>
+			<add><![CDATA[public function getTaxClassId($tax_class) {
+		$query = $this->db->query("SELECT tax_class_id FROM " . DB_PREFIX . "tax_class WHERE title LIKE '" . $tax_class . "'");
+		if($query->row)
+		return $query->row['tax_class_id'];
+		else
+		return 0;
+	}]]></add>
+		</operation>
+	</file>		
+		
+		
+		
+		 
+</modification>

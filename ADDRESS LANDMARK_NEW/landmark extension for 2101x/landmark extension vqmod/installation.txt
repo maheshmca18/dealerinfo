@@ -1,0 +1,47 @@
+---------------------------------------------------------------------------------------------
+         Module : Address Landmark  
+--------------------------------------------------------------------------------------------
+
+The Address Landmark module has added new field in form.
+
+The landmark field has display on following forms:
+	- Customer registeration,
+	- Billing Address,
+	- Delivery Address.
+
+This module have install/uninstall like others modules.
+
+
+=================================================================================================
+Installation
+=================================================================================================
+
+1. First You must backup your opencart site/cart and also database. Because add a new files and alter two tables.
+
+The altered database tables are:
+-----------------------------------------
+TABLE        :     NEW FIELDs
+-----------------------------------------
+             
+address	     :  landmark 
+             
+order        : payment_landmark 
+               shipping_landmark 
+
+-----------------------------------------
+
+			
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin panel 
+		Extensions -> Modules
+		
+		 See the "Landmark" Module then Click [install] link to install this Plugin.	 
+
+4. Reload Your opencart site.
+
+5. Now see your site's following forms "landmark" field:
+
+		- Customer Registeration form
+		- Billing Details form
+		- Delivery Details form

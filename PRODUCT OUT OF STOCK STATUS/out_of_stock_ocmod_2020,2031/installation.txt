@@ -1,0 +1,21 @@
+---------------------------------------------------------
+          Out Of Stock Status for Product
+---------------------------------------------------------
+
+Description :
+The extension shows "Out Of Stock" label when the product's status is out of stock or quantity is 0.
+
+Requirements
+OpenCart 2
+
+---------------------------------------------------------------
+           Installation Steps
+---------------------------------------------------------------
+1. Login into your administrator dashboard.
+2. Extract our extension's zip file.
+3. Go to Extensions->Extension installer.
+4. Upload the outofstockstatusforproductv2.ocmod.xml file to install the extension.
+5. If installed correctly, you should see a success message.
+6. Go to Extensions->Modifications. You should see the “Product - Out Of Stock Status” in the
+list. Click the “refresh” button at the top right corner.
+7.Reload Your opencart site.

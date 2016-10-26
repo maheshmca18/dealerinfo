@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+	<name><![CDATA[Import Customer Data]]></name>
+	<code><![CDATA[importcustomerdata]]></code>	
+	<version><![CDATA[2.0]]></version>
+	<author><![CDATA[IRSSOFT]]></author> 
+	<link><![CDATA[http://www.irssoft.com/]]></link>
+	 
+<!-- Language -->
+
+	<file path="admin/language/english/english.php">
+		<operation>
+			<search><![CDATA[$_['button_approve']                = 'Approve';]]></search>
+			<add position="after"><![CDATA[$_['button_import']                = 'Import';]]></add>
+		</operation>
+	</file>
+	
+	
+<!-- Customer -->    
+<!-- Controller --> 
+  
+    <file path="admin/controller/sale/customer.php">
+	<operation>
+			<search><![CDATA[$data['button_add'] = $this->language->get('button_add');]]></search>
+            <add position="before"><![CDATA[$data['button_import'] = $this->language->get('button_import');
+			$data['import'] = $this->url->link('sale/customer/import', 'token=' . $this->session->data['token'] . $url, 'SSL');
+			
+			]]></add>
+		</operation>  
+	
+		<operation>
+			<search><![CDATA[public function add() {]]></search>
+			<add position="before"><![CDATA[
+	public function import() {
+		
+		$excel_field_error = 0;
+		$_SESSION['customerslist']=array();
+	
+		$this->language->load('sale/customer');
+		
+		$this->load->model('sale/customer');
+		$this->load->model('sale/customer_group');
+		$this->load->model('localisation/country');
+		$this->load->model('localisation/zone');
+		
+		$data['heading_title'] = "Import Customer Data";
+		$data['sample_import']=$this->language->get('Sample CSV File');
+
+		$data['entry_import'] = $this->language->get('Upload Excel File');
+		
+		$data['entry_insertonly'] = $this->language->get('Insert Only');	
+				
+		$data['action'] = $this->url->link('sale/customer/import', 'token=' . $this->session->data['token'], 'SSL');
+		
+		$data['importdataurl'] = $this->url->link('sale/customer/importcustomers', 'token=' . $this->session->data['token'], 'SSL');
+		
+		
+		$data['sampleexport'] = $this->url->link('sale/customer/customersampleexport', 'token=' . $this->session->data['token'], 'SSL');
+		
+		
+  		$data['breadcrumbs'] = array();
+
+   		$data['breadcrumbs'][] = array(
+       		'text'      => $this->language->get('text_home'),
+			'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),  		
+      		'separator' => false
+   		);
+
+   		$data['breadcrumbs'][] = array(
+       		'text'      => $this->language->get('heading_title'),
+			'href'      => $this->url->link('sale/customer', 'token=' . $this->session->data['token'], 'SSL'),
+      		'separator' => ' :: '
+   		);
+		
+		if(isset($_POST['submit']))
+		{		
+				$insertonly=0;
+				
+				if(isset($_POST['insertonly']) && $_POST['insertonly']==1)
+				$insertonly=1;
+				
+				
+				if($this->validateImport())
+				{  // import form validate start
+				
+				 if ((isset($this->request->files['file'])) && (is_uploaded_file($this->request->files['file']['tmp_name']))) 
+				 { //file upload start
+				 
+						@set_time_limit(3600);
+						if (substr(@ini_get("memory_limit"), 0, -1) < "512") {
+								@ini_set("memory_limit", "512M");
+						}
+						ini_set("memory_limit", "512M");
+						ini_set("max_execution_time", 180);
+						ini_set('display_errors', 1);
+						ini_set('log_errors', 1);
+						error_reporting(E_ALL);
+						//set_time_limit( 60 );
+						
+						$filename = $this->request->files['file']['tmp_name'];
+						
+						//chdir('../system/library/PHPExcel'); // change directory to PHPExcel library
+						//require_once( 'Classes/PHPExcel.php' );
+						//chdir('../../../admin');
+						require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+						$inputFileType = PHPExcel_IOFactory::identify($filename);
+						$objReader = PHPExcel_IOFactory::createReader($inputFileType);
+						//$objReader->setReadDataOnly(true);
+						$reader = $objReader->load($filename);
+						$reader = &$reader;						
+					//			$this->clearCache();
+					
+						$xldata = $reader->getSheet(0);
+						
+						$isFirstRow = TRUE;
+						
+						$i = 0;
+						
+						$k = $xldata->getHighestRow();						
+						
+						$columns = PHPExcel_Cell::columnIndexFromString($xldata->getHighestColumn());
+			
+						$customer_list_data = array();
+					
+						if($columns == 18)
+						{
+						
+						$customer_list_array=array();
+						for ($i = 0; $i < $k; $i++) {  // Excel row loop start
+							//Skip the header row
+							if ($isFirstRow) {
+								$isFirstRow = FALSE;
+								continue;
+							}			
+
+							
+							// Collect Detail
+							$firstname = $this->getCell($xldata, $i, 1);
+							$lastname = $this->getCell($xldata, $i, 2);		   
+							$email = $this->getCell($xldata, $i, 3);
+							$password = $this->getCell($xldata, $i, 4);
+							$telephone = $this->getCell($xldata, $i, 5);
+							$fax = $this->getCell($xldata, $i, 6);
+							$newsletter = $this->getCell($xldata, $i, 7);
+							$newsletter=($newsletter=="Enabled")?1:0;
+							
+							//get customer group id by customer group name
+							$customer_group = $this->getCell($xldata, $i, 8);								
+							$customer_group_id =$this->model_sale_customer_group->getCustomerGroupIdByName($customer_group);
+																				
+							$status = $this->getCell($xldata, $i, 9);
+							$status=($status=="Enabled")?1:0;
+							$company = $this->getCell($xldata, $i, 10);
+							$company_id = $this->getCell($xldata, $i, 11);
+							$tax_id = $this->getCell($xldata, $i, 12);
+							$address1 = $this->getCell($xldata, $i, 13);
+							$address2 = $this->getCell($xldata, $i, 14);	   
+							$city = $this->getCell($xldata, $i, 15);
+							$postcode = $this->getCell($xldata, $i, 16);
+							
+							
+							//get country id by country name
+							$country = $this->getCell($xldata, $i, 17);								
+							$country_id = $this->model_localisation_country->getCountryIdByName($country);
+							
+							//get zone id by zone/state name
+							$zone = $this->getCell($xldata, $i, 18);
+							$zone_id = $this->model_localisation_zone->getZoneIdByName($zone);
+							
+							$customer_array = array();
+							//Customer Info
+						    $customer_array['firstname'] = $firstname;
+							$customer_array['lastname'] = $lastname;
+							$customer_array['email'] = $email;
+							$customer_array['telephone'] = $telephone;		
+							$customer_array['fax'] = $fax;
+							$customer_array['newsletter'] = $newsletter;
+							$customer_array['customer_group_id'] = $customer_group_id;	
+							$customer_array['customer_group'] = $customer_group;			
+							$customer_array['password'] = $password;			
+							$customer_array['status'] = $status;
+							
+							//Address
+						    $customer_address['firstname'] = $firstname;
+							$customer_address['lastname'] = $lastname;
+							$customer_address['company'] = $company;			
+							$customer_address['company_id'] = $company_id;	
+							$customer_address['tax_id'] = $tax_id;
+							$customer_address['address_1'] = $address1;
+							$customer_address['address_2'] = $address2;	
+							$customer_address['city'] = $city;
+							$customer_address['postcode'] = $postcode;
+							$customer_address['country_id'] = $country_id;			
+							$customer_address['zone_id'] = $zone_id;
+							
+							//Address Default
+							$customer_address['default'] = 1;	
+							
+							$customer_array['address'][0] = $customer_address;
+							
+							$customer_list_data[]=$customer_array;
+						
+						} // Excel row loop end
+						}
+						else
+						{
+							$excel_field_error = 1;
+						}
+								
+						//chdir('../../..');	// change directory to site
+						
+						} //file upload end		
+						
+						if(!$excel_field_error)
+						{
+							$data['sampletabledata']=$customer_list_data;
+							
+							$_SESSION['customerslist'] = $customer_list_data;
+						}
+						
+
+				} // import form validate end		
+		
+		}
+		
+		if (isset($this->error['warning'])) {
+			$data['error_warning'] = $this->error['warning'];
+		} else {
+			$data['error_warning'] = '';
+		}
+		
+		if (isset($this->error['errorfile'])) {
+			$data['error_file'] = $this->error['errorfile'];
+		} else {
+			$data['error_file'] = '';
+		}
+		
+		if($excel_field_error)
+			{
+			$data['error_fields'] = 'Upload like our Sample Excel File';			
+			}
+		else
+			{
+			$data['error_fields'] = '';			
+			}
+		
+		$data['header']=$this->load->controller('common/header');
+		$data['column_left']=$this->load->controller('common/column_left');
+		$data['footer']=$this->load->controller('common/footer');
+		
+		$this->response->setOutput($this->load->view('sale/customer_import.tpl',$data));
+		
+	}
+	
+	public function importcustomers()
+	{
+	
+		$this->load->model('sale/customer');
+		
+	if(isset($_SESSION['customerslist']) && is_array($_SESSION['customerslist']))
+	{
+	
+						foreach($_SESSION['customerslist'] as $customerdata)
+						{
+						
+							$customerexist = $this->model_sale_customer->getCustomerIdByEmail($customerdata['email']);
+							
+							if($customerexist != 0)
+							{	
+							
+							$customer_id = $customerexist['customer_id'];	
+							
+							$customerdata['address'][0]['address_id'] = $customerexist['address_id'];
+									
+							$this->model_sale_customer->editCustomer($customer_id,$customerdata);
+							
+							}
+							else
+							{
+							
+							$this->model_sale_customer->addCustomer($customerdata);
+						
+							}
+													
+						}
+					
+			unset($_SESSION['customerslist']);
+			$url = '';			
+			$this->response->redirect($this->url->link('sale/customer', 'token=' . $this->session->data['token'] . $url, 'SSL'));	
+	
+	}
+	
+	}
+	
+	
+    function getCell(&$worksheet, $row, $col, $default_val = '') {
+        $col -= 1; // we use 1-based, PHPExcel uses 0-based column index
+        $row += 1; // we use 0-based, PHPExcel used 1-based row index
+        return ($worksheet->cellExistsByColumnAndRow($col, $row)) ? $worksheet->getCellByColumnAndRow($col, $row)->getValue() : $default_val;
+    }
+	
+	
+	public function customersampleexport()
+	{
+		/* Include PHPExcel class */
+		//chdir('../system/library/PHPExcel');
+		//require_once( 'Classes/PHPExcel.php' );
+		//chdir('../../../admin');
+		require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+		
+		// Instantiate a new PHPExcel object
+		$objPHPExcel = new PHPExcel(); 
+		// Set the active Excel worksheet to sheet 0
+		$objPHPExcel->setActiveSheetIndex(0); 
+		// Initialise the Excel row number
+		$rowCount = 1; 
+		
+		/* Add Heading Row */ 
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'First Name'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Last Name');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Email');   		
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Password'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, 'Telephone');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, 'FAX'); 	
+			$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, 'Newsletter');
+			
+			//Customer Group
+			$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, 'Customer Group'); 
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, 'Status'); 
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, 'Company'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, 'Company ID'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, 'TAX ID'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, 'Address 1'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, 'Address 2'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('O'.$rowCount, 'City'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('P'.$rowCount, 'Postcode'); 
+			
+			//$objPHPExcel->getActiveSheet()->SetCellValue('Q'.$rowCount, 'Country ID');
+			$objPHPExcel->getActiveSheet()->SetCellValue('Q'.$rowCount, 'Country');  
+			
+			//$objPHPExcel->getActiveSheet()->SetCellValue('R'.$rowCount, 'Zone ID');
+			$objPHPExcel->getActiveSheet()->SetCellValue('R'.$rowCount, 'Zone');
+			
+			
+			
+		/* Add data Rows */		
+        $rowCount = 2;
+		
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'customername1'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'irs');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'irs@gmail.com');   		
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'xxx'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, '0987654321');  
+			$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, '0987654321'); 	
+			$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, 'Enabled');
+			
+			//Customer Group
+			$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, 'Default'); 
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, 'Enabled'); 
+			
+			$objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, 'IRS Soft'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, '111'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, '123456'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, 'address 1'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, 'address 2'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('O'.$rowCount, 'Chennai'); 
+			$objPHPExcel->getActiveSheet()->SetCellValue('P'.$rowCount, '600001'); 
+			
+			//$objPHPExcel->getActiveSheet()->SetCellValue('Q'.$rowCount, 'Country ID');
+			$objPHPExcel->getActiveSheet()->SetCellValue('Q'.$rowCount, 'India');  
+			
+			//$objPHPExcel->getActiveSheet()->SetCellValue('R'.$rowCount, 'Zone ID');
+			$objPHPExcel->getActiveSheet()->SetCellValue('R'.$rowCount, 'Tamil Nadu');
+			
+			
+			
+		// Redirect output to a client’s web browser (Excel5) 
+		header('Content-Type: application/vnd.ms-excel'); 
+		header('Content-Disposition: attachment;filename="customer_list_'.date("Y m d G i s").'.csv"'); 
+		//header('Content-Disposition: attachment;filename="customer_list_'.date("Y m d G i s").'.xlsx"'); 
+		header('Cache-Control: max-age=0'); 
+			
+		// Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+		$objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel); 
+		// Write the Excel file to filename some_excel_file.xlsx in the current directory
+		//$objWriter->save('some_excel_file.xlsx'); 
+		
+		/* Download CsV file in downloads */
+		$objWriter->save('php://output'); 
+					
+        //chdir('../../..');
+	}
+	protected function validateImport() {
+		if (!$this->user->hasPermission('modify', 'sale/customer')) {
+				$this->error['warning'] = $this->language->get('error_permission');
+		}
+		
+		if (!$this->request->files['file']['tmp_name']) {
+				$this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+		}
+		elseif($_FILES["file"]["name"])
+		{
+			$allowedExts = array("csv", "xlsx", "xls");
+			$temp = explode(".", $_FILES["file"]["name"]);
+			$extension = end($temp);
+			
+			if(!in_array($extension, $allowedExts))
+			$this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');	
+			
+		}
+		
+		return !$this->error;
+	}
+	]]></add>
+		</operation>  
+        
+	</file>
+   
+<!-- Model -->
+
+	<file path="admin/model/sale/customer.php">
+	
+		<operation>
+			<search><![CDATA[public function getCustomers($data = array()) {]]></search>
+			<add position="before"><![CDATA[public function getCustomerIdByEmail($email)
+						{
+						$query = $this->db->query("SELECT customer_id,address_id FROM " . DB_PREFIX . "customer WHERE LCASE(email) LIKE '".$this->db->escape(utf8_strtolower($email))."'");
+									if($query->row)
+									return $query->row;
+									else
+									return 0;
+						}
+						
+						public function getDefaultAddress($customer_id) {
+							$address_data = array();
+
+							$query = $this->db->query("SELECT address_id FROM " . DB_PREFIX . "address WHERE customer_id = '" . (int)$customer_id . "'");
+
+							foreach ($query->rows as $result) {
+								$address_info = $this->getAddress($result['address_id']);
+
+								if ($address_info) {
+									$address_data[$result['address_id']] = $address_info;
+								}
+							}		
+
+							return $address_data;
+						}
+		]]></add>
+		</operation>	
+		
+	</file>  
+	
+<!-- Customer View -->
+
+	<file path="admin/view/template/sale/customer_list.tpl">
+		<operation>
+			<search><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $import; ?>" data-toggle="tooltip" title="<?php echo $button_import; ?>" class="btn btn-success"><i class="fa fa-file"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+		
+		
+		<!-- Country Model -->
+	<file path="admin/model/localisation/country.php">
+	
+		<operation>
+			<search><![CDATA[public function getCountry($country_id) {]]></search>
+			<add position="before"><![CDATA[public function getCountryIdByName($country) {				
+				$query = $this->db->query("SELECT country_id FROM " . DB_PREFIX . "country WHERE name LIKE '".$country."'");
+				if($query->row)
+				return $query->row['country_id'];
+				else
+				return 0;
+			}]]></add>
+		</operation>	
+		
+	</file>   
+		
+		
+		<!-- Zone Model -->
+	<file path="admin/model/localisation/zone.php">
+	
+		<operation>
+			<search><![CDATA[public function getZone($zone_id) {]]></search>
+			<add position="before"><![CDATA[public function getZoneIdByName($zone) {	
+			
+				$query = $this->db->query("SELECT zone_id FROM " . DB_PREFIX . "zone WHERE name LIKE '".$zone."'");
+				if($query->row)
+				return $query->row['zone_id'];
+				else
+				return 0;
+			}]]></add>
+		</operation>	
+		
+	</file>   
+		
+		
+		<!-- Customer Group Model -->
+	<file path="admin/model/sale/customer_group.php">
+	
+		<operation>
+			<search><![CDATA[public function getCustomerGroup($customer_group_id) {]]></search>
+			<add position="before"><![CDATA[public function getCustomerGroupIdByName($customer_group) {
+			$query = $this->db->query("SELECT customer_group_id FROM " . DB_PREFIX . "customer_group_description WHERE name  like '" . $customer_group . "'");
+			
+			if($query->row)
+			return $query->row['customer_group_id'];
+			else
+			return 0;
+			}
+	]]></add>
+		</operation>	
+		
+	</file>   
+		 
+</modification>

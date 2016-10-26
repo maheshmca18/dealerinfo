@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+	<name><![CDATA[Testimonial Menu]]></name>
+	<code><![CDATA[irsterminalmenu]]></code>
+	<version><![CDATA[2.0]]></version>
+	<author><![CDATA[IRSSOFT]]></author>
+	<link><![CDATA[http://www.irssoft.com/]]></link>
+	<!-- Making changes in admin menu -->
+	<file path="admin/view/template/common/menu.tpl">
+		<operation>
+			<search>
+				<![CDATA[<li><a href="<?php echo $weight_class; ?>"><?php echo $text_weight_class; ?></a></li>]]>
+			</search>
+			<add position="after">
+				<![CDATA[<li><a href="<?php echo $testimonial; ?>"><?php echo $text_testimonial_class; ?></a></li>]]>
+			</add>
+		</operation>
+	</file>	
+	
+	<file path="admin/controller/common/menu.php">
+		<operation>
+			<search>
+				<![CDATA[$data['text_weight_class'] = $this->language->get('text_weight_class');]]>
+			</search>
+			<add position="after">
+				<![CDATA[$data['text_testimonial_class'] = $this->language->get('Testimonial');]]>
+			</add>
+		</operation>		
+	
+		<operation>
+			<search>
+				<![CDATA[$data['weight_class'] = $this->url->link('localisation/weight_class', 'token=' . $this->session->data['token'], 'SSL');]]>
+			</search>
+			<add position="after">
+				<![CDATA[$data['testimonial'] = $this->url->link('localisation/testimonial', 'token=' . $this->session->data['token'], 'SSL');]]>
+			</add>
+		</operation>		
+	</file>
+	
+</modification>	
+
+

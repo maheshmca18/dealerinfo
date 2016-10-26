@@ -1,0 +1,126 @@
+
+/* pagination */
+.numbers{
+        width:auto; height:25px; 
+        margin:2px; padding:5px;  
+        float:right; 
+        cursor:pointer; 
+        border-radius:500px; 
+        font-weight:bold; 
+    }
+.numbers .links {
+    	float: left;
+        margin-left: 10px;
+    }
+.numbers .links a {
+    	display: inline-block;
+    	padding: 4px 10px;
+    	text-decoration: none;
+    }
+.numbers .links a:hover {
+        font-weight:bold;
+    }
+.numbers .links b {
+    	display: inline-block;
+    	padding: 4px 10px;
+    	font-weight: normal;
+    	text-decoration: none;
+    }
+.numbers .results {
+    	float: right;
+    	padding-top: 3px;
+        margin-right: 10px;
+        padding-left: 5px;
+    }
+/* Testimonial loop content */
+.testimonials-loop{
+        font-family:Arial, Helvetica, sans-serif; 
+        font-size:12px; 
+        margin:20px; 
+        padding-top:10px; 
+        border-bottom:1px solid #333; 
+        border-bottom-style:dotted;
+    }
+.name{
+        font-family:Arial, Helvetica, sans-serif; 
+        font-size:14px; 
+        font-weight:bold; 
+        padding-bottom:5px;
+    }
+.time{
+        font-family:Arial, Helvetica, sans-serif; 
+        font-size:14px; 
+        font-weight:bold; 
+        padding-bottom:5px; 
+        float:right;
+    }
+.testimonials{
+        font-family:Arial, Helvetica, sans-serif; 
+        font-size:12px;
+        padding-left:10px; 
+        line-height:28px; 
+}
+/* Add Testimonial form */
+#content-about {
+        font-family:Tahoma;
+        font-size:12px; 
+        color:#000; 
+        padding:15px; 
+        text-align:center;
+        margin-left: 15%;
+        width:70%;
+    }
+ 
+#content-about h3{
+        width:100%;
+    
+    }
+.testimonial-form{
+        text-align:center; 
+        width:100%;
+    }
+
+.testimonial-label{
+        width:30%;  
+        padding-top:6px; 
+        padding-right:5%;
+        float:left;   
+        font-weight:bold;
+    }
+
+.testimonial-field{
+        width:60%;  
+        float:left; 
+        padding-right:5%;
+        display : inline-block;
+    }
+.testimonial-field input, .testimonial-field textarea {
+        width:100%;
+    }
+    
+span.error{
+        display: inline-block;
+        margin-top:5px;
+        margin-bottom:5px;
+    }
+.buttonsubmit{
+        width:30%; 
+        height:40px;  
+        float:left; 
+        margin-left:20%; 
+        text-align:left;
+        margin-top: 10px;
+}
+.buttonreset{
+        width:30%; 
+        height:40px;  
+        float:left; 
+        margin-left:0%; 
+        text-align:left; 
+        margin-top: 10px;
+}
+.testimonial-form-button {
+        cursor:pointer;
+        border-radius: 2em;
+        width:60%;
+    }

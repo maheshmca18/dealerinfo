@@ -1,0 +1,15 @@
+==========================================
+Installation
+==========================================
+1. First You must backup your opencart site/shop.
+
+2. Upload the "system" & "admin" to your root folder. (No file are replaced, all files are new)
+Done.
+
+3. Upload irs_import_customer_data.ocmod.xml file via Extension installer.
+
+4. Click refresh on the top corner of Modifications. 
+
+
+
+

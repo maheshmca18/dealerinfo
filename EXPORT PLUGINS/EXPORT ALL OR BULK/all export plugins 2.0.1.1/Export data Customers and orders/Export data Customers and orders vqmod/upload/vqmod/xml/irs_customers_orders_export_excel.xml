@@ -1,0 +1,655 @@
+
+<modification>
+
+	<id>Export customer list and order list</id>
+	<version>2.0</version>
+	<vqmver>2.4.1</vqmver>
+	<author>IRSSOFT</author>
+	
+	<!-- Language -->
+
+	<file path="admin/language/english/default.php">
+		<operation>
+			<search position="after"><![CDATA[$_['button_approve']                = 'Approve';]]></search>
+			<add><![CDATA[$_['button_export']                = 'Export';]]></add>
+		</operation>
+	</file>
+    
+<!-- Controller --> 
+  
+    <file path="admin/controller/sale/customer.php">
+		<operation>
+			<search position="before"><![CDATA[$data['add'] = $this->url->link('sale/customer/add', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></search>
+			<add><![CDATA[$data['export'] = $this->url->link('sale/customer/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>
+	
+        	<operation>
+			<search position="before"><![CDATA[$data['button_approve'] = $this->language->get('button_approve');]]></search>
+            <add><![CDATA[$data['button_export'] = $this->language->get('button_export');]]></add>
+		</operation>
+        
+        
+        	<operation>
+			<search position="before"><![CDATA[public function address() {]]></search>
+            <add><![CDATA[ public function export($getarr='') {
+        
+       	if (isset($this->request->get['filter_name'])) {
+
+			$filter_name = $this->request->get['filter_name'];
+
+		} else {
+
+			$filter_name = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_email'])) {
+
+			$filter_email = $this->request->get['filter_email'];
+
+		} else {
+
+			$filter_email = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_customer_group_id'])) {
+
+			$filter_customer_group_id = $this->request->get['filter_customer_group_id'];
+
+		} else {
+
+			$filter_customer_group_id = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_status'])) {
+
+			$filter_status = $this->request->get['filter_status'];
+
+		} else {
+
+			$filter_status = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_approved'])) {
+
+			$filter_approved = $this->request->get['filter_approved'];
+
+		} else {
+
+			$filter_approved = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_ip'])) {
+
+			$filter_ip = $this->request->get['filter_ip'];
+
+		} else {
+
+			$filter_ip = null;
+
+		}
+
+				
+
+		if (isset($this->request->get['filter_date_added'])) {
+
+			$filter_date_added = $this->request->get['filter_date_added'];
+
+		} else {
+
+			$filter_date_added = null;
+
+		}		
+
+		
+
+		if (isset($this->request->get['sort'])) {
+
+			$sort = $this->request->get['sort'];
+
+		} else {
+
+			$sort = 'name'; 
+
+		}
+
+		
+
+		if (isset($this->request->get['order'])) {
+
+			$order = $this->request->get['order'];
+
+		} else {
+
+			$order = 'ASC';
+
+		}
+
+		
+
+		if (isset($this->request->get['page'])) {
+
+			$page = $this->request->get['page'];
+
+		} else {
+
+			$page = 1;
+
+		}
+        
+        	$data = array(
+
+			'filter_name'              => $filter_name, 
+
+			'filter_email'             => $filter_email, 
+
+			'filter_customer_group_id' => $filter_customer_group_id, 
+
+			'filter_status'            => $filter_status, 
+
+			'filter_approved'          => $filter_approved, 
+
+			'filter_date_added'        => $filter_date_added,
+
+			'filter_ip'                => $filter_ip,
+
+			'sort'                     => $sort,
+
+			'order'                    => $order,
+
+		);
+        
+        $customers = array();
+        
+        $customers_column=array();
+        
+        $this->load->model('sale/customer');
+        
+        $customers_column = array('Customer ID', 'Customer Name', 'Email', 'Telephone', 'Address', 'City', 'Post Code', 'Country', 'IP', 'Status', 'Approved', 'Date Added', 'Customer Group');
+            
+        $customers[0] = $customers_column;  
+        
+        $customers_list = $this->model_sale_customer->getCustomerstoexport($data);
+        
+        foreach($customers_list as $customer_row)
+        {
+            $customers[]=$customer_row;
+        }
+        require_once(DIR_SYSTEM . 'library/excel_xml.php');
+        $xls = new Excel_XML('UTF-8', false, 'Customers List');
+        $xls->addArray($customers);
+        $xls->generateXML('customerlist_'.date('Y-m-d _ H:i:s'));
+	}]]></add>
+		</operation>
+        
+        
+        
+        
+	</file>
+    
+<!-- Model -->
+
+	<file path="admin/model/sale/customer.php">
+		<operation>
+			<search position="before"><![CDATA[public function getCustomers($data = array()) {]]></search>
+			<add><![CDATA[public function getCustomerstoexport($data = array()) {
+    	 
+$sql = "SELECT c.customer_id, CONCAT(c.firstname, ' ', c.lastname) AS name, c.email, c.telephone, CONCAT(oca.address_1,oca.address_2) AS address, oca.city, oca.postcode, occ.name as Country, c.ip, IF( c.status = 1, 'Enabled', 'Disabled' ) AS status, IF( c.approved = 1, 'Yes', 'No' ) AS approved, c.date_added, cgd.name AS customer_group FROM " . DB_PREFIX . "customer c LEFT JOIN " . DB_PREFIX . "customer_group_description cgd ON (c.customer_group_id = cgd.customer_group_id) LEFT JOIN " . DB_PREFIX . "address oca ON (c.address_id=oca.address_id) LEFT JOIN " . DB_PREFIX . "country occ ON (oca.country_id=occ.country_id) WHERE cgd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+
+		$implode = array();
+		
+		if (!empty($data['filter_name'])) {
+			$implode[] = "CONCAT(c.firstname, ' ', c.lastname) LIKE '%" . $this->db->escape($data['filter_name']) . "%'";
+		}
+		
+		if (!empty($data['filter_email'])) {
+			$implode[] = "c.email LIKE '" . $this->db->escape($data['filter_email']) . "%'";
+		}
+
+		if (isset($data['filter_newsletter']) && !is_null($data['filter_newsletter'])) {
+			$implode[] = "c.newsletter = '" . (int)$data['filter_newsletter'] . "'";
+		}	
+				
+		if (!empty($data['filter_customer_group_id'])) {
+			$implode[] = "c.customer_group_id = '" . (int)$data['filter_customer_group_id'] . "'";
+		}	
+			
+		if (!empty($data['filter_ip'])) {
+			$implode[] = "c.customer_id IN (SELECT customer_id FROM " . DB_PREFIX . "customer_ip WHERE ip = '" . $this->db->escape($data['filter_ip']) . "')";
+		}	
+				
+		if (isset($data['filter_status']) && !is_null($data['filter_status'])) {
+			$implode[] = "c.status = '" . (int)$data['filter_status'] . "'";
+		}	
+		
+		if (isset($data['filter_approved']) && !is_null($data['filter_approved'])) {
+			$implode[] = "c.approved = '" . (int)$data['filter_approved'] . "'";
+		}	
+				
+		if (!empty($data['filter_date_added'])) {
+			$implode[] = "DATE(c.date_added) = DATE('" . $this->db->escape($data['filter_date_added']) . "')";
+		}
+		
+		if ($implode) {
+			$sql .= " AND " . implode(" AND ", $implode);
+		}
+		
+		$sort_data = array(
+			'name',
+			'c.email',
+			'customer_group',
+			'c.status',
+			'c.approved',
+			'c.ip',
+			'c.date_added'
+		);	
+			
+		if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
+			$sql .= " ORDER BY " . $data['sort'];	
+		} else {
+			$sql .= " ORDER BY name";	
+		}
+			
+		if (isset($data['order']) && ($data['order'] == 'DESC')) {
+			$sql .= " DESC";
+		} else {
+			$sql .= " ASC";
+		}
+		
+		if (isset($data['start']) || isset($data['limit'])) {
+			if ($data['start'] < 0) {
+				$data['start'] = 0;
+			}			
+
+			if ($data['limit'] < 1) {
+				$data['limit'] = 20;
+			}	
+			
+			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+		}		
+
+		$query = $this->db->query($sql);
+        
+		return $query->rows;	
+	}]]></add>
+		</operation>
+	</file>
+
+<!-- View -->
+
+	<file path="admin/view/template/sale/customer_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<div class="pull-right"><a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add><![CDATA[<div class="pull-right"><a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo "Export"; ?>" class="btn btn-success"><i class="glyphicon glyphicon-export"></i></a> <a href="<?php echo $add; ?>" data-toggle="tooltip" title="<?php echo $button_add; ?>" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></add>
+		</operation>
+	</file>
+    
+    
+<!-- Order list -->  
+    <!-- Controller --> 
+  
+    <file path="admin/controller/sale/order.php">
+		<operation>
+			<search position="before"><![CDATA[$data['invoice'] = $this->url->link('sale/order/invoice', 'token=' . $this->session->data['token'], 'SSL');]]></search>
+			<add><![CDATA[$data['export'] = $this->url->link('sale/order/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>
+        
+        	<operation>
+			<search position="before"><![CDATA[$data['button_invoice_print'] = $this->language->get('button_invoice_print');]]></search>
+            <add><![CDATA[$data['button_export'] = $this->language->get('button_export');]]></add>
+		</operation>
+        
+        
+        	<operation>
+			<search position="before"><![CDATA[protected function getList() {]]></search>
+            <add><![CDATA[public function export() {
+        
+        	if (isset($this->request->get['filter_order_id'])) {
+
+			$filter_order_id = $this->request->get['filter_order_id'];
+
+		} else {
+
+			$filter_order_id = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_customer'])) {
+
+			$filter_customer = $this->request->get['filter_customer'];
+
+		} else {
+
+			$filter_customer = null;
+
+		}
+
+
+
+		if (isset($this->request->get['filter_order_status_id'])) {
+
+			$filter_order_status_id = $this->request->get['filter_order_status_id'];
+
+		} else {
+
+			$filter_order_status_id = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_total'])) {
+
+			$filter_total = $this->request->get['filter_total'];
+
+		} else {
+
+			$filter_total = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_date_added'])) {
+
+			$filter_date_added = $this->request->get['filter_date_added'];
+
+		} else {
+
+			$filter_date_added = null;
+
+		}
+
+		
+
+		if (isset($this->request->get['filter_date_modified'])) {
+
+			$filter_date_modified = $this->request->get['filter_date_modified'];
+
+		} else {
+
+			$filter_date_modified = null;
+
+		}
+
+
+
+		if (isset($this->request->get['sort'])) {
+
+			$sort = $this->request->get['sort'];
+
+		} else {
+
+			$sort = 'o.order_id';
+
+		}
+
+
+
+		if (isset($this->request->get['order'])) {
+
+			$order = $this->request->get['order'];
+
+		} else {
+
+			$order = 'DESC';
+
+		}
+
+		
+
+		if (isset($this->request->get['page'])) {
+
+			$page = $this->request->get['page'];
+
+		} else {
+
+			$page = 1;
+
+		}
+        
+        
+
+		$data = array(
+
+			'filter_order_id'        => $filter_order_id,
+
+			'filter_customer'	     => $filter_customer,
+
+			'filter_order_status_id' => $filter_order_status_id,
+
+			'filter_total'           => $filter_total,
+
+			'filter_date_added'      => $filter_date_added,
+
+			'filter_date_modified'   => $filter_date_modified,
+
+			'sort'                   => $sort,
+
+			'order'                  => $order,
+		);
+        
+        
+        $orders = array();
+        
+        $orders_column=array();
+        
+        $this->load->model('sale/order');
+        
+        $results = $this->model_sale_order->getOrdersexport($data); 
+        
+        $orders_list = array();
+        
+        	foreach ($results as $result) {
+
+			$orders_list[] = array(
+				'order_id'      => $result['order_id'],
+				'customer_group'=> $result['customer_group'],
+				'customer_name'      => $result['customer_name'],
+				'email'=> $result['email'],
+				'telephone'      => $result['telephone'],
+				'payment_address'=> $result['payment_address'],
+				'shipping_address'      => $result['shipping_address'],
+				'payment_method'=> $result['payment_method'],
+				'shipping_method'        => $result['shipping_method'],
+				'total'         => $this->currency->format($result['total'], $result['currency_code'], $result['currency_value']),
+				'currency_code'    => $result['currency_code'],
+				'date_added'  =>  $result['date_added'],
+				'order_status' => $result['order_status'],
+				
+			);
+		}
+        
+        
+        
+       
+        $orders_column = array('Order ID', 'Customer Group', 'Customer Name', 'Email', 'Telephone', 'Payment Address', 'Shipping Address', 'Payment Method', 'Shipping Method', 'Total', 'Currency Code', 'Date Added', 'Order Status');
+            
+        $orders[0]=   $orders_column;   
+        
+        foreach($orders_list as $orders_row)
+        {
+            $orders[]=   $orders_row;            
+        }     
+        require_once(DIR_SYSTEM . 'library/excel_xml.php');
+        $xls = new Excel_XML('UTF-8', false, 'Orders List');
+        
+        $xls->addArray($orders);
+        
+        $xls->generateXML('orderslist_'.date('Y-m-d _ H:i:s'));	
+
+	}]]></add>
+		</operation>
+        
+	</file>
+    
+<!-- Model -->
+
+	<file path="admin/model/sale/order.php">
+		<operation>
+			<search position="before"><![CDATA[public function getOrders($data = array()) {]]></search>
+			<add><![CDATA[public function getOrdersexport($data = array()) {
+ $sql = "SELECT o.order_id, cgd.name as customer_group, CONCAT(o.firstname, ' ', o.lastname) AS customer_name,
+email, telephone, CONCAT(o.payment_firstname, ' ', o.payment_lastname,',',o.payment_address_1,',',o.payment_address_2,',',o.payment_city,'-',o.payment_postcode) AS payment_address,
+CONCAT(o.shipping_firstname, ' ', o.shipping_lastname,',',o.shipping_address_1,',',o.shipping_address_2,',', o.shipping_city,'-',o.shipping_postcode) AS shipping_address,
+ o.payment_method, o.shipping_method, o.total, o.currency_code,o.currency_value,
+ o.date_added, oos.name as order_status
+FROM `" . DB_PREFIX . "order` o
+LEFT JOIN " . DB_PREFIX . "customer_group_description cgd ON (o.customer_group_id = cgd.customer_group_id)
+LEFT JOIN " . DB_PREFIX . "order_status oos ON (o.order_status_id = oos.order_status_id) WHERE cgd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+
+
+
+
+		if (isset($data['filter_order_status_id']) && !is_null($data['filter_order_status_id'])) {
+
+			$sql .= " AND o.order_status_id = '" . (int)$data['filter_order_status_id'] . "'";
+
+		} else {
+
+			$sql .= " AND o.order_status_id > '0'";
+
+		}
+
+
+
+		if (!empty($data['filter_order_id'])) {
+
+			$sql .= " AND o.order_id = '" . (int)$data['filter_order_id'] . "'";
+
+		}
+
+
+
+		if (!empty($data['filter_customer'])) {
+
+			$sql .= " AND CONCAT(o.firstname, ' ', o.lastname) LIKE '%" . $this->db->escape($data['filter_customer']) . "%'";
+
+		}
+
+
+
+		if (!empty($data['filter_date_added'])) {
+
+			$sql .= " AND DATE(o.date_added) = DATE('" . $this->db->escape($data['filter_date_added']) . "')";
+
+		}
+
+		
+
+		if (!empty($data['filter_date_modified'])) {
+
+			$sql .= " AND DATE(o.date_modified) = DATE('" . $this->db->escape($data['filter_date_modified']) . "')";
+
+		}
+
+		
+
+		if (!empty($data['filter_total'])) {
+
+			$sql .= " AND o.total = '" . (float)$data['filter_total'] . "'";
+
+		}
+
+
+
+		$sort_data = array(
+
+			'o.order_id',
+
+			'customer',
+
+			'status',
+
+			'o.date_added',
+
+			'o.date_modified',
+
+			'o.total'
+
+		);
+
+
+
+		if (isset($data['sort']) && in_array($data['sort'], $sort_data)) {
+
+			$sql .= " ORDER BY " . $data['sort'];
+
+		} else {
+
+			$sql .= " ORDER BY o.order_id";
+
+		}
+
+
+
+		if (isset($data['order']) && ($data['order'] == 'DESC')) {
+
+			$sql .= " DESC";
+
+		} else {
+
+			$sql .= " ASC";
+
+		}
+
+
+
+		if (isset($data['start']) || isset($data['limit'])) {
+
+			if ($data['start'] < 0) {
+
+				$data['start'] = 0;
+
+			}
+
+
+
+			if ($data['limit'] < 1) {
+
+				$data['limit'] = 20;
+
+			}
+
+
+
+			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+
+		}
+
+		$query = $this->db->query($sql);
+
+
+
+		return $query->rows;
+
+	}]]></add>
+		</operation>
+	</file>
+
+<!-- View -->
+
+	<file path="admin/view/template/sale/order_list.tpl">
+		<operation>
+			<search position="before"><![CDATA[<button type="submit" id="button-shipping" form="form-order" formaction="<?php echo $shipping; ?>" data-toggle="tooltip" title="<?php echo $button_shipping_print; ?>" class="btn btn-info"><i class="fa fa-truck"></i></button>]]></search>
+			<add><![CDATA[<a href="<?php echo $export; ?>" data-toggle="tooltip" title="<?php echo "Export"; ?>" class="btn btn-success"><i class="glyphicon glyphicon-export"></i></a>]]></add>
+		</operation>
+	</file>
+	
+</modification>

@@ -1,0 +1,1428 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+    <id> Add Landmark Field </id>
+    <version>1.5.6.4</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRS</author>
+    <!-- landmark in account-->
+    <file path="catalog/view/theme/*/template/account/" name="register.tpl">
+        <operation info="After address_2, Add Landmark">
+            <search position="after" offset="1"><![CDATA[<td><input type="text" name="address_2" value="<?php echo $address_2; ?>" /></td>]]></search>
+            <add><![CDATA[
+		 <tr>
+          <td><span class="required">*</span> <?php echo $entry_landmark; ?></td>
+          <td><input type="text" name="landmark" value="<?php echo $landmark; ?>" />
+            <?php if ($error_landmark) { ?>
+            <span class="error"><?php echo $error_landmark; ?></span>
+            <?php } ?></td>
+        </tr>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/account/" name="register.php">
+        <operation info="After address_2, assign Landmark">
+            <search position="after" offset="4"><![CDATA[if (isset($this->request->post['address_2'])) {]]>
+            </search>
+            <add><![CDATA[
+				if (isset($this->request->post['landmark'])) {
+				$this->data['landmark'] = $this->request->post['landmark'];
+				} else {
+				$this->data['landmark'] = '';
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+
+    <file path="catalog/controller/account/" name="register.php">
+        <operation info="Describe entry_landmark">
+            <search position="after"><![CDATA[$this->data['entry_address_2'] = $this->language->get('entry_address_2');]]>
+            </search>
+            <add><![CDATA[
+				$this->data['entry_landmark'] = $this->language->get('entry_landmark');
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/account/" name="register.php">
+        <operation info="Describe error">
+            <search position="after" offset="1"><![CDATA[$this->data['error_address_1'] = '';]]>
+            </search>
+            <add><![CDATA[
+				if (isset($this->error['landmark'])) {
+				$this->data['error_landmark'] = $this->error['landmark'];
+				} else {
+				$this->data['error_landmark'] = '';
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="customer.php">
+        <operation info="Add New Query Due To Adding Landmark">
+            <search position="after"><![CDATA[$customer_id = $this->db->getLastId();]]>
+            </search>
+            <add><![CDATA[
+		if($this->db->escape($data['landmark'])!=NULL)
+		{
+		$this->db->query("INSERT INTO " . DB_PREFIX . "address SET customer_id = '" . (int)$customer_id . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '" . $this->db->escape($data['company']) . "', company_id = '" . $this->db->escape($data['company_id']) . "', tax_id = '" . $this->db->escape($data['tax_id']) . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '" . $this->db->escape($data['address_2']) . "', landmark='".$this->db->escape($data['landmark'])."',  city = '" . $this->db->escape($data['city']) . "', postcode = '" . $this->db->escape($data['postcode']) . "', country_id = '" . (int)$data['country_id'] . "', zone_id = '" . (int)$data['zone_id'] . "'");
+		}
+		]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="customer.php">
+        <operation info="Add New Query Due To Adding Landmark">
+            <search position="after" offset="1"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "address SET customer_id = '" . (int)$customer_id . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '" . $this->db->escape($data['company']) . "', company_id = '" . $this->db->escape($data['company_id']) . "', tax_id = '" . $this->db->escape($data['tax_id']) . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '" . $this->db->escape($data['address_2']) . "', landmark='".$this->db->escape($data['landmark'])."',  city = '" . $this->db->escape($data['city']) . "', postcode = '" . $this->db->escape($data['postcode']) . "', country_id = '" . (int)$data['country_id'] . "', zone_id = '" . (int)$data['zone_id'] . "'");]]>
+            </search>
+            <add><![CDATA[
+		else
+		{
+		]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="customer.php">
+        <operation info="Add New Query Due To Adding Landmark">
+            <search position="after" offset="1"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "address SET customer_id = '" . (int)$customer_id . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '" . $this->db->escape($data['company']) . "', company_id = '" . $this->db->escape($data['company_id']) . "', tax_id = '" . $this->db->escape($data['tax_id']) . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '" . $this->db->escape($data['address_2']) . "', city = '" . $this->db->escape($data['city']) . "', postcode = '" . $this->db->escape($data['postcode']) . "', country_id = '" . (int)$data['country_id'] . "', zone_id = '" . (int)$data['zone_id'] . "'");]]>
+            </search>
+            <add><![CDATA[
+		}
+		]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/language/english/account/" name="register.php">
+        <operation info="Describe Landmark error">
+            <search position="after"><![CDATA[$_['entry_address_2']      = 'Address 2:';]]>
+            </search>
+            <add><![CDATA[
+				$_['entry_landmark']   = 'Landmark:';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/language/english/account/" name="register.php">
+        <operation info="Show Error">
+            <search position="after"><![CDATA[$_['error_address_1']      = 'Address 1 must be between 3 and 128 characters!';]]>
+            </search>
+            <add><![CDATA[
+				$_['error_landmark'] = 'Landmark must be between 3 and 100 characters!';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/account/" name="register.php">
+        <operation info="Add Error Message">
+            <search position="before" offset="2"><![CDATA[if ((utf8_strlen($this->request->post['address_1']) < 3) || (utf8_strlen($this->request->post['address_1']) > 128)) {]]></search>
+            <add><![CDATA[
+		if ((utf8_strlen($this->request->post['landmark']) < 3) || (utf8_strlen($this->request->post['landmark']) > 100)) {
+			$this->error['landmark'] = $this->language->get('error_landmark');
+		}
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/extension/" name="module.php">
+        <operation info="Enable only Uninstall">
+            <search position="before" offset="1"><![CDATA['text' => $this->language->get('text_edit'),]]>
+            </search>
+            <add><![CDATA[
+				if($extension=="landmark")
+				{
+				$action[] = array(
+						'text' => $this->language->get('text_uninstall'),
+						'href' => $this->url->link('extension/module/uninstall', 'token=' . $this->session->data['token'] . '&extension=' . $extension, 'SSL')
+					);
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/extension/" name="module.php">
+        <operation info="Enable only Uninstall else">
+            <search position="before" offset="1"><![CDATA['text' => $this->language->get('text_edit'),]]>
+            </search>
+            <add><![CDATA[
+				else{
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/extension/" name="module.php">
+        <operation info="Enable only Uninstall else close bracket">
+            <search position="after" offset="6"><![CDATA['href' => $this->url->link('module/' . $extension . '', 'token=' . $this->session->data['token'], 'SSL')]]>
+            </search>
+            <add><![CDATA[
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/setting/" name="extension.php">
+        <operation info="add db query on installation">
+            <search position="after"><![CDATA[public function install($type, $code) {]]>
+            </search>
+            <add><![CDATA[
+			if($code=="landmark")
+			{
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "customer` ADD `landmark` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL AFTER `lastname` ");
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "order` ADD `payment_landmark` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL AFTER `payment_address_2` ");
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "order` ADD `shipping_landmark` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL AFTER `shipping_address_2` ");
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "address` ADD `landmark` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL AFTER `address_2` ");
+			}
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/setting/" name="extension.php">
+        <operation info="add db query on uninstallation">
+            <search position="after"><![CDATA[public function uninstall($type, $code) {]]>
+            </search>
+            <add><![CDATA[
+			if($code=="landmark")
+			{
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "order` DROP `payment_landmark`, drop `shipping_landmark`");
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "address` DROP `landmark`");
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "customer` DROP `landmark`");
+			}
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- landmark in checkout register account&billing-->
+
+    <file path="catalog/view/theme/*/template/checkout/" name="register.tpl">
+        <operation info="After Address 2, Add Landmark">
+            <search position="after" offset="2"><![CDATA[<input type="text" name="address_2" value="" class="large-field" />]]></search>
+            <add><![CDATA[
+		 <span class="required">*</span> <?php echo $entry_landmark; ?><br />
+		<input type="text" name="landmark" value="" class="large-field" />
+		<br />
+		<br />
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/" name="register.php">
+        <operation info="Describe entry_landmark">
+            <search position="after"><![CDATA[$this->data['entry_address_2'] = $this->language->get('entry_address_2');]]>
+            </search>
+            <add><![CDATA[
+				$this->data['entry_landmark'] = $this->language->get('entry_landmark');
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/" name="register.php">
+        <operation info="Add Error Message">
+            <search position="after" offset="1"><![CDATA[$json['error']['address_1'] = $this->language->get('error_address_1');]]></search>
+            <add><![CDATA[
+		if ((utf8_strlen($this->request->post['landmark']) < 3) || (utf8_strlen($this->request->post['landmark']) > 100)) {
+				$json['error']['landmark'] = $this->language->get('error_landmark');
+			}
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/language/english/checkout/" name="checkout.php">
+        <operation info="Describe Landmark error">
+            <search position="after"><![CDATA[$_['entry_address_2']                = 'Address 2:';]]>
+            </search>
+            <add><![CDATA[
+				$_['entry_landmark']   = 'Landmark:';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/language/english/checkout/" name="checkout.php">
+        <operation info=" To Show Required error">
+            <search position="after"><![CDATA[$_['error_address_1']                = 'Address 1 must be between 3 and 128 characters!';]]>
+            </search>
+            <add><![CDATA[
+				$_['error_landmark']                = 'Landmark must be between 3 and 100 characters!';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="checkout.tpl">
+        <operation info="Describe Json Error">
+            <search position="after" offset="1"><![CDATA[$('#payment-address input[name=\'address_1\'] + br').after('<span class="error">' + json['error']['address_1'] + '</span>');]]>
+            </search>
+            <add><![CDATA[
+				if (json['error']['landmark']) {
+				$('#payment-address input[name=\'landmark\']').after('<span class="error">' + json['error']['landmark'] + '</span>');
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- landmark in checkout payment_address billing details-->
+
+    <file path="catalog/view/theme/*/template/checkout/" name="payment_address.tpl">
+        <operation info="After Address 2, Add Landmark">
+            <search position="after" offset="1"><![CDATA[<td><input type="text" name="address_2" value="" class="large-field" /></td>]]></search>
+            <add><![CDATA[
+		 <tr>
+      		<td><span class="required">*</span> <?php echo $entry_landmark; ?></td>
+      		<td><input type="text" name="landmark" value="" class="large-field" /></td>
+    	</tr>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="payment_address.tpl">
+        <operation>
+            <search position="before"><![CDATA[<option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>]]></search>
+            <add><![CDATA[
+		 <?php if($address['landmark']) {?>
+		 <option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['landmark']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+		 <?php } else{ ?>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="payment_address.tpl">
+        <operation>
+            <search position="after"><![CDATA[<option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>]]></search>
+            <add><![CDATA[
+		 <?php } ?>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="payment_address.tpl">
+        <operation>
+            <search position="before"><![CDATA[<option value="<?php echo $address['address_id']; ?>"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>]]></search>
+            <add><![CDATA[
+		 <?php if($address['landmark']) {?>
+		 <option value="<?php echo $address['address_id']; ?>"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['landmark']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+		 <?php } else{ ?>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="payment_address.tpl">
+        <operation>
+            <search position="after"><![CDATA[<option value="<?php echo $address['address_id']; ?>"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>]]></search>
+            <add><![CDATA[
+		 <?php } ?>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/" name="payment_address.php">
+        <operation info="Describe entry_landmark">
+            <search position="after"><![CDATA[$this->data['entry_address_1'] = $this->language->get('entry_address_1');]]>
+            </search>
+            <add><![CDATA[
+			$this->data['entry_landmark'] = $this->language->get('entry_landmark');
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/" name="payment_address.php">
+        <operation info="Add Error Message">
+            <search position="after" offset="2"><![CDATA[if ((utf8_strlen($this->request->post['address_1']) < 3) || (utf8_strlen($this->request->post['address_1']) > 128)) {]]></search>
+            <add><![CDATA[
+		if ((utf8_strlen($this->request->post['landmark']) < 3) || (utf8_strlen($this->request->post['landmark']) > 100)) {
+				$json['error']['landmark'] = $this->language->get('error_landmark');
+			}
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="checkout.tpl">
+        <operation info="Describe Json Error">
+            <search position="after" offset="1"><![CDATA[$('#payment-address input[name=\'address_1\']').after('<span class="error">' + json['error']['address_1'] + '</span>');]]>
+            </search>
+            <add><![CDATA[
+				if (json['error']['landmark']) {
+				$('#payment-address input[name=\'landmark\']').after('<span class="error">' + json['error']['landmark'] + '</span>');
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="checkout.tpl">
+        <operation info="Describe Json Error">
+            <search position="after" offset="1"><![CDATA[$('#shipping-address input[name=\'address_1\']').after('<span class="error">' + json['error']['address_1'] + '</span>');]]>
+            </search>
+            <add><![CDATA[
+				if (json['error']['landmark']) {
+				$('#shipping-address input[name=\'landmark\']').after('<span class="error">' + json['error']['landmark'] + '</span>');
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- For shipping_address page Delivery Details landmark field-->
+
+    <file path="catalog/view/theme/*/template/checkout/" name="shipping_address.tpl">
+        <operation info="After Address 2, Add Landmark">
+            <search position="after" offset="1"><![CDATA[<td><input type="text" name="address_2" value="" class="large-field" /></td>]]></search>
+            <add><![CDATA[
+		<tr>
+      	<td><span class="required">*</span> <?php echo $entry_landmark; ?></td>
+      	<td><input type="text" name="landmark" value="" class="large-field" /></td>
+    	</tr>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="shipping_address.tpl">
+        <operation>
+            <search position="after"><![CDATA[<?php if ($address['address_id'] == $address_id) { ?>]]></search>
+            <add><![CDATA[
+		<?php if($address['landmark']) {?>
+		<option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['landmark']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+		<?php } else{ ?>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="shipping_address.tpl">
+        <operation>
+            <search position="after"><![CDATA[<option value="<?php echo $address['address_id']; ?>" selected="selected"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>]]></search>
+            <add><![CDATA[
+		<?php } ?>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="shipping_address.tpl">
+        <operation>
+            <search position="before"><![CDATA[<option value="<?php echo $address['address_id']; ?>"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>]]></search>
+            <add><![CDATA[
+		<?php if($address['landmark']){ ?>
+		<option value="<?php echo $address['address_id']; ?>"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['landmark']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>
+		<?php } else{ ?>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/view/theme/*/template/checkout/" name="shipping_address.tpl">
+        <operation>
+            <search position="after"><![CDATA[<option value="<?php echo $address['address_id']; ?>"><?php echo $address['firstname']; ?> <?php echo $address['lastname']; ?>, <?php echo $address['address_1']; ?>, <?php echo $address['city']; ?>, <?php echo $address['zone']; ?>, <?php echo $address['country']; ?></option>]]></search>
+            <add><![CDATA[
+		<?php } ?>
+			]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/" name="shipping_address.php">
+        <operation info="Describe entry_landmark">
+            <search position="after"><![CDATA[$this->data['entry_address_2'] = $this->language->get('entry_address_2');]]>
+            </search>
+            <add><![CDATA[
+				$this->data['entry_landmark'] = $this->language->get('entry_landmark');
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/" name="shipping_address.php">
+        <operation info="Add Error Message">
+            <search position="after" offset="2"><![CDATA[if ((utf8_strlen($this->request->post['address_1']) < 3) || (utf8_strlen($this->request->post['address_1']) > 128)) {]]></search>
+            <add><![CDATA[
+		if ((utf8_strlen($this->request->post['landmark']) < 3) || (utf8_strlen($this->request->post['landmark']) > 100)) {
+					$json['error']['landmark'] = $this->language->get('error_landmark');
+				}
+			]]></add>
+        </operation>
+    </file>
+
+    <!-- For sales->orders->payment_details page landmark field-->
+    <file path="admin/view/template/sale/" name="order_info.tpl">
+        <operation info="Add Text in payment_method">
+            <search position="after" offset="1"><![CDATA[<td><?php echo $payment_address_1; ?></td>]]>
+            </search>
+            <add><![CDATA[
+				<tr>
+            <td><?php echo $text_landmark; ?></td>
+            <td><?php echo $payment_landmark; ?></td>
+          </tr>
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="Describe landmark in controller">
+            <search position="after"><![CDATA[$this->data['entry_address_2'] = $this->language->get('entry_address_2');]]>
+            </search>
+            <add><![CDATA[
+				$this->data['entry_landmark'] = $this->language->get('entry_landmark');
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="Describe landmark in controller">
+            <search position="after" offset="1"><![CDATA[$this->data['payment_city'] = '';]]>
+            </search>
+            <add><![CDATA[
+				if (isset($this->request->post['payment_landmark'])) {
+      		$this->data['payment_landmark'] = $this->request->post['payment_landmark'];
+    	} elseif (!empty($order_info)) {
+			$this->data['payment_landmark'] = $order_info['payment_landmark'];
+		} else {
+      		$this->data['payment_landmark'] = '';
+    	}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="Describe landmark in controller">
+            <search position="after" offset="1"><![CDATA[$this->data['shipping_city'] = '';]]>
+            </search>
+            <add><![CDATA[
+			if (isset($this->request->post['shipping_landmark'])) {
+      		$this->data['shipping_landmark'] = $this->request->post['shipping_landmark'];
+    	} elseif (!empty($order_info)) {
+			$this->data['shipping_landmark'] = $order_info['shipping_landmark'];
+		} else {
+      		$this->data['shipping_landmark'] = '';
+    	}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="Describe landmark in controller">
+            <search position="after"><![CDATA[$this->data['text_address_2'] = $this->language->get('text_address_2');]]>
+            </search>
+            <add><![CDATA[
+			$this->data['text_landmark'] = $this->language->get('text_landmark');
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="Describe landmark in controller">
+            <search position="after" offset="7"><![CDATA[$this->data['date_modified'] = date($this->language->get('date_format_short'), strtotime($order_info['date_modified']));]]>
+            </search>
+            <add><![CDATA[
+			$this->data['payment_landmark'] = $order_info['payment_landmark'];
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="Describe landmark in controller">
+            <search position="after" offset="17"><![CDATA[$this->data['date_modified'] = date($this->language->get('date_format_short'), strtotime($order_info['date_modified']));]]>
+            </search>
+            <add><![CDATA[
+			$this->data['shipping_landmark'] = $order_info['shipping_landmark'];
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="add in query">
+            <search position="replace"><![CDATA[$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';]]>
+            </search>
+            <add><![CDATA[
+					$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{landmark}' . "\n" . '{zone}' . "\n" . '{country}';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="Check in query">
+            <search position="before" offset="20"><![CDATA[$shipping_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));]]>
+            </search>
+            <add><![CDATA[
+			 '{landmark}',
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation info="add in query">
+            <search position="after"><![CDATA['address_2' => $order_info['shipping_address_2'],]]>
+            </search>
+            <add><![CDATA[
+			 'landmark' => $order_info['shipping_landmark'],
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation>
+            <search position="before" offset="20"><![CDATA[$payment_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));]]>
+            </search>
+            <add><![CDATA[
+			 '{landmark}',
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/" name="order.php">
+        <operation>
+            <search position="before" offset="7"><![CDATA[$payment_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));]]>
+            </search>
+            <add><![CDATA[
+			 'landmark' => $order_info['payment_landmark'],
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/language/english/sale/" name="order.php">
+        <operation info="Add Landmark text">
+            <search position="before"><![CDATA[$_['text_address_2']                          = 'Address 2:';]]>
+            </search>
+            <add><![CDATA[
+			$_['text_landmark']					='Landmark:';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/language/english/sale/" name="order.php">
+        <operation info="Add Landmark text">
+            <search position="before"><![CDATA[$_['entry_address_2']                         = 'Address 2:';]]>
+            </search>
+            <add><![CDATA[
+			$_['entry_Landmark']                         = 'Landmark:';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- For sales->orders->shipping details page landmark field (other codes are above)-->
+
+    <file path="admin/view/template/sale/" name="order_info.tpl">
+        <operation info="Add Text in shipping_method">
+            <search position="after" offset="1"><![CDATA[<td><?php echo $shipping_address_1; ?></td>]]>
+            </search>
+            <add><![CDATA[
+				 <tr>
+            <td><?php echo $text_landmark; ?></td>
+            <td><?php echo $shipping_landmark; ?></td>
+          </tr>
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- to store,retrieve payment_landmark,shipping_landmark  fields in db-->
+
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="Describe landmark in model">
+            <search position="replace"><![CDATA[$shipping_address_format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';]]>
+            </search>
+            <add><![CDATA[
+				$shipping_address_format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{landmark}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="Describe landmark in model">
+            <search position="replace"><![CDATA[$payment_address_format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';]]>
+            </search>
+            <add><![CDATA[
+				$payment_address_format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{landmark}' . "\n". '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation>
+            <search position="after" offset="1"><![CDATA[$currency_value = 1.00000;]]>
+            </search>
+            <add><![CDATA[
+				if($this->db->escape('payment_landmark')!=NULL && $this->db->escape('shipping_landmark')!=NULL)
+				{
+				$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($invoice_prefix) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($store_name) . "',store_url = '" . $this->db->escape($store_url) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_company_id = '" . $this->db->escape($data['payment_company_id']) . "', payment_tax_id = '" . $this->db->escape($data['payment_tax_id']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_landmark = '" . $this->db->escape($data['payment_landmark']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($payment_country) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($payment_zone) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($payment_address_format) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_landmark = '" . $this->db->escape($data['shipping_landmark']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($shipping_country) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($shipping_zone) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($shipping_address_format) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', order_status_id = '" . (int)$data['order_status_id'] . "', affiliate_id  = '" . (int)$data['affiliate_id'] . "', language_id = '" . (int)$this->config->get('config_language_id') . "', currency_id = '" . (int)$currency_id . "', currency_code = '" . $this->db->escape($currency_code) . "', currency_value = '" . (float)$currency_value . "', date_added = NOW(), date_modified = NOW()");
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation>
+            <search position="after" offset="3"><![CDATA[if($this->db->escape('payment_landmark')!=NULL && $this->db->escape('shipping_landmark')!=NULL)]]>
+            </search>
+            <add><![CDATA[else{]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="Describe landmark in model">
+            <search position="before"><![CDATA[$order_id = $this->db->getLastId();]]>
+            </search>
+            <add><![CDATA[}]]></add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="global variable $payment_landmark">
+            <search position="after" offset="1"><![CDATA[public function getOrder($order_id) {]]>
+            </search>
+            <add><![CDATA[
+				$payment_landmark='';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="condition for db field payment_landmark null or not">
+            <search position="before" offset="1"><![CDATA['amazon_order_id'         => $amazonOrderId,]]>
+            </search>
+            <add><![CDATA[
+				if($order_query->row['payment_landmark']==NULL)
+			{
+				$payment_landmark= "Not Set";
+			}
+			else {
+				$payment_landmark=  $order_query->row['payment_landmark'];
+			}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="Describe landmark in model">
+            <search position="after"><![CDATA['payment_address_2'       => $order_query->row['payment_address_2'],]]>
+            </search>
+            <add><![CDATA[
+				'payment_landmark'       => $payment_landmark,
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="global variable $payment_landmark">
+            <search position="after" offset="1"><![CDATA[public function getOrder($order_id) {]]>
+            </search>
+            <add><![CDATA[
+				$shipping_landmark='';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="condition for db field payment_landmark null or not">
+            <search position="before" offset="1"><![CDATA['amazon_order_id'         => $amazonOrderId,]]>
+            </search>
+            <add><![CDATA[
+				if($order_query->row['shipping_landmark']==NULL)
+			{
+				$shipping_landmark= "Not Set";
+			}
+			else {
+				$shipping_landmark=  $order_query->row['shipping_landmark'];
+			}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="Describe landmark in model">
+            <search position="after"><![CDATA['shipping_address_2'      => $order_query->row['shipping_address_2'],]]>
+            </search>
+            <add><![CDATA[
+				'shipping_landmark'      => $shipping_landmark,
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- Landmark in Edit Addressbook -->
+    <file path="catalog/view/theme/*/template/account/" name="address_form.tpl">
+        <operation info="Describe landmark in address">
+            <search position="after" offset="1"><![CDATA[<td><input type="text" name="address_2" value="<?php echo $address_2; ?>" /></td>]]>
+            </search>
+            <add><![CDATA[
+				<tr>
+          <td><span class="required">*</span> <?php echo $entry_landmark; ?></td>
+          <td><input type="text" name="landmark" value="<?php echo $landmark; ?>" />
+            <?php if ($error_landmark) { ?>
+            <span class="error"><?php echo $error_landmark; ?></span>
+            <?php } ?></td>
+          </tr>
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/language/english/account/" name="address.php">
+        <operation info="Define landmark in language file">
+            <search position="after"><![CDATA[$_['entry_address_2']   = 'Address 2:';]]>
+            </search>
+            <add><![CDATA[
+			$_['entry_landmark']   = 'Landmark :';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/language/english/account/" name="address.php">
+        <operation info="Define landmark in language file">
+            <search position="after"><![CDATA[$_['error_address_1']   = 'Address must be between 3 and 128 characters!';]]>
+            </search>
+            <add><![CDATA[
+			$_['error_landmark']   = 'Landmark must be between 3 and 100 characters!';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/account/" name="address.php">
+        <operation info="Define landmark in controller file">
+            <search position="after"><![CDATA[$this->data['entry_address_2'] = $this->language->get('entry_address_2');]]>
+            </search>
+            <add><![CDATA[
+			$this->data['entry_landmark'] = $this->language->get('entry_landmark');
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/account/" name="address.php">
+        <operation info="Define landmark in language file">
+            <search position="after" offset="1"><![CDATA[$this->data['error_address_1'] = '';]]>
+            </search>
+            <add><![CDATA[
+			if (isset($this->error['landmark'])) {
+
+    		$this->data['error_landmark'] = $this->error['landmark'];
+			} else {
+			$this->data['error_landmark'] = '';
+			}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/account/" name="address.php">
+        <operation info="Define landmark in controller file">
+            <search position="after" offset="1"><![CDATA[$this->data['address_2'] = '';]]>
+            </search>
+            <add><![CDATA[
+			 if (isset($this->request->post['landmark'])) {
+      		$this->data['landmark'] = $this->request->post['landmark'];
+    		} elseif (!empty($address_info)) {
+			$this->data['landmark'] = $address_info['landmark'];
+			} else {
+      		$this->data['landmark'] = '';
+    		}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/account/" name="address.php">
+        <operation info="Define landmark in controller file to show error">
+            <search position="after" offset="1"><![CDATA[$this->error['address_1'] = $this->language->get('error_address_1');]]>
+            </search>
+            <add><![CDATA[
+			 if ((utf8_strlen($this->request->post['landmark']) < 3) || (utf8_strlen($this->request->post['landmark']) > 100)) {
+      		$this->error['landmark'] = $this->language->get('error_landmark');
+	    	}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="address.php">
+        <operation info="To get landmark data from db">
+            <search position="after"><![CDATA['address_2'      => $address_query->row['address_2'],]]>
+            </search>
+            <add><![CDATA[
+			'landmark'       => $address_query->row['landmark'],
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="address.php">
+        <operation info="To get landmark data from db">
+            <search position="after"><![CDATA['address_2'      => $result['address_2'],]]>
+            </search>
+            <add><![CDATA[
+			'landmark'       => $result['landmark'],
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="address.php">
+        <operation info="To get landmark data from db">
+            <search position="before"><![CDATA[$this->db->query("UPDATE " . DB_PREFIX . "address SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '" . $this->db->escape($data['company']) . "', company_id = '" . $this->db->escape(isset($data['company_id']) ? $data['company_id'] : '') . "', tax_id = '" . $this->db->escape(isset($data['tax_id']) ? $data['tax_id'] : '') . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '" . $this->db->escape($data['address_2']) . "', postcode = '" . $this->db->escape($data['postcode']) . "', city = '" . $this->db->escape($data['city']) . "', zone_id = '" . (int)$data['zone_id'] . "', country_id = '" . (int)$data['country_id'] . "' WHERE address_id  = '" . (int)$address_id . "' AND customer_id = '" . (int)$this->customer->getId() . "'");]]>
+            </search>
+            <add><![CDATA[
+			if($this->db->escape('landmark')!=NULL)
+			{
+			$this->db->query("UPDATE " . DB_PREFIX . "address SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '', company_id = '" . $this->db->escape(isset($data['company_id']) ? $data['company_id'] : '') . "', tax_id = '" . $this->db->escape(isset($data['tax_id']) ? $data['tax_id'] : '') . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '', landmark = '" . $this->db->escape($data['landmark']) . "', postcode = '" . $this->db->escape($data['postcode']) . "', city = '" . $this->db->escape($data['city']) . "', zone_id = '" . (int)$data['zone_id'] . "', country_id = '" . (int)$data['country_id'] . "' WHERE address_id  = '" . (int)$address_id . "' AND customer_id = '" . (int)$this->customer->getId() . "'");
+			}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="address.php">
+        <operation info="update landmark from addressbook">
+            <search position="after" offset="1"><![CDATA[$this->db->query("UPDATE " . DB_PREFIX . "address SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '', company_id = '" . $this->db->escape(isset($data['company_id']) ? $data['company_id'] : '') . "', tax_id = '" . $this->db->escape(isset($data['tax_id']) ? $data['tax_id'] : '') . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '', landmark = '" . $this->db->escape($data['landmark']) . "', postcode = '" . $this->db->escape($data['postcode']) . "', city = '" . $this->db->escape($data['city']) . "', zone_id = '" . (int)$data['zone_id'] . "', country_id = '" . (int)$data['country_id'] . "' WHERE address_id  = '" . (int)$address_id . "' AND customer_id = '" . (int)$this->customer->getId() . "'");]]>
+            </search>
+            <add><![CDATA[
+			else
+			{
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="address.php">
+        <operation info="update landmark from addressbook">
+            <search position="before" offset="5"><![CDATA[public function deleteAddress($address_id) {]]>
+            </search>
+            <add><![CDATA[
+			}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+
+    <!-- insert new address from billing details & delivery details-->
+
+    <file path="catalog/model/account/" name="address.php">
+        <operation info="insert landmark from payment_address,shipping_address">
+            <search position="after"><![CDATA[public function addAddress($data) {]]>
+            </search>
+            <add><![CDATA[
+				if($this->db->escape('landmark')!=NULL)
+				{
+					$this->db->query("INSERT INTO " . DB_PREFIX . "address SET customer_id = '" . (int)$this->customer->getId() . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '', company_id = '', tax_id = '" . $this->db->escape(isset($data['tax_id']) ? $data['tax_id'] : '') . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '', landmark = '" . $this->db->escape($data['landmark']) ."', postcode = '" . $this->db->escape($data['postcode']) . "', city = '" . $this->db->escape($data['city']) . "', zone_id = '" . (int)$data['zone_id'] . "', country_id = '" . (int)$data['country_id'] . "'");
+				}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="address.php">
+        <operation info="insert landmark from payment_address,shipping_address">
+            <search position="after" offset="1"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "address SET customer_id = '" . (int)$this->customer->getId() . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', company = '', company_id = '', tax_id = '" . $this->db->escape(isset($data['tax_id']) ? $data['tax_id'] : '') . "', address_1 = '" . $this->db->escape($data['address_1']) . "', address_2 = '', landmark = '" . $this->db->escape($data['landmark']) ."', postcode = '" . $this->db->escape($data['postcode']) . "', city = '" . $this->db->escape($data['city']) . "', zone_id = '" . (int)$data['zone_id'] . "', country_id = '" . (int)$data['country_id'] . "'");]]>
+            </search>
+            <add><![CDATA[
+			else
+			{
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/account/" name="address.php">
+        <operation info="insert landmark from payment_address,shipping_address">
+            <search position="before"><![CDATA[$address_id = $this->db->getLastId();]]>
+            </search>
+            <add><![CDATA[
+			}
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- Add payment_landmark,shipping_landmark in controller,model to insert in order -->
+
+    <file path="catalog/controller/checkout/" name="confirm.php">
+        <operation info="define payment_landmark to order table">
+            <search position="after"><![CDATA[$data['payment_address_2'] = $payment_address['address_2'];]]>
+            </search>
+            <add><![CDATA[
+			$data['payment_landmark'] = $payment_address['landmark'];
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/" name="confirm.php">
+        <operation info="define shipping_landmark to order table">
+            <search position="after"><![CDATA[$data['shipping_address_2'] = $shipping_address['address_2'];]]>
+            </search>
+            <add><![CDATA[
+			$data['shipping_landmark'] = $shipping_address['landmark'];
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/" name="confirm.php">
+        <operation info="define shipping_landmark null">
+            <search position="after"><![CDATA[$data['shipping_address_2'] = '';]]>
+            </search>
+            <add><![CDATA[
+			$data['shipping_landmark'] = '';
+				]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- Add new field value in order table -->
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation info="insert payment_landmark, shipping_landmark to order table">
+            <search position="replace" offset="2"><![CDATA[public function addOrder($data) {]]>
+            </search>
+            <add><![CDATA[
+			public function addOrder($data) {
+			$this->db->query("INSERT INTO `" . DB_PREFIX . "order` SET invoice_prefix = '" . $this->db->escape($data['invoice_prefix']) . "', store_id = '" . (int)$data['store_id'] . "', store_name = '" . $this->db->escape($data['store_name']) . "', store_url = '" . $this->db->escape($data['store_url']) . "', customer_id = '" . (int)$data['customer_id'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_company_id = '" . $this->db->escape($data['payment_company_id']) . "', payment_tax_id = '" . $this->db->escape($data['payment_tax_id']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "',payment_landmark = '" . $this->db->escape($data['payment_landmark']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($data['payment_country']) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($data['payment_zone']) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($data['payment_address_format']) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "', shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "',shipping_landmark = '" . $this->db->escape($data['shipping_landmark']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($data['shipping_country']) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($data['shipping_zone']) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($data['shipping_address_format']) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', total = '" . (float)$data['total'] . "', affiliate_id = '" . (int)$data['affiliate_id'] . "', commission = '" . (float)$data['commission'] . "', language_id = '" . (int)$data['language_id'] . "', currency_id = '" . (int)$data['currency_id'] . "', currency_code = '" . $this->db->escape($data['currency_code']) . "', currency_value = '" . (float)$data['currency_value'] . "', ip = '" . $this->db->escape($data['ip']) . "', forwarded_ip = '" .  $this->db->escape($data['forwarded_ip']) . "', user_agent = '" . $this->db->escape($data['user_agent']) . "', accept_language = '" . $this->db->escape($data['accept_language']) . "', date_added = NOW(), date_modified = NOW()");
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="after"><![CDATA['payment_address_2'       => $order_query->row['payment_address_2'],]]>
+            </search>
+            <add><![CDATA[
+			'payment_landmark'       => $order_query->row['payment_landmark'],
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="after"><![CDATA['shipping_address_2'      => $order_query->row['shipping_address_2'],]]>
+            </search>
+            <add><![CDATA[
+			'shipping_landmark'      => $order_query->row['shipping_landmark'],
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="after" offset="1"><![CDATA[$format = $order_info['payment_address_format'];]]>
+            </search>
+            <add><![CDATA[
+			if($this->db->escape('payment_landmark')!=NULL && $this->db->escape('shipping_landmark')!=NULL)
+			{
+			$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{landmark}' . "\n". '{zone}' . "\n" . '{country}';
+			}
+			else
+			{
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="after"><![CDATA[$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';]]>
+            </search>
+            <add><![CDATA[
+			}
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="before" offset="8"><![CDATA['firstname' => $order_info['payment_firstname'],]]>
+            </search>
+            <add><![CDATA[
+			'{landmark}',
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="after" offset="4"><![CDATA['firstname' => $order_info['payment_firstname'],]]>
+            </search>
+            <add><![CDATA[
+			'landmark' => $order_info['payment_landmark'],
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="after" offset="1"><![CDATA[$format = $order_info['shipping_address_format'];]]>
+            </search>
+            <add><![CDATA[
+			if($this->db->escape('payment_landmark')!=NULL && $this->db->escape('shipping_landmark')!=NULL)
+			{
+			$format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" .'{landmark}' ."\n" .'{zone}' . "\n" . '{country}';
+			}
+			else
+			{
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="before" offset="8"><![CDATA['firstname' => $order_info['shipping_firstname'],]]>
+            </search>
+            <add><![CDATA[
+			'{landmark}',
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/checkout/" name="order.php">
+        <operation>
+            <search position="after" offset="4"><![CDATA['firstname' => $order_info['shipping_firstname'],]]>
+            </search>
+            <add><![CDATA[
+			'landmark' => $order_info['shipping_landmark'],
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- sales->orders->edit->payment_details, shipping_details  -->
+
+    <file path="admin/view/template/sale/" name="order_form.tpl">
+        <operation info="add landmark in view">
+            <search position="after" offset="1"><![CDATA[<td><input type="text" name="payment_address_2" value="<?php echo $payment_address_2; ?>" /></td>]]>
+            </search>
+            <add><![CDATA[
+				<tr>
+              <td><?php echo $entry_landmark; ?></td>
+              <td><input type="text" name="payment_landmark" value="<?php echo $payment_landmark; ?>" /></td>
+            </tr>
+			]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/language/english/sale/" name="order.php">
+        <operation info="add landmark in language">
+            <search position="after" offset="1"><![CDATA[$_['entry_address_2']                         = 'Address 2:';]]>
+            </search>
+            <add><![CDATA[$_['entry_landmark']                         = 'Landmark:';]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/controller/sale/order/" name="order.php">
+        <operation info="add landmark in language">
+            <search position="after" offset="1"><![CDATA[$this->data['payment_address_2'] = '';]]>
+            </search>
+            <add><![CDATA[if (isset($this->request->post['payment_landmark'])) {
+	      		$this->data['payment_landmark'] = $this->request->post['payment_landmark'];
+	    	} elseif (!empty($order_info)) {
+				$this->data['payment_landmark'] = $order_info['payment_landmark'];
+			} else {
+	      		$this->data['payment_landmark'] = '';
+	    	}]]>
+            </add>
+        </operation>
+        <operation info="add landmark in language">
+            <search position="after" offset="1"><![CDATA[$this->data['entry_address_2'] = $this->language->get('entry_address_2');]]>
+            </search>
+            <add><![CDATA[$this->data['entry_landmark'] = $this->language->get('entry_landmark');]]>
+            </add>
+        </operation>
+    </file>
+    <file path="admin/model/sale/" name="order.php">
+        <operation info="db query in controller">
+            <search position="before" offset="1"><![CDATA[$this->db->query("UPDATE `" . DB_PREFIX . "order` SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_company_id = '" . $this->db->escape($data['payment_company_id']) . "', payment_tax_id = '" . $this->db->escape($data['payment_tax_id']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($payment_country) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($payment_zone) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($payment_address_format) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "',  shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($shipping_country) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($shipping_zone) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($shipping_address_format) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', order_status_id = '" . (int)$data['order_status_id'] . "', affiliate_id  = '" . (int)$data['affiliate_id'] . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");]]>
+            </search>
+            <add><![CDATA[ if($this->db->escape('landmark')!=NULL){
+				$this->db->query("UPDATE `" . DB_PREFIX . "order` SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', payment_firstname = '" . $this->db->escape($data['payment_firstname']) . "', payment_lastname = '" . $this->db->escape($data['payment_lastname']) . "', payment_company = '" . $this->db->escape($data['payment_company']) . "', payment_company_id = '" . $this->db->escape($data['payment_company_id']) . "', payment_tax_id = '" . $this->db->escape($data['payment_tax_id']) . "', payment_address_1 = '" . $this->db->escape($data['payment_address_1']) . "', payment_address_2 = '" . $this->db->escape($data['payment_address_2']) . "', payment_landmark = '" . $this->db->escape($data['payment_landmark']) . "', payment_city = '" . $this->db->escape($data['payment_city']) . "', payment_postcode = '" . $this->db->escape($data['payment_postcode']) . "', payment_country = '" . $this->db->escape($payment_country) . "', payment_country_id = '" . (int)$data['payment_country_id'] . "', payment_zone = '" . $this->db->escape($payment_zone) . "', payment_zone_id = '" . (int)$data['payment_zone_id'] . "', payment_address_format = '" . $this->db->escape($payment_address_format) . "', payment_method = '" . $this->db->escape($data['payment_method']) . "', payment_code = '" . $this->db->escape($data['payment_code']) . "', shipping_firstname = '" . $this->db->escape($data['shipping_firstname']) . "', shipping_lastname = '" . $this->db->escape($data['shipping_lastname']) . "',  shipping_company = '" . $this->db->escape($data['shipping_company']) . "', shipping_address_1 = '" . $this->db->escape($data['shipping_address_1']) . "', shipping_address_2 = '" . $this->db->escape($data['shipping_address_2']) . "', shipping_landmark = '" . $this->db->escape($data['shipping_landmark']) . "', shipping_city = '" . $this->db->escape($data['shipping_city']) . "', shipping_postcode = '" . $this->db->escape($data['shipping_postcode']) . "', shipping_country = '" . $this->db->escape($shipping_country) . "', shipping_country_id = '" . (int)$data['shipping_country_id'] . "', shipping_zone = '" . $this->db->escape($shipping_zone) . "', shipping_zone_id = '" . (int)$data['shipping_zone_id'] . "', shipping_address_format = '" . $this->db->escape($shipping_address_format) . "', shipping_method = '" . $this->db->escape($data['shipping_method']) . "', shipping_code = '" . $this->db->escape($data['shipping_code']) . "', comment = '" . $this->db->escape($data['comment']) . "', order_status_id = '" . (int)$data['order_status_id'] . "', affiliate_id  = '" . (int)$data['affiliate_id'] . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+				}else{]]></add></operation>
+
+        <operation info="db query in controller">
+            <search position="after" offset="4"><![CDATA[if($this->db->escape('landmark')!=NULL){]]>
+            </search>
+            <add><![CDATA[}]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- shipping_details -->
+    <file path="admin/view/template/sale/" name="order_form.tpl">
+        <operation info="add landmark in view">
+            <search position="after" offset="1"><![CDATA[<td><input type="text" name="shipping_address_2" value="<?php echo $shipping_address_2; ?>" /></td>]]>
+            </search>
+            <add><![CDATA[
+				<tr>
+              <td><?php echo $entry_landmark; ?></td>
+              <td><input type="text" name="shipping_landmark" value="<?php echo $shipping_landmark; ?>" /></td>
+            </tr>
+			]]>
+            </add>
+        </operation>
+    </file>
+    <file path="admin/controller/sale/order/" name="order.php">
+        <operation info="add landmark in language">
+            <search position="after" offset="1"><![CDATA[$this->data['shipping_address_2'] = '';]]>
+            </search>
+            <add><![CDATA[if (isset($this->request->post['shipping_landmark'])) {
+      		$this->data['shipping_landmark'] = $this->request->post['shipping_landmark'];
+    	} elseif (!empty($order_info)) {
+			$this->data['shipping_landmark'] = $order_info['shipping_landmark'];
+		} else {
+      		$this->data['shipping_landmark'] = '';
+    	}]]>
+            </add>
+        </operation>
+        <operation info="add landmark in controller">
+            <search position="after" offset="1"><![CDATA[$this->data['entry_address_2'] = $this->language->get('entry_address_2');]]>
+            </search>
+            <add><![CDATA[$this->data['entry_landmark'] = $this->language->get('entry_landmark');]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- for  sales->customers->customers->edit changed-->
+    <file path="admin/view/template/sale/" name="customer_form.tpl">
+        <operation info="Add landmark in view">
+            <search position="after" offset="1"><![CDATA[<td><input type="text" name="address[<?php echo $address_row; ?>][address_2]" value="<?php echo $address['address_2']; ?>" /></td>]]>
+            </search>
+            <add><![CDATA[<tr>
+                <td><?php echo $entry_landmark; ?></td>
+                <td><input type="text" name="address[<?php echo $address_row; ?>][landmark]" value="<?php echo $address['landmark']; ?>" /></td>
+              </tr>]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/language/english/sale/" name="customer.php">
+        <operation info="describe landmark in language">
+            <search position="after" offset="1"><![CDATA[$_['entry_address_1']       = 'Address 1:';]]>
+            </search>
+            <add><![CDATA[$_['entry_landmark']        = 'Landmark:';]]>
+            </add>
+        </operation>
+    </file>
+    <file path="admin/controller/sale/" name="customer.php">
+        <operation info="describe landmark in language">
+            <search position="after" offset="1"><![CDATA[$this->data['entry_address_1'] = $this->language->get('entry_address_1');]]>
+            </search>
+            <add><![CDATA[$this->data['entry_landmark'] = $this->language->get('entry_landmark');]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="admin/model/sale/" name="customer.php">
+        <operation info="new query to update">
+            <search position="after"><![CDATA[public function editCustomer($customer_id, $data) {]]>
+            </search>
+            <add><![CDATA[ if($this->db->escape('landmark')!=NULL){
+				$this->db->query("UPDATE " . DB_PREFIX . "customer SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', landmark = '" . $this->db->escape($data['landmark']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', newsletter = '" . (int)$data['newsletter'] . "', customer_group_id = '" . (int)$data['customer_group_id'] . "', status = '" . (int)$data['status'] . "' WHERE customer_id = '" . (int)$customer_id . "'");
+				}else
+				{
+				]]>
+
+            </add>
+        </operation>
+    </file>
+    <file path="admin/model/sale/" name="customer.php">
+        <operation info="new query to update">
+            <search position="before" offset="1"><![CDATA[if ($data['password']) {]]>
+            </search>
+            <add><![CDATA[}]]>
+
+            </add>
+        </operation>
+
+        <operation info="new query to update">
+            <search position="replace"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "address SET address_id = '" . (int)$address['address_id'] . "', customer_id = '" . (int)$customer_id . "', firstname = '" . $this->db->escape($address['firstname']) . "', lastname = '" . $this->db->escape($address['lastname']) . "', company = '" . $this->db->escape($address['company']) . "', company_id = '" . $this->db->escape($address['company_id']) . "', tax_id = '" . $this->db->escape($address['tax_id']) . "', address_1 = '" . $this->db->escape($address['address_1']) . "', address_2 = '" . $this->db->escape($address['address_2']) . "', city = '" . $this->db->escape($address['city']) . "', postcode = '" . $this->db->escape($address['postcode']) . "', country_id = '" . (int)$address['country_id'] . "', zone_id = '" . (int)$address['zone_id'] . "'");]]>
+            </search>
+            <add><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "address SET address_id = '" . (int)$address['address_id'] . "', customer_id = '" . (int)$customer_id . "', firstname = '" . $this->db->escape($address['firstname']) . "', lastname = '" . $this->db->escape($address['lastname']) . "', company = '" . $this->db->escape($address['company']) . "', company_id = '" . $this->db->escape($address['company_id']) . "', tax_id = '" . $this->db->escape($address['tax_id']) . "', address_1 = '" . $this->db->escape($address['address_1']) . "', address_2 = '" . $this->db->escape($address['address_2']) . "',landmark = '" . $this->db->escape($address['landmark']) . "', city = '" . $this->db->escape($address['city']) . "', postcode = '" . $this->db->escape($address['postcode']) . "', country_id = '" . (int)$address['country_id'] . "', zone_id = '" . (int)$address['zone_id'] . "'");]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="after"><![CDATA['address_2'      => $address_query->row['address_2'],]]>
+            </search>
+            <add><![CDATA['landmark'      => $address_query->row['landmark'],]]>
+            </add>
+        </operation>
+    </file>
+
+
+    <!-- for guest_checkout -->
+    <file path="catalog/view/theme/*/template/checkout/guest.tpl">
+        <operation>
+            <search position="after" offset="2">
+                <![CDATA[<input type="text" name="address_2" value="<?php echo $address_2; ?>" class="large-field" />]]>
+            </search>
+            <add>
+                <![CDATA[<span class="required">*</span> <?php echo $entry_landmark; ?><br />
+  <input type="text" name="landmark" value="<?php echo $landmark; ?>" class="large-field" />
+  <br />
+  <br />]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/checkout/guest.php">
+        <operation>
+            <search position="after">
+                <![CDATA[$this->data['entry_address_1'] = $this->language->get('entry_address_1');]]>
+            </search>
+            <add>
+                <![CDATA[$this->data['entry_landmark'] = $this->language->get('Landmark');]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="after" offset="3">
+                <![CDATA[$this->data['address_1'] = $this->session->data['guest']['payment']['address_1'];]]>
+            </search>
+            <add>
+                <![CDATA[if (isset($this->session->data['guest']['payment']['landmark'])) {
+			$this->data['landmark'] = $this->session->data['guest']['payment']['landmark'];
+		} else {
+			$this->data['landmark'] = '';
+		}]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="after" offset="1">
+                <![CDATA[$json['error']['address_1'] = $this->language->get('error_address_1');]]>
+            </search>
+            <add>
+                <![CDATA[if ((utf8_strlen($this->request->post['landmark']) < 3) || (utf8_strlen($this->request->post['landmark']) > 100)) {
+    $json['error']['landmark'] = $this->language->get('Landmark must be between 3 to 100 characters!');
+    }]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="after">
+                <![CDATA[$this->session->data['guest']['payment']['address_1'] = $this->request->post['address_1'];]]>
+            </search>
+            <add>
+                <![CDATA[$this->session->data['guest']['payment']['landmark'] = $this->request->post['landmark'];]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="after">
+                <![CDATA[$this->session->data['guest']['shipping']['address_1'] = $this->request->post['address_1'];]]>
+            </search>
+            <add>
+                <![CDATA[$this->session->data['guest']['shipping']['landmark'] = $this->request->post['landmark'];]]>
+            </add>
+        </operation>
+
+    </file>
+
+
+    <file path="catalog/view/theme/*/template/checkout/guest_shipping.tpl">
+        <operation>
+            <search position="after" offset="1">
+                <![CDATA[<td><input type="text" name="address_2" value="<?php echo $address_2; ?>" class="large-field" /></td>]]>
+            </search>
+            <add>
+                <![CDATA[<tr>
+    <td><span class="required">*</span> <?php echo $entry_landmark; ?></td>
+    <td><input type="text" name="landmark" value="<?php echo $landmark; ?>" class="large-field" /></td>
+  </tr>]]>
+            </add>
+        </operation>
+    </file>
+
+
+
+
+    <file path="catalog/controller/checkout/guest_shipping.php">
+        <operation>
+            <search position="after">
+                <![CDATA[$this->data['entry_address_1'] = $this->language->get('entry_address_1');]]>
+            </search>
+            <add>
+                <![CDATA[$this->data['entry_landmark'] = $this->language->get('Landmark');]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="after" offset="3">
+                <![CDATA[$this->data['address_1'] = $this->session->data['guest']['shipping']['address_1'];]]>
+            </search>
+            <add>
+                <![CDATA[if (isset($this->session->data['guest']['shipping']['landmark'])) {
+			$this->data['landmark'] = $this->session->data['guest']['shipping']['landmark'];
+		} else {
+			$this->data['landmark'] = '';
+		}]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="after" offset="1">
+                <![CDATA[$json['error']['address_1'] = $this->language->get('error_address_1');]]>
+            </search>
+            <add>
+                <![CDATA[if ((utf8_strlen($this->request->post['landmark']) < 1) || (utf8_strlen($this->request->post['landmark']) > 100)) {
+				$json['error']['landmark'] = $this->language->get('Landmark must be between 3 to 100 characters!');
+			}]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="after">
+                <![CDATA[$this->session->data['guest']['shipping']['address_1'] = $this->request->post['address_1'];]]>
+            </search>
+            <add>
+                <![CDATA[$this->session->data['guest']['shipping']['landmark'] = $this->request->post['landmark'];]]>
+            </add>
+        </operation>
+
+    </file>
+
+    <!-- modified -->
+
+</modification>

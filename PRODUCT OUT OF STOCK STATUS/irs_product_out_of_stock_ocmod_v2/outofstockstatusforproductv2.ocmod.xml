@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<modification>
+    <name><![CDATA[Product - Out Of Stock Status]]></name>
+    <code><![CDATA[outofstockstatusproduct]]></code>
+    <version><![CDATA[2.0]]></version>
+    <author><![CDATA[IRSSOFT]]></author>
+    <link><![CDATA[http://www.irssoft.com]]></link>
+
+<!-- Category -->    
+<!-- Controller --> 
+  
+    <file path="catalog/controller/product/category.php">
+		<operation>
+			<search index="0"><![CDATA[$data['products'][] = array(]]></search>
+			<add position="replace" offset="0"><![CDATA[if ($result['quantity'] <= 0) {
+					$stock_status = ($result['quantity'] == 0)?$this->language->get('Out Of Stock'):$result['stock_status'];
+				} elseif ($this->config->get('config_stock_display')) {
+					$stock_status = $result['quantity'];
+				} else {
+					$stock_status = $this->language->get('In Stock');
+				}
+			$data['products'][] = array(
+						'stock'       => $stock_status,]]></add>
+		</operation>  
+        
+	</file>
+   
+<!-- View -->
+
+	<file path="catalog/view/theme/*/template/product/category.tpl">
+	
+		<operation>
+			<search><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+			<add position="replace"><![CDATA[<?php if("Out Of Stock"==$product['stock']){ ?><div class="special-pro"></div><button class="button" style="background:#CC5D32;cursor:default;color:#ffffff;"><?php echo $product['stock']; ?></button><?php } else { ?><button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button><?php } ?>]]></add>
+		</operation>	
+		
+	</file>   
+	
+<!-- Product -->
+  	
+    <file path="catalog/controller/product/product.php">
+		<operation>
+			<search index="6"><![CDATA[if ($product_info['quantity'] <= 0) {]]></search>
+			<add position="replace" offset="6"><![CDATA[if ($product_info['quantity'] <= 0) {
+			$data['stock'] = ($product_info['quantity'] == 0)?$this->language->get('Out Of Stock'):$product_info['stock_status'];
+			} elseif ($this->config->get('config_stock_display')) {
+				$data['stock'] = $product_info['quantity'];
+			} else {
+				$data['stock'] = $this->language->get('In Stock');
+			}]]></add>
+		</operation>  
+        
+	</file>
+<!-- View -->
+
+	<file path="catalog/view/theme/*/template/product/product.tpl">
+	
+		<operation>
+			<search index="0"><![CDATA[<button type="button" id="button-cart" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary btn-lg btn-block"><?php echo $button_cart; ?></button>]]></search>
+			<add position="replace" offset="0"><![CDATA[<?php if("Out Of Stock"==$stock){ ?><div class="special-pro"></div><a class="btn btn-lg btn-block" style="background:#CC5D32;cursor:default;color: #fff;width: 100%;height: 34px;  padding: 6px 12px;"><?php echo $stock; ?></a><?php } else { ?><button type="button" id="button-cart" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary btn-lg btn-block"><?php echo $button_cart; ?></button><?php } ?>]]></add>
+		</operation>	
+		
+	</file>   
+
+<!-- Featured -->    
+<!-- Controller --> 
+  
+    <file path="catalog/controller/module/featured.php">
+		<operation>
+			<search index="0"><![CDATA[$data['products'][] = array(]]></search>
+			<add  position="replace" offset="0"><![CDATA[if ($product_info['quantity'] <= 0) {
+							$stock_status = ($product_info['quantity'] == 0)?$this->language->get('Out Of Stock'):$product_info['stock_status'];
+				} elseif ($this->config->get('config_stock_display')) {
+					$stock_status = $product_info['quantity'];
+				} else {
+					$stock_status = $this->language->get('In Stock');
+				}
+			$data['products'][] = array(
+						'stock'       => $stock_status,]]></add>
+		</operation>  
+        
+	</file>
+   
+<!-- View -->
+
+	<file path="catalog/view/theme/*/template/module/featured.tpl">
+	
+		<operation>
+			<search index="0"><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+			<add  position="replace" offset="0"><![CDATA[<?php if("Out Of Stock"==$product['stock']){ ?><div class="special-pro"></div><button class="button" style="background:#CC5D32;cursor:default;color:#ffffff;"><?php echo $product['stock']; ?></button><?php } else { ?><button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button><?php } ?>]]></add>
+		</operation>	
+		
+	</file>  
+	
+<!-- Search -->    
+<!-- Controller --> 
+  
+    <file path="catalog/controller/product/search.php">
+		<operation>
+			<search index="0"><![CDATA[$data['products'][] = array(]]></search>
+			<add  position="replace" offset="0"><![CDATA[if ($result['quantity'] <= 0) {
+							$stock_status = ($result['quantity'] == 0)?$this->language->get('Out Of Stock'):$result['stock_status'];
+				} elseif ($this->config->get('config_stock_display')) {
+					$stock_status = $result['quantity'];
+				} else {
+					$stock_status = $this->language->get('In Stock');
+				}
+			$data['products'][] = array(
+						'stock'       => $stock_status,]]></add>
+		</operation>  
+        
+	</file>
+   
+<!-- View -->
+
+	<file path="catalog/view/theme/*/template/product/search.tpl">
+	
+		<operation>
+			<search index="0"><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+			<add position="replace" offset="0"><![CDATA[<?php if("Out Of Stock"==$product['stock']){ ?><div class="special-pro"></div><button class="button" style="background:#CC5D32;cursor:default;color:#ffffff;"><?php echo $product['stock']; ?></button><?php } else { ?><button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button><?php } ?>]]></add>
+		</operation>	
+		
+	</file>  
+	
+</modification>

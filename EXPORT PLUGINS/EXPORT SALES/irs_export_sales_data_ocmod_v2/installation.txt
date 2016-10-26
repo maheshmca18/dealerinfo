@@ -1,0 +1,25 @@
+==========================================
+Installation
+==========================================
+
+1. Upload the "system" to your root folder. (No file are replaced, all files are new)
+
+2. Upload irs_sales_data_export.ocmod.xml file on your root folder via Extension installer.
+
+3. Click refresh in top corner of modifications .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

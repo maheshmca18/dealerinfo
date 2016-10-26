@@ -1,0 +1,469 @@
+<modification>
+
+	<id>Export Excel : Sales </id>
+	<version>1.0</version>
+	<vqmver>2.3.2</vqmver>
+	<author>IRS</author>
+    
+<!-- Product Returns -->  
+    <!-- Controller --> 
+  
+    <file name="admin/controller/sale/return.php">
+		
+    <operation>
+			<search position="before" offset="0"><![CDATA[$this->data['button_filter'] = $this->language->get('button_filter');]]></search>
+            <add><![CDATA[$this->data['button_export'] = $this->language->get('button_export');
+			$this->data['export'] = $this->url->link('sale/return/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search position="before" offset="0"><![CDATA[public function index() { ]]></search>
+            <add><![CDATA[public function export() {
+				if (isset($this->request->get['filter_return_id'])) {
+					$filter_return_id = $this->request->get['filter_return_id'];
+				} else {
+					$filter_return_id = null;
+				}
+
+				if (isset($this->request->get['filter_order_id'])) {
+					$filter_order_id = $this->request->get['filter_order_id'];
+				} else {
+					$filter_order_id = null;
+				}
+
+				if (isset($this->request->get['filter_customer'])) {
+					$filter_customer = $this->request->get['filter_customer'];
+				} else {
+					$filter_customer = null;
+				}
+
+				if (isset($this->request->get['filter_product'])) {
+					$filter_product = $this->request->get['filter_product'];
+				} else {
+					$filter_product = null;
+				}
+
+				if (isset($this->request->get['filter_model'])) {
+					$filter_model = $this->request->get['filter_model'];
+				} else {
+					$filter_model = null;
+				}
+
+				if (isset($this->request->get['filter_return_status_id'])) {
+					$filter_return_status_id = $this->request->get['filter_return_status_id'];
+				} else {
+					$filter_return_status_id = null;
+				}
+
+				if (isset($this->request->get['filter_date_added'])) {
+					$filter_date_added = $this->request->get['filter_date_added'];
+				} else {
+					$filter_date_added = null;
+				}
+
+				if (isset($this->request->get['filter_date_modified'])) {
+					$filter_date_modified = $this->request->get['filter_date_modified'];
+				} else {
+					$filter_date_modified = null;
+				}	
+
+				if (isset($this->request->get['sort'])) {
+					$sort = $this->request->get['sort'];
+				} else {
+					$sort = 'r.return_id'; 
+				}
+
+				if (isset($this->request->get['order'])) {
+					$order = $this->request->get['order'];
+				} else {
+					$order = 'DESC';
+				}
+
+				if (isset($this->request->get['page'])) {
+					$page = $this->request->get['page'];
+				} else {
+					$page = 1;
+				}
+				
+				
+				$this->load->model('sale/return');
+
+				
+				$returns= array();
+
+				$data = array(
+					'filter_return_id'        => $filter_return_id, 
+					'filter_order_id'         => $filter_order_id, 
+					'filter_customer'         => $filter_customer, 
+					'filter_product'          => $filter_product, 
+					'filter_model'            => $filter_model, 
+					'filter_return_status_id' => $filter_return_status_id, 
+					'filter_date_added'       => $filter_date_added,
+					'filter_date_modified'    => $filter_date_modified,
+					'sort'                    => $sort,
+					'order'                   => $order,
+				//	'start'                   => ($page - 1) * $this->config->get('config_admin_limit'),
+				//	'limit'                   => $this->config->get('config_admin_limit')
+				);
+
+				$results = $this->model_sale_return->getReturns($data);
+
+				foreach ($results as $result) {
+					$returns[] = array(
+						'return_id'     => $result['return_id'],
+						'order_id'      => $result['order_id'],
+						'customer'      => $result['customer'],
+						'product'       => $result['product'],
+						'model'         => $result['model'],
+						'status'        => $result['status'],
+						'date_added'    => date($this->language->get('date_format_short'), strtotime($result['date_added'])),	
+						'date_modified' => date($this->language->get('date_format_short'), strtotime($result['date_modified'])),				
+						'selected'      => isset($this->request->post['selected']) && in_array($result['return_id'], $this->request->post['selected'])
+					);
+				}	
+						
+						$returns_data = array();
+						
+						$returns_column=array();
+						
+						$returns_column = array('Return ID', 'Order ID', 'Customer', 'Product', 'Model', 'Date Added', 'Date Modified');
+							
+						$returns_data[0]=   $returns_column;   
+						
+						foreach($returns as $returns_row)
+						{
+							$returns_data[]=   $returns_row;            
+						}     
+						require_once(DIR_SYSTEM . 'library/excel_xml.php');
+						$xls = new Excel_XML('UTF-8', false, 'Product Returns List');
+						
+						$xls->addArray($returns_data);
+						
+						$xls->generateXML('product_returns_list_'.date('Y-m-d _ H:i:s'));	
+
+					}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file name="admin/view/template/sale/return_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<a onclick="location = '<?php echo $insert; ?>'" class="button"><?php echo $button_insert; ?></a>]]></search>
+			<add><![CDATA[<a href="<?php echo $export; ?>" class="button"><?php echo $button_export; ?></a><a onclick="location = '<?php echo $insert; ?>'" class="button"><?php echo $button_insert; ?></a>]]></add>
+		</operation>
+	</file>
+	
+<!-- Affliate List -->  
+    <!-- Controller --> 
+  
+    <file name="admin/controller/sale/affiliate.php">
+		
+    <operation>
+			<search position="before" offset="0"><![CDATA[$this->data['button_filter'] = $this->language->get('button_filter');]]></search>
+            <add><![CDATA[$this->data['button_export'] = $this->language->get('button_export');
+			$this->data['export'] = $this->url->link('sale/affiliate/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search position="before" offset="0"><![CDATA[private function getList() {]]></search>
+            <add><![CDATA[public function export() {
+		if (isset($this->request->get['filter_name'])) {
+			$filter_name = $this->request->get['filter_name'];
+		} else {
+			$filter_name = null;
+		}
+
+		if (isset($this->request->get['filter_email'])) {
+			$filter_email = $this->request->get['filter_email'];
+		} else {
+			$filter_email = null;
+		}
+
+		if (isset($this->request->get['filter_status'])) {
+			$filter_status = $this->request->get['filter_status'];
+		} else {
+			$filter_status = null;
+		}
+
+		if (isset($this->request->get['filter_approved'])) {
+			$filter_approved = $this->request->get['filter_approved'];
+		} else {
+			$filter_approved = null;
+		}
+
+		if (isset($this->request->get['filter_date_added'])) {
+			$filter_date_added = $this->request->get['filter_date_added'];
+		} else {
+			$filter_date_added = null;
+		}	
+
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'name'; 
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'ASC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+		
+		$data = array(
+			'filter_name'       => $filter_name, 
+			'filter_email'      => $filter_email, 
+			'filter_status'     => $filter_status, 
+			'filter_approved'   => $filter_approved, 
+			'filter_date_added' => $filter_date_added,
+			'sort'              => $sort,
+			'order'             => $order,
+		//	'start'             => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit'             => $this->config->get('config_admin_limit')
+		);
+		
+		$this->load->model('sale/affiliate');
+		
+		$results = $this->model_sale_affiliate->getAffiliates($data);
+		
+		$affiliates = array();
+		
+		foreach ($results as $result) {
+			$affiliates[] = array(
+				'affiliate_id' => $result['affiliate_id'],
+				'name'         => $result['name'],
+				'email'        => $result['email'],
+				'balance'      => $this->currency->format($result['balance'], $this->config->get('config_currency')),
+				'status'       => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled')),
+				'approved'     => ($result['approved'] ? $this->language->get('text_yes') : $this->language->get('text_no')),
+				'date_added'   => date($this->language->get('date_format_short'), strtotime($result['date_added'])),
+				'selected'     => isset($this->request->post['selected']) && in_array($result['affiliate_id'], $this->request->post['selected'])
+			);
+		}	
+				
+				$affiliates_data = array();
+				
+				$affiliates_column=array();
+				
+				$affiliates_column = array('Affliate ID', 'Affliate Name', 'Email', 'Balance', 'Status', 'Approved', 'Date Added');
+					
+				$affiliates_data[0]=   $affiliates_column;   
+				
+				foreach($affiliates as $affiliates_row)
+				{
+					$affiliates_data[]=   $affiliates_row;            
+				}     
+				require_once(DIR_SYSTEM . 'library/excel_xml.php');
+				$xls = new Excel_XML('UTF-8', false, 'Affliates List');
+				
+				$xls->addArray($affiliates_data);
+				
+				$xls->generateXML('affliate_list_'.date('Y-m-d _ H:i:s'));	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file name="admin/view/template/sale/affiliate_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<a onclick="$('form').attr('action', '<?php echo $approve; ?>'); $('form').submit();" class="button"><?php echo $button_approve; ?></a>]]></search>
+			<add><![CDATA[<a href="<?php echo $export; ?>" class="button"><?php echo $button_export; ?></a><a onclick="$('form').attr('action', '<?php echo $approve; ?>'); $('form').submit();" class="button"><?php echo $button_approve; ?></a>]]></add>
+		</operation>
+		
+	</file>
+   
+   	
+<!-- Coupon List -->  
+    <!-- Controller --> 
+  
+    <file name="admin/controller/sale/coupon.php">
+		
+    <operation>
+			<search position="before" offset="0"><![CDATA[$this->data['button_insert'] = $this->language->get('button_insert');]]></search>
+            <add><![CDATA[$this->data['button_export'] = $this->language->get('button_export');
+			$this->data['export'] = $this->url->link('sale/coupon/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search position="before" offset="0"><![CDATA[private function getList() {]]></search>
+            <add><![CDATA[public function export() {
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'name';
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'ASC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+
+		$this->data['coupons'] = array();
+
+		$data = array(
+			'sort'  => $sort,
+			'order' => $order,
+		//	'start' => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit' => $this->config->get('config_admin_limit')
+		);
+		
+		
+		$this->load->model('sale/coupon');
+				
+		$coupon_total = $this->model_sale_coupon->getTotalCoupons();
+
+		$results = $this->model_sale_coupon->getCoupons($data);
+
+		
+		$coupons = array();
+		
+		foreach ($results as $result) {
+			$coupons[] = array(
+				'coupon_id'  => $result['coupon_id'],
+				'name'       => $result['name'],
+				'code'       => $result['code'],
+				'discount'   => $result['discount'],
+				'date_start' => date($this->language->get('date_format_short'), strtotime($result['date_start'])),
+				'date_end'   => date($this->language->get('date_format_short'), strtotime($result['date_end'])),
+				'status'     => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled'))
+			);
+		}	
+				
+				$coupons_data = array();
+				
+				$coupons_column=array();
+				
+				$coupons_column = array('Coupon ID', 'Coupon Name', 'Coupon Code', 'Discount', 'Start Date', 'End Date', 'Status');
+					
+				$coupons_data[0]=   $coupons_column;   
+				
+				foreach($coupons as $coupons_row)
+				{
+					$coupons_data[]=   $coupons_row;            
+				}     
+				require_once(DIR_SYSTEM . 'library/excel_xml.php');
+				$xls = new Excel_XML('UTF-8', false, 'Coupons List');
+				
+				$xls->addArray($coupons_data);
+				
+				$xls->generateXML('coupons_list_'.date('Y-m-d _ H:i:s'));	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file name="admin/view/template/sale/coupon_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<a onclick="location = '<?php echo $insert; ?>'" class="button"><?php echo $button_insert; ?></a>]]></search>
+			<add><![CDATA[<a href="<?php echo $export; ?>" class="button"><?php echo $button_export; ?></a><a onclick="location = '<?php echo $insert; ?>'" class="button"><?php echo $button_insert; ?></a>]]></add>
+		</operation>
+	</file>
+   
+    	
+<!-- Gift Voucher List -->  
+    <!-- Controller --> 
+  
+    <file name="admin/controller/sale/voucher.php">
+		
+    <operation>
+			<search position="before" offset="0"><![CDATA[$this->data['button_insert'] = $this->language->get('button_insert');]]></search>
+            <add><![CDATA[$this->data['button_export'] = $this->language->get('button_export');
+			$this->data['export'] = $this->url->link('sale/voucher/export', 'token=' . $this->session->data['token'] . $url, 'SSL');]]></add>
+		</operation>    
+        	
+        	<operation>
+			<search position="before" offset="0"><![CDATA[private function getList() {]]></search>
+            <add><![CDATA[public function export() {
+		if (isset($this->request->get['sort'])) {
+			$sort = $this->request->get['sort'];
+		} else {
+			$sort = 'v.date_added';
+		}
+
+		if (isset($this->request->get['order'])) {
+			$order = $this->request->get['order'];
+		} else {
+			$order = 'DESC';
+		}
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+
+		$data = array(
+			'sort'  => $sort,
+			'order' => $order,
+		//	'start' => ($page - 1) * $this->config->get('config_admin_limit'),
+		//	'limit' => $this->config->get('config_admin_limit')
+		);
+
+		$this->load->model('sale/voucher');
+		
+		$results = $this->model_sale_voucher->getVouchers($data);
+		
+		$vouchers = array();
+		
+		foreach ($results as $result) {
+			$vouchers[] = array(
+				'voucher_id' => $result['voucher_id'],
+				'code'       => $result['code'],
+				'from'       => $result['from_name'],
+				'to'         => $result['to_name'],
+				'theme'      => $result['theme'],
+				'amount'     => $this->currency->format($result['amount'], $this->config->get('config_currency')),
+				'status'     => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled')),
+				'date_added' => date($this->language->get('date_format_short'), strtotime($result['date_added']))
+			);
+		}	
+				
+				$vouchers_data = array();
+				
+				$vouchers_column=array();
+				
+				$vouchers_column = array('Voucher ID', 'Voucher Code', 'From', 'To', 'Theme', 'Amount', 'Status', 'Date Added');
+					
+				$vouchers_data[0]=   $vouchers_column;   
+				
+				foreach($vouchers as $vouchers_row)
+				{
+					$vouchers_data[]=   $vouchers_row;            
+				}     
+				require_once(DIR_SYSTEM . 'library/excel_xml.php');
+				$xls = new Excel_XML('UTF-8', false, 'Vouchers List');
+				
+				$xls->addArray($vouchers_data);
+				
+				$xls->generateXML('vouchers_list_'.date('Y-m-d _ H:i:s'));	
+
+			}]]></add>
+		</operation>
+	</file>
+<!-- View -->
+
+	<file name="admin/view/template/sale/voucher_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<a onclick="location = '<?php echo $insert; ?>'" class="button"><?php echo $button_insert; ?></a>]]></search>
+			<add><![CDATA[<a href="<?php echo $export; ?>" class="button"><?php echo $button_export; ?></a><a onclick="location = '<?php echo $insert; ?>'" class="button"><?php echo $button_insert; ?></a>]]></add>
+		</operation>
+	</file>
+   
+   
+   
+	
+</modification>

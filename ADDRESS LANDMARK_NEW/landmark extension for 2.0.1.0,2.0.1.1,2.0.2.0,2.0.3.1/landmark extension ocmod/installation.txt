@@ -1,0 +1,50 @@
+---------------------------------------------------------------------------------------------
+         Module : Address Landmark  
+--------------------------------------------------------------------------------------------
+
+The Address Landmark module has added new field in form.
+
+The landmark field has display on following forms:
+	- Customer registeration,
+	- Billing Address,
+	- Delivery Address.
+
+This module have install/uninstall like others modules.
+
+
+=================================================================================================
+Installation
+=================================================================================================
+
+1. First You must backup your opencart site/cart and also database. Because add a new files and alter two tables.
+
+The altered database tables are:
+-----------------------------------------
+TABLE        :     NEW FIELDs
+-----------------------------------------
+             
+address	     :  landmark 
+             
+order        : payment_landmark 
+               shipping_landmark 
+
+-----------------------------------------
+
+2. Before install this addon you have to install irs_landmarkfield.ocmod.xml file given in Extensions root directory via Extension Installer
+
+3. Click Refresh in right top corner of modification 
+			
+4. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+5. Login to Admin panel 
+		Extensions -> Modules
+		
+		 See the "Landmark" Module then Click [install] link to install this Plugin.	 
+
+6. Reload Your opencart site.
+
+7. Now see your site's following forms "landmark" field:
+
+		- Customer Registeration form
+		- Billing Details form
+		- Delivery Details form

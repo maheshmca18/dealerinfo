@@ -1,0 +1,114 @@
+This Plugin requires 'VQMOD' 
+
+Main feature :
+
+This Plugin allows you to export your 
+					
+					Sales,
+						Orders,
+						Returns,
+						Customers,
+						Affliates,
+						Coupons,
+						Gift Vouchers.
+
+to an Excel file.
+
+
+
+
+
+Additional features :
+
+Sales Section :
+
+1.Filtering your Orders :
+
+	Order id, Customer Name, Order status, Total, IP, Date Added, Date Modified
+
+2.Filtering your returns :
+
+	Return id, Order id, Customer Name, Product Name, Model, Return status, Date Added, Date Modified
+
+
+3.Filtering your customers :
+
+	Customer Name, Email, Customer Group, Customer status, Approved, IP, Date Added
+
+4.Filtering your Affliates :
+
+	Affliate Name, Email, Affliate Status, Approved, Date Added
+
+
+The fields Exported are
+
+Sales Section
+
+Orders list  :
+		Order ID,
+		Customer Group,
+		Customer Name,
+		Email,
+		Telephone,
+		Payment Address,
+		Shipping Address,
+		Payment Method,
+		Shipping Method,
+		Total,
+		Currency Code,
+		Date Added,
+		Order Status.
+
+Returns list :
+		Return ID,
+		Order ID,
+		Customer,
+		Product,
+		Model,
+		Date Added,
+		Date Modified.
+
+Customers list :
+
+		Customer ID,
+		Customer Name,
+		Email,
+		Telephone,
+		Address,
+		City,
+		Post Code,
+		Country	IP,
+		Status,
+		Approved,
+		Date Added,
+		Customer Group.
+		
+		
+Affliate list :
+		Affliate ID,
+		Affliate Name,
+		Email,
+		Balance,
+		Status,
+		Approved,
+		Date Added.
+		
+Coupon list :
+		Coupon ID,
+		Coupon Name,
+		Coupon Code,
+		Discount,
+		Start Date,
+		End Date,
+		Status.
+		
+Gift Vouchers list :
+		Voucher ID,
+		Voucher Code,
+		From,
+		To,
+		Theme,
+		Amount,
+		Status,
+		Date Added.
+		

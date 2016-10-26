@@ -1,0 +1,21 @@
+==========================================
+                 Installation
+==========================================
+
+1. Before install this extension you have to install "vQmod" in your shop.
+
+[NOTE : Opencart version - 1.5.4X ] install vQmod 2.3.2 version.
+
+
+2. Upload the our extension's "vqmod" folder to your root folder. (No file are replaced, Only one new file)
+Done.
+
+3. Refresh/Reload Your Opencart Site.
+
+
+
+
+
+
+
+
