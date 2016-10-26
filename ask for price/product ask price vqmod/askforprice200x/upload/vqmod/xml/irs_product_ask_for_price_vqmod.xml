@@ -1,0 +1,1500 @@
+<modification>
+    <id>Product Ask For Price</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <authour>IRS SOFT</authour>
+
+			<!--- PRODUCT -->
+
+    <!--catalog controller file start-->
+    <file path="catalog/controller/product/product.php">
+       
+
+ 	<operation>
+            <search position="before" ><![CDATA[$data['tab_description'] = $this->language->get('tab_description');]]></search>
+            <add><![CDATA[//ask for price start here
+
+            $data['entry_cname'] = $this->language->get('entry_cname');
+            $data['entry_cemail'] = $this->language->get('entry_cemail');
+            $data['entry_cmessage'] = $this->language->get('entry_cmessage');
+            $data['entry_cquantity'] = $this->language->get('entry_cquantity');
+            $data['entry_ccode'] = $this->language->get('entry_ccode');
+            $data['button_csubmit'] = $this->language->get('button_csubmit');
+            $data['entry_cheader'] = $this->language->get('entry_cheader');
+
+
+
+            if (isset($this->request->post['cemail'])) {
+                $data['cemail'] = $this->request->post['cemail'];
+            } else {
+                $data['cemail'] = $this->customer->getEmail();
+            }
+
+            if (isset($this->request->post['cmessage'])) {
+                $data['cmessage'] = $this->request->post['cmessage'];
+            } else {
+                $data['cmessage'] = '';
+            }
+
+            if (isset($this->request->post['cquantity'])) {
+                $data['cquantity'] = $this->request->post['cquantity'];
+            } else {
+                $data['cquantity'] = '';
+            }
+
+            if (isset($this->request->post['cname'])) {
+                $data['cname'] = $this->request->post['cname'];
+            } else {
+                $data['cname'] = $this->customer->getFirstName();
+            }
+
+            if (isset($this->error['captcha'])) {
+                $data['error_captcha'] = $this->error['captcha'];
+            } else {
+                $data['error_captcha'] = '';
+            }
+
+            if ($this->config->get('recaptcha_private_key') && $this->config->get('recaptcha_public_key')) {
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+                if ($this->config->get('config_ssl')) {
+                    $recaptcha_ssl = true;
+                } else {
+                    $recaptcha_ssl = false;
+                }
+
+                $data['recaptcha'] = recaptcha_get_html($this->config->get('recaptcha_public_key'), null, $recaptcha_ssl);
+            } else {
+                $data['recaptcha'] = '';
+            }
+
+            //ask for price end here]]>
+            </add>
+        </operation>
+
+
+<operation>
+            <search position="before" offset="1"><![CDATA[$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue=0.00;]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="after" ><![CDATA[$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue = $this->currency->format($result['price']);
+
+                    $pricecheck = $this->currency->format($this->$pricevalue);]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="after" ><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA['pricevalue' => $pricevalue,
+                    'pricecheck' => $pricecheck,]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="before" offset="1"><![CDATA[$data['price'] = $this->currency->format($this->tax->calculate($product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue=0.00;]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="after" ><![CDATA[data['price'] = $this->currency->format($this->tax->calculate($product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$data['pricevalue'] = $this->currency->format($product_info['price']); $data['pricecheck'] = $this->currency->format($pricevalue);]]>
+            </add>
+        </operation>
+
+
+
+
+        <operation>
+            <search position="before" ><![CDATA[public function write() {]]></search>
+            <add><![CDATA[public function pricevalidate() {
+        $this->load->language('product/product');
+
+        $json = array();
+
+
+        if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+
+            if ((utf8_strlen($this->request->post['cname']) < 3) || (utf8_strlen($this->request->post['cname']) > 25)) {
+                $json['error'] = $this->language->get('error_cname');
+            }
+
+            if (!preg_match('/^[^\@]+@.*.[a-z]{2,15}$/i', $this->request->post['cemail'])) {
+                $json['error'] = $this->language->get('error_cemail');
+            }
+
+
+            if ((utf8_strlen($this->request->post['cmessage']) < 25) || (utf8_strlen($this->request->post['cmessage']) > 1000)) {
+                $json['error'] = $this->language->get('error_ctext');
+            }
+
+            if ((utf8_strlen($this->request->post['cquantity']) == "")) {
+                $json['error'] = $this->language->get('error_cquantity');
+            }
+
+            if (!$this->config->get('recaptcha_private_key') || !$this->config->get('recaptcha_public_key')) {
+                if (empty($this->session->data['captcha']) || ($this->session->data['captcha'] != $this->request->post['captcha'])) {
+                    $this->error['captcha'] = $this->language->get('error_captcha');
+                }
+            } else {
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+                if (!isset($this->request->post['recaptcha_challenge_field']) || !isset($this->request->post['recaptcha_response_field'])) {
+                    $json['error'] = $this->language->get('error_captcha');
+                } else {
+                    $response = recaptcha_check_answer($this->config->get('recaptcha_private_key'), $this->request->server['REMOTE_ADDR'], $this->request->post['recaptcha_challenge_field'], $this->request->post['recaptcha_response_field']);
+
+                    if (!$response->is_valid) {
+                        $json['error'] = $this->language->get('error_captcha');
+                    }
+                }
+            }
+
+            if (!isset($json['error'])) {
+
+                if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+                    unset($this->session->data['captcha']);
+
+                    $msg = $this->language->get('text_cadmin') . "\n\n";
+                    $msg .= $this->language->get('text_cmsgcontent')."<a target='_blank' href='mailto:".$this->request->post['cemail']."'>".$this->request->post['cemail']."</a> ". "\n";
+                    $msg .= $this->request->post['cmessage'] . "\n";
+                    $msg .= $this->language->get('text_cproductname')."<a target='_blank'  href='".$this->request->post['urllink'] ."'>".$this->request->post['productname'] ."</a>" . "\n";
+                    $msg .= $this->language->get('text_cexpitquantity').$this->request->post['cquantity'];
+
+                    $mail = new Mail($this->config->get('config_mail'));
+                    $mail->setTo($this->config->get('config_email'));
+                    $mail->setFrom($this->request->post['cemail']);
+                    $mail->setSender($this->request->post['cname']);
+                    $mail->setSubject(sprintf($this->language->get('email_subject'), $this->request->post['cname']));
+                    $mail->setText(strip_tags(html_entity_decode($msg, ENT_QUOTES, 'UTF-8')));
+                    $mail->send();
+
+                    $json['success'] = $this->language->get('text_csuccess');
+                }
+
+            }
+        }
+
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($json));
+
+    }]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog controller file end-->
+
+    <!--catalog language file start-->
+    <file path="catalog/language/english/product/product.php">
+        <operation>
+            <search position="after" ><![CDATA[$_['tab_review']                              = 'Reviews (%s)';]]></search>
+            <add><![CDATA[//ask for price start here
+
+$_['entry_cname']              = 'Name';
+$_['entry_cemail']             = 'Email id';
+$_['entry_cmessage']           = 'Request Message';
+$_['entry_cquantity']          = 'Required Quantity';
+$_['button_csubmit']           = 'Submit';
+$_['email_subject']            = 'Enquiry %s';
+
+$_['error_cname']              = 'Warning: Name must be between 3 and 25 characters!';
+$_['error_cquantity']          = 'Warning: Enter Required Quantity Details !';
+$_['error_ctext']              = 'Warning: Message Text must be between 25 and 1000 characters!';
+$_['error_captcha']            = 'Warning: Verification code does not match the image!';
+$_['error_cemail']              = 'E-Mail Address does not appear to be valid!';
+$_['text_csuccess']            = 'successfully send your message.';
+$_['text_cadmin']              = 'Dear Admin,';
+$_['text_cmsgcontent']         = 'You got a price request from ';
+$_['text_cexpitquantity']      = 'Expected Quantity = ';
+$_['text_cproductname']        = 'Product Name : ';
+$_['entry_cheader']            = 'Ask About ';
+
+//end ask for price]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+   
+    <!--catalog view file start-->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search position="before" ><![CDATA[<?php if ($price) { ?>]]></search>
+            <add><![CDATA[<?php
+            if ($pricevalue==$pricecheck) {
+            ?>
+            <button type="button" class="btn  btn-primary btn-lg btn-block" data-toggle="modal" data-target="#myModal" onclick="addname(this)" id="<?php echo $heading_title; ?>">Ask for price</button>
+            <?php   }
+            else{
+              ?>]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="before" offset="1"><![CDATA[<?php if ($options) { ?>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="before" ><![CDATA[<button type="button" id="button-cart" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary btn-lg btn-block"><?php echo $button_cart; ?></button>]]></search>
+            <add><![CDATA[<?php if ($pricevalue==$pricecheck) { ?>
+                <button type="button" id="buttondisable" data-loading-text="<?php echo $text_loading; ?>" class="btn  btn-lg btn-block"  style=" background-image: linear-gradient(to bottom, #eeeeee, #dddddd);  "><?php echo $button_cart; ?></button>
+                <?php } else {  ?>]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="after" ><![CDATA[<button type="button" id="button-cart" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary btn-lg btn-block"><?php echo $button_cart; ?></button>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="before" ><![CDATA[<?php if ($product['price']) { ?>]]></search>
+            <add><![CDATA[ <?php
+            if ($product['pricevalue']==$product['pricecheck']) {
+            ?>
+                <button type="button" class="btn  btn-primary btn-lg btn-block" data-toggle="modal" data-target="#myModal" onclick="addname(this)" id="<?php echo $product['name']; ?>">Ask for price</button>
+                <?php   }
+            else{
+              ?>]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="before" offset="2"><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span> <i class="fa fa-shopping-cart"></i></button>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="before" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span> <i class="fa fa-shopping-cart"></i></button>]]></search>
+            <add><![CDATA[<?php
+                 if ($product['pricevalue']==$product['pricecheck']) { ?>
+                <button type="button" id="buttondisable" data-loading-text="<?php echo $text_loading; ?>"   style=" background-image: linear-gradient(to bottom, #eeeeee, #dddddd);  "><i class="fa fa-shopping-cart"></i><?php echo $button_cart; ?></button>
+                <?php } else {  ?>]]>
+            </add>
+        </operation>
+<operation>
+            <search position="after" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span> <i class="fa fa-shopping-cart"></i></button>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+
+        <operation>
+             <search position="before" ><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[<div class="container">
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <center> <label style="font-size: 20px;"><?php echo $entry_cheader; ?></label> <label id="addproductname" name="addproductname" value="" style="font-size: 20px;"> </label>
+                    </center>
+                </div>
+                <div class="modal-body">
+                        <fieldset>
+                            <div id="price"></div>
+
+                            <div class="form-group required">
+
+                                <div class="col-sm-10" >
+                                    <label class="control-label" for="input-name"><?php echo $entry_cname; ?></label>
+                                    <input type="text" name="cname" value="<?php echo $cname; ?>" id="input-cname" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class=" control-label" for="input-email"><?php echo $entry_cemail; ?></label>
+                                    <input type="text" name="cemail" value="<?php echo $cemail; ?>" id="input-cemail" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class=" control-label" for="input-enquiry"><?php echo $entry_cmessage; ?></label>
+                                    <textarea name="cmessage" rows="5" id="input-cmessage" class="form-control"><?php echo $cmessage; ?></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class="control-label" for="input-name"><?php echo $entry_cquantity; ?></label>
+                                    <input type="text" name="cquantity" value="<?php echo $cquantity; ?>" id="input-name" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+
+                                <div class="col-sm-10">
+                                    <?php if ($recaptcha) { ?>
+                                    <?php echo $recaptcha; ?>
+                                    <br />
+                                    <?php if ($error_captcha) { ?>
+                                    <span class="text-danger"><?php echo $error_captcha; ?></span>
+                                    <?php } ?>
+                                    <?php } ?>
+                                </div></div>
+                        </fieldset>
+                   
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="button-price" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary"><?php echo $button_csubmit; ?></button>
+                    <button type="button" class="btn btn-primary btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+
+    //ask for price start here
+    $(document).ready(function(){
+
+        $('#price').delegate('.pagination a', 'click', function(e) {
+            e.preventDefault();
+
+            $('#price').fadeOut('slow');
+
+            $('#price').load(this.href);
+
+            $('#price').fadeIn('slow');
+        });
+
+        $(document).on('click','#button-price', function() {
+
+            $urllink='&urllink='+ encodeURIComponent(window.location.href);
+
+
+            $productname='&productname=' + encodeURIComponent($('#addproductname').text());
+             $cname='cname=' + encodeURIComponent($('input[name=\'cname\']').val());
+            $cemail='&cemail=' + encodeURIComponent($('input[name=\'cemail\']').val());
+            $cmessage='&cmessage=' + encodeURIComponent($('textarea[name=\'cmessage\']').val());
+            $cquantity='&cquantity=' + encodeURIComponent($('input[name=\'cquantity\']').val());
+            $recaptcha = '&recaptcha_response_field=' + encodeURIComponent($('input[name=\'recaptcha_response_field\']').val()) + '&recaptcha_challenge_field=' + encodeURIComponent($('input[name=\'recaptcha_challenge_field\']').val());
+
+            $.ajax({
+                url: 'index.php?route=product/product/pricevalidate',
+                type: 'post',
+                dataType: 'json',
+                data: $cname + $cemail + $cmessage + $cquantity + $recaptcha + $productname + $urllink,
+                beforeSend: function() {
+                    $('#button-price').button('loading');
+                },
+                complete: function() {
+                    $('#button-price').button('reset');
+                },
+                success: function(json) {
+
+
+                    $('.alert-success, .alert-danger').remove();
+
+                    if (json['error']) {
+                        $('#price').after('<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' + json['error'] + '</div>');
+
+                        Recaptcha.reload();
+
+                    }
+
+                    if (json['success']) {
+                        
+                        $('input[name=\'cname\']').val('');
+                        $('textarea[name=\'cmessage\']').val('');
+                        $('input[name=\'cemail\']').val('');
+                        $('input[name=\'cquantity\']').val('');
+
+                        Recaptcha.reload();
+$(".close").trigger("click");
+$(window).scrollTop(0);
+$('.breadcrumb').after('<div class="alert alert-success">' + json['success'] + '<button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+
+                    }
+                }
+            });
+
+
+        });
+
+    });
+
+
+    function addname(obj){
+
+        $obj=$(obj).attr('id');
+        $('#addproductname').html($obj);
+    }
+
+</script>]]>
+            </add>
+        </operation>
+
+
+    </file>
+    <!-- catalog view file end-->
+					<!---END PRODUCT-->
+
+					<!--- search start here-->
+
+ <!--catalog controller file start-->
+    <file path="catalog/controller/product/search.php">
+       
+
+ 	<operation>
+            <search position="before" ><![CDATA[$data['entry_description'] = $this->language->get('entry_description');]]></search>
+            <add><![CDATA[//ask for price start here
+
+            $data['entry_cname'] = $this->language->get('entry_cname');
+            $data['entry_cemail'] = $this->language->get('entry_cemail');
+            $data['entry_cmessage'] = $this->language->get('entry_cmessage');
+            $data['entry_cquantity'] = $this->language->get('entry_cquantity');
+            $data['entry_ccode'] = $this->language->get('entry_ccode');
+            $data['button_csubmit'] = $this->language->get('button_csubmit');
+            $data['entry_cheader'] = $this->language->get('entry_cheader');
+$data['text_loading'] = $this->language->get('text_loading');
+
+
+
+            if (isset($this->request->post['cemail'])) {
+                $data['cemail'] = $this->request->post['cemail'];
+            } else {
+                $data['cemail'] = $this->customer->getEmail();
+            }
+
+            if (isset($this->request->post['cmessage'])) {
+                $data['cmessage'] = $this->request->post['cmessage'];
+            } else {
+                $data['cmessage'] = '';
+            }
+
+            if (isset($this->request->post['cquantity'])) {
+                $data['cquantity'] = $this->request->post['cquantity'];
+            } else {
+                $data['cquantity'] = '';
+            }
+
+            if (isset($this->request->post['cname'])) {
+                $data['cname'] = $this->request->post['cname'];
+            } else {
+                $data['cname'] = $this->customer->getFirstName();
+            }
+
+            if (isset($this->error['captcha'])) {
+                $data['error_captcha'] = $this->error['captcha'];
+            } else {
+                $data['error_captcha'] = '';
+            }
+
+            if ($this->config->get('recaptcha_private_key') && $this->config->get('recaptcha_public_key')) {
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+                if ($this->config->get('config_ssl')) {
+                    $recaptcha_ssl = true;
+                } else {
+                    $recaptcha_ssl = false;
+                }
+
+                $data['recaptcha'] = recaptcha_get_html($this->config->get('recaptcha_public_key'), null, $recaptcha_ssl);
+            } else {
+                $data['recaptcha'] = '';
+            }
+
+            //ask for price end here]]>
+            </add>
+        </operation>
+
+
+<operation>
+            <search position="before" offset="1"><![CDATA[$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue=0.00;]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="after" ><![CDATA[$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue = $this->currency->format($result['price']);
+
+                    $pricecheck = $this->currency->format($this->$pricevalue);]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="after" ><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA['pricevalue' => $pricevalue,
+                    'pricecheck' => $pricecheck,]]>
+            </add>
+        </operation>
+
+
+
+
+    </file>
+    <!-- catalog controller file end-->
+
+    <!--catalog language file start-->
+    <file path="catalog/language/english/product/search.php">
+        <operation>
+            <search position="after" ><![CDATA[$_['entry_search']      = 'Search Criteria';]]></search>
+            <add><![CDATA[//ask for price start here
+
+$_['entry_cname']              = 'Name';
+$_['entry_cemail']             = 'Email id';
+$_['entry_cmessage']           = 'Request Message';
+$_['entry_cquantity']          = 'Required Quantity';
+$_['button_csubmit']           = 'Submit';
+$_['email_subject']            = 'Enquiry %s';
+
+$_['error_cname']              = 'Warning: Name must be between 3 and 25 characters!';
+$_['error_cquantity']          = 'Warning: Enter Required Quantity Details !';
+$_['error_ctext']              = 'Warning: Message Text must be between 25 and 1000 characters!';
+$_['error_captcha']            = 'Warning: Verification code does not match the image!';
+$_['error_cemail']              = 'E-Mail Address does not appear to be valid!';
+$_['text_csuccess']            = 'successfully send your message.';
+$_['text_cadmin']              = 'Dear Admin,';
+$_['text_cmsgcontent']         = 'You got a price request from ';
+$_['text_cexpitquantity']      = 'Expected Quantity = ';
+$_['text_cproductname']        = 'Product Name : ';
+$_['entry_cheader']            = 'Ask About ';
+
+//end ask for price]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+   
+    <!--catalog view file start-->
+    <file path="catalog/view/theme/*/template/product/search.tpl">
+        
+
+<operation>
+            <search position="before" ><![CDATA[<?php if ($product['price']) { ?>]]></search>
+            <add><![CDATA[ <?php
+            if ($product['pricevalue']==$product['pricecheck']) {
+            ?>
+                <button type="button" class="btn  btn-primary btn-lg btn-block" data-toggle="modal" data-target="#myModal" onclick="addname(this)" id="<?php echo $product['name']; ?>">Ask for price</button>
+                <?php   }
+            else{
+              ?>]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="before" ><![CDATA[<?php if ($product['rating']) { ?>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="before" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+            <add><![CDATA[<?php
+                 if ($product['pricevalue']==$product['pricecheck']) { ?>
+                <button type="button" id="buttondisable" data-loading-text="<?php echo $text_loading; ?>"   style=" background-image: linear-gradient(to bottom, #eeeeee, #dddddd);  "><i class="fa fa-shopping-cart"></i><?php echo $button_cart; ?></button>
+                <?php } else {  ?>]]>
+            </add>
+        </operation>
+<operation>
+            <search position="after" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+
+        <operation>
+             <search position="before" ><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[<div class="container">
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <center> <label style="font-size: 20px;"><?php echo $entry_cheader; ?></label> <label id="addproductname" name="addproductname" value="" style="font-size: 20px;"> </label>
+                    </center>
+                </div>
+                <div class="modal-body">
+
+                        <fieldset>
+                            <div id="price"></div>
+
+                            <div class="form-group required">
+
+                                <div class="col-sm-10" >
+                                    <label class="control-label" for="input-name"><?php echo $entry_cname; ?></label>
+                                    <input type="text" name="cname" value="<?php echo $cname; ?>" id="input-cname" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class=" control-label" for="input-email"><?php echo $entry_cemail; ?></label>
+                                    <input type="text" name="cemail" value="<?php echo $cemail; ?>" id="input-cemail" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class=" control-label" for="input-enquiry"><?php echo $entry_cmessage; ?></label>
+                                    <textarea name="cmessage" rows="5" id="input-cmessage" class="form-control"><?php echo $cmessage; ?></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class="control-label" for="input-name"><?php echo $entry_cquantity; ?></label>
+                                    <input type="text" name="cquantity" value="<?php echo $cquantity; ?>" id="input-name" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+
+                                <div class="col-sm-10">
+                                    <?php if ($recaptcha) { ?>
+                                    <?php echo $recaptcha; ?>
+                                    <br />
+                                    <?php if ($error_captcha) { ?>
+                                    <span class="text-danger"><?php echo $error_captcha; ?></span>
+                                    <?php } ?>
+                                    <?php } ?>
+                                </div></div>
+                        </fieldset>
+                   
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="button-price" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary"><?php echo $button_csubmit; ?></button>
+                    <button type="button" class="btn btn-primary btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+
+    //ask for price start here
+    $(document).ready(function(){
+
+        $('#price').delegate('.pagination a', 'click', function(e) {
+            e.preventDefault();
+
+            $('#price').fadeOut('slow');
+
+            $('#price').load(this.href);
+
+            $('#price').fadeIn('slow');
+        });
+
+        $(document).on('click','#button-price', function() {
+
+            $urllink='&urllink='+ encodeURIComponent(window.location.href);
+
+            $productname='&productname=' + encodeURIComponent($('#addproductname').text());
+             $cname='cname=' + encodeURIComponent($('input[name=\'cname\']').val());
+            $cemail='&cemail=' + encodeURIComponent($('input[name=\'cemail\']').val());
+            $cmessage='&cmessage=' + encodeURIComponent($('textarea[name=\'cmessage\']').val());
+            $cquantity='&cquantity=' + encodeURIComponent($('input[name=\'cquantity\']').val());
+            $recaptcha = '&recaptcha_response_field=' + encodeURIComponent($('input[name=\'recaptcha_response_field\']').val()) + '&recaptcha_challenge_field=' + encodeURIComponent($('input[name=\'recaptcha_challenge_field\']').val());
+
+            $.ajax({
+                url: 'index.php?route=product/product/pricevalidate',
+                type: 'post',
+                dataType: 'json',
+                data: $cname + $cemail + $cmessage + $cquantity + $recaptcha + $productname + $urllink,
+                beforeSend: function() {
+                    $('#button-price').button('loading');
+                },
+                complete: function() {
+                    $('#button-price').button('reset');
+                },
+                success: function(json) {
+
+
+                    $('.alert-success, .alert-danger').remove();
+
+                    if (json['error']) {
+                        $('#price').after('<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' + json['error'] + '</div>');
+
+                        Recaptcha.reload();
+
+                    }
+
+                    if (json['success']) {
+                        
+                        $('input[name=\'cname\']').val('');
+                        $('textarea[name=\'cmessage\']').val('');
+                        $('input[name=\'cemail\']').val('');
+                        $('input[name=\'cquantity\']').val('');
+
+                        Recaptcha.reload();
+$(".close").trigger("click");
+$(window).scrollTop(0);
+$('.breadcrumb').after('<div class="alert alert-success">' + json['success'] + '<button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+
+                    }
+                }
+            });
+
+
+        });
+
+
+
+
+    });
+
+
+    function addname(obj){
+
+        $obj=$(obj).attr('id');
+        $('#addproductname').html($obj);
+    }
+
+
+
+</script>]]>
+            </add>
+        </operation>
+
+
+    </file>
+    <!-- catalog view file end-->
+
+				<!---search end here-->
+
+<!--- category start here-->
+
+ <!--catalog controller file start-->
+    <file path="catalog/controller/product/category.php">       
+
+ 	<operation>
+            <search position="before" ><![CDATA[$data['button_wishlist'] = $this->language->get('button_wishlist');]]></search>
+            <add><![CDATA[//ask for price start here
+
+            $data['entry_cname'] = $this->language->get('entry_cname');
+            $data['entry_cemail'] = $this->language->get('entry_cemail');
+            $data['entry_cmessage'] = $this->language->get('entry_cmessage');
+            $data['entry_cquantity'] = $this->language->get('entry_cquantity');
+            $data['entry_ccode'] = $this->language->get('entry_ccode');
+            $data['button_csubmit'] = $this->language->get('button_csubmit');
+            $data['entry_cheader'] = $this->language->get('entry_cheader');
+$data['text_loading'] = $this->language->get('text_loading');
+
+
+
+            if (isset($this->request->post['cemail'])) {
+                $data['cemail'] = $this->request->post['cemail'];
+            } else {
+                $data['cemail'] = $this->customer->getEmail();
+            }
+
+            if (isset($this->request->post['cmessage'])) {
+                $data['cmessage'] = $this->request->post['cmessage'];
+            } else {
+                $data['cmessage'] = '';
+            }
+
+            if (isset($this->request->post['cquantity'])) {
+                $data['cquantity'] = $this->request->post['cquantity'];
+            } else {
+                $data['cquantity'] = '';
+            }
+
+            if (isset($this->request->post['cname'])) {
+                $data['cname'] = $this->request->post['cname'];
+            } else {
+                $data['cname'] = $this->customer->getFirstName();
+            }
+
+            if (isset($this->error['captcha'])) {
+                $data['error_captcha'] = $this->error['captcha'];
+            } else {
+                $data['error_captcha'] = '';
+            }
+
+            if ($this->config->get('recaptcha_private_key') && $this->config->get('recaptcha_public_key')) {
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+                if ($this->config->get('config_ssl')) {
+                    $recaptcha_ssl = true;
+                } else {
+                    $recaptcha_ssl = false;
+                }
+
+                $data['recaptcha'] = recaptcha_get_html($this->config->get('recaptcha_public_key'), null, $recaptcha_ssl);
+            } else {
+                $data['recaptcha'] = '';
+            }
+
+            //ask for price end here]]>
+            </add>
+        </operation>
+
+
+<operation>
+            <search position="before" offset="1"><![CDATA[$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue=0.00;]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="after" ><![CDATA[$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue = $this->currency->format($result['price']);
+
+                    $pricecheck = $this->currency->format($this->$pricevalue);]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="after" ><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA['pricevalue' => $pricevalue,
+                    'pricecheck' => $pricecheck,]]>
+            </add>
+        </operation>
+
+
+
+    </file>
+    <!-- catalog controller file end-->
+
+    <!--catalog language file start-->
+    <file path="catalog/language/english/product/category.php">
+        <operation>
+            <search position="after" ><![CDATA[$_['text_default']      = 'Default';]]></search>
+            <add><![CDATA[//ask for price start here
+
+$_['entry_cname']              = 'Name';
+$_['entry_cemail']             = 'Email id';
+$_['entry_cmessage']           = 'Request Message';
+$_['entry_cquantity']          = 'Required Quantity';
+$_['button_csubmit']           = 'Submit';
+$_['email_subject']            = 'Enquiry %s';
+
+$_['error_cname']              = 'Warning: Name must be between 3 and 25 characters!';
+$_['error_cquantity']          = 'Warning: Enter Required Quantity Details !';
+$_['error_ctext']              = 'Warning: Message Text must be between 25 and 1000 characters!';
+$_['error_captcha']            = 'Warning: Verification code does not match the image!';
+$_['error_cemail']              = 'E-Mail Address does not appear to be valid!';
+$_['text_csuccess']            = 'successfully send your message.';
+$_['text_cadmin']              = 'Dear Admin,';
+$_['text_cmsgcontent']         = 'You got a price request from ';
+$_['text_cexpitquantity']      = 'Expected Quantity = ';
+$_['text_cproductname']        = 'Product Name : ';
+$_['entry_cheader']            = 'Ask About ';
+
+//end ask for price]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+   
+    <!--catalog view file start-->
+    <file path="catalog/view/theme/*/template/product/category.tpl">
+        
+
+<operation>
+            <search position="before" ><![CDATA[<?php if ($product['price']) { ?>]]></search>
+            <add><![CDATA[ <?php
+            if ($product['pricevalue']==$product['pricecheck']) {
+            ?>
+                <button type="button" class="btn  btn-primary btn-lg btn-block" data-toggle="modal" data-target="#myModal" onclick="addname(this)" id="<?php echo $product['name']; ?>">Ask for price</button>
+                <?php   }
+            else{
+              ?>]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="before" offset="2" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="before" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+            <add><![CDATA[<?php
+                 if ($product['pricevalue']==$product['pricecheck']) { ?>
+                <button type="button" id="buttondisable" data-loading-text="<?php echo $text_loading; ?>"   style=" background-image: linear-gradient(to bottom, #eeeeee, #dddddd);  "><i class="fa fa-shopping-cart"></i><?php echo $button_cart; ?></button>
+                <?php } else {  ?>]]>
+            </add>
+        </operation>
+<operation>
+            <search position="after" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+
+        <operation>
+             <search position="before" ><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[<div class="container">
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <center> <label style="font-size: 20px;"><?php echo $entry_cheader; ?></label> <label id="addproductname" name="addproductname" value="" style="font-size: 20px;"> </label>
+                    </center>
+                </div>
+                <div class="modal-body">
+
+                        <fieldset>
+                            <div id="price"></div>
+
+                            <div class="form-group required">
+
+                                <div class="col-sm-10" >
+                                    <label class="control-label" for="input-name"><?php echo $entry_cname; ?></label>
+                                    <input type="text" name="cname" value="<?php echo $cname; ?>" id="input-cname" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class=" control-label" for="input-email"><?php echo $entry_cemail; ?></label>
+                                    <input type="text" name="cemail" value="<?php echo $cemail; ?>" id="input-cemail" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class=" control-label" for="input-enquiry"><?php echo $entry_cmessage; ?></label>
+                                    <textarea name="cmessage" rows="5" id="input-cmessage" class="form-control"><?php echo $cmessage; ?></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class="control-label" for="input-name"><?php echo $entry_cquantity; ?></label>
+                                    <input type="text" name="cquantity" value="<?php echo $cquantity; ?>" id="input-name" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+
+                                <div class="col-sm-10">
+                                    <?php if ($recaptcha) { ?>
+                                    <?php echo $recaptcha; ?>
+                                    <br />
+                                    <?php if ($error_captcha) { ?>
+                                    <span class="text-danger"><?php echo $error_captcha; ?></span>
+                                    <?php } ?>
+                                    <?php } ?>
+                                </div></div>
+                        </fieldset>
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="button-price" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary"><?php echo $button_csubmit; ?></button>
+                    <button type="button" class="btn btn-primary btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+
+    //ask for price start here
+    $(document).ready(function(){
+
+        $('#price').delegate('.pagination a', 'click', function(e) {
+            e.preventDefault();
+
+            $('#price').fadeOut('slow');
+
+            $('#price').load(this.href);
+
+            $('#price').fadeIn('slow');
+        });
+
+        $(document).on('click','#button-price', function() {
+
+            $urllink='&urllink='+ encodeURIComponent(window.location.href);
+
+            $productname='&productname=' + encodeURIComponent($('#addproductname').text());
+             $cname='cname=' + encodeURIComponent($('input[name=\'cname\']').val());
+            $cemail='&cemail=' + encodeURIComponent($('input[name=\'cemail\']').val());
+            $cmessage='&cmessage=' + encodeURIComponent($('textarea[name=\'cmessage\']').val());
+            $cquantity='&cquantity=' + encodeURIComponent($('input[name=\'cquantity\']').val());
+            $recaptcha = '&recaptcha_response_field=' + encodeURIComponent($('input[name=\'recaptcha_response_field\']').val()) + '&recaptcha_challenge_field=' + encodeURIComponent($('input[name=\'recaptcha_challenge_field\']').val());
+
+            $.ajax({
+                url: 'index.php?route=product/product/pricevalidate',
+                type: 'post',
+                dataType: 'json',
+                data: $cname + $cemail + $cmessage + $cquantity + $recaptcha + $productname + $urllink,
+                beforeSend: function() {
+                    $('#button-price').button('loading');
+                },
+                complete: function() {
+                    $('#button-price').button('reset');
+                },
+                success: function(json) {
+
+
+                    $('.alert-success, .alert-danger').remove();
+
+                    if (json['error']) {
+                        $('#price').after('<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' + json['error'] + '</div>');
+
+                        Recaptcha.reload();
+
+                    }
+
+                    if (json['success']) {
+                        
+                        $('input[name=\'cname\']').val('');
+                        $('textarea[name=\'cmessage\']').val('');
+                        $('input[name=\'cemail\']').val('');
+                        $('input[name=\'cquantity\']').val('');
+
+                        Recaptcha.reload();
+
+$(".close").trigger("click");
+$(window).scrollTop(0);
+$('.breadcrumb').after('<div class="alert alert-success">' + json['success'] + '<button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+
+                    }
+                }
+            });
+
+
+        });
+
+
+    });
+
+
+    function addname(obj){
+
+        $obj=$(obj).attr('id');
+        $('#addproductname').html($obj);
+    }
+
+
+
+</script>]]>
+            </add>
+        </operation>
+
+
+    </file>
+    <!-- catalog view file end-->
+
+				<!---category end here-->
+
+
+<!--- featured start here-->  
+
+
+ <!--catalog controller file start-->
+    <file path="catalog/controller/module/featured.php">
+       
+
+ 	<operation>
+            <search position="before" ><![CDATA[$data['button_compare'] = $this->language->get('button_compare');]]></search>
+            <add><![CDATA[//ask for price start here
+
+            $data['entry_cname'] = $this->language->get('entry_cname');
+            $data['entry_cemail'] = $this->language->get('entry_cemail');
+            $data['entry_cmessage'] = $this->language->get('entry_cmessage');
+            $data['entry_cquantity'] = $this->language->get('entry_cquantity');
+            $data['entry_ccode'] = $this->language->get('entry_ccode');
+            $data['button_csubmit'] = $this->language->get('button_csubmit');
+            $data['entry_cheader'] = $this->language->get('entry_cheader');
+$data['text_loading'] = $this->language->get('text_loading');
+
+
+
+            if (isset($this->request->post['cemail'])) {
+                $data['cemail'] = $this->request->post['cemail'];
+            } else {
+                $data['cemail'] = $this->customer->getEmail();
+            }
+
+            if (isset($this->request->post['cmessage'])) {
+                $data['cmessage'] = $this->request->post['cmessage'];
+            } else {
+                $data['cmessage'] = '';
+            }
+
+            if (isset($this->request->post['cquantity'])) {
+                $data['cquantity'] = $this->request->post['cquantity'];
+            } else {
+                $data['cquantity'] = '';
+            }
+
+            if (isset($this->request->post['cname'])) {
+                $data['cname'] = $this->request->post['cname'];
+            } else {
+                $data['cname'] = $this->customer->getFirstName();
+            }
+
+            if (isset($this->error['captcha'])) {
+                $data['error_captcha'] = $this->error['captcha'];
+            } else {
+                $data['error_captcha'] = '';
+            }
+
+            if ($this->config->get('recaptcha_private_key') && $this->config->get('recaptcha_public_key')) {
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+                if ($this->config->get('config_ssl')) {
+                    $recaptcha_ssl = true;
+                } else {
+                    $recaptcha_ssl = false;
+                }
+
+                $data['recaptcha'] = recaptcha_get_html($this->config->get('recaptcha_public_key'), null, $recaptcha_ssl);
+            } else {
+                $data['recaptcha'] = '';
+            }
+
+            //ask for price end here]]>
+            </add>
+        </operation>
+
+
+<operation>
+            <search position="before" offset="1"><![CDATA[$price = $this->currency->format($this->tax->calculate($product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue=0.00;]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="after" ><![CDATA[$price = $this->currency->format($this->tax->calculate($product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax')));]]></search>
+            <add><![CDATA[$pricevalue = $this->currency->format($product_info['price']);
+
+                    $pricecheck = $this->currency->format($this->$pricevalue);]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="after" ><![CDATA[$data['products'][] = array(]]></search>
+            <add><![CDATA['pricevalue' => $pricevalue,
+                    'pricecheck' => $pricecheck,]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="before" ><![CDATA[public function index($setting) {]]></search>
+            <add><![CDATA[public function pricevalidate() {
+        $this->load->language('module/featured');
+
+        $json = array();
+
+
+        if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+
+            if ((utf8_strlen($this->request->post['cname']) < 3) || (utf8_strlen($this->request->post['cname']) > 25)) {
+                $json['error'] = $this->language->get('error_cname');
+            }
+
+            if (!preg_match('/^[^\@]+@.*.[a-z]{2,15}$/i', $this->request->post['cemail'])) {
+                $json['error'] = $this->language->get('error_cemail');
+            }
+
+
+            if ((utf8_strlen($this->request->post['cmessage']) < 25) || (utf8_strlen($this->request->post['cmessage']) > 1000)) {
+                $json['error'] = $this->language->get('error_ctext');
+            }
+
+            if ((utf8_strlen($this->request->post['cquantity']) == "")) {
+                $json['error'] = $this->language->get('error_cquantity');
+            }
+
+            if (!$this->config->get('recaptcha_private_key') || !$this->config->get('recaptcha_public_key')) {
+                if (empty($this->session->data['captcha']) || ($this->session->data['captcha'] != $this->request->post['captcha'])) {
+                    $this->error['captcha'] = $this->language->get('error_captcha');
+                }
+            } else {
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+                if (!isset($this->request->post['recaptcha_challenge_field']) || !isset($this->request->post['recaptcha_response_field'])) {
+                    $json['error'] = $this->language->get('error_captcha');
+                } else {
+                    $response = recaptcha_check_answer($this->config->get('recaptcha_private_key'), $this->request->server['REMOTE_ADDR'], $this->request->post['recaptcha_challenge_field'], $this->request->post['recaptcha_response_field']);
+
+                    if (!$response->is_valid) {
+                        $json['error'] = $this->language->get('error_captcha');
+                    }
+                }
+            }
+
+            if (!isset($json['error'])) {
+
+                if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+                    unset($this->session->data['captcha']);
+
+                    $msg = $this->language->get('text_cadmin') . "\n\n";
+                    $msg .= $this->language->get('text_cmsgcontent')."<a target='_blank' href='mailto:".$this->request->post['cemail']."'>".$this->request->post['cemail']."</a> ". "\n";
+                    $msg .= $this->request->post['cmessage'] . "\n";
+                    $msg .= $this->language->get('text_cproductname')."<a target='_blank'  href='".$this->request->post['urllink'] ."'>".$this->request->post['productname'] ."</a>" . "\n";
+                    $msg .= $this->language->get('text_cexpitquantity').$this->request->post['cquantity'];
+
+                    $mail = new Mail($this->config->get('config_mail'));
+                    $mail->setTo($this->config->get('config_email'));
+                    $mail->setFrom($this->request->post['cemail']);
+                    $mail->setSender($this->request->post['cname']);
+                    $mail->setSubject(sprintf($this->language->get('email_subject'), $this->request->post['cname']));
+                    $mail->setText(strip_tags(html_entity_decode($msg, ENT_QUOTES, 'UTF-8')));
+                    $mail->send();
+
+                    $json['success'] = $this->language->get('text_csuccess');
+                }
+
+            }
+        }
+
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($json));
+
+    }]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog controller file end-->
+
+    <!--catalog language file start-->
+    <file path="catalog/language/english/module/featured.php">
+        <operation>
+            <search position="after" ><![CDATA[$_['heading_title'] = 'Featured';]]></search>
+            <add><![CDATA[//ask for price start here
+
+$_['entry_cname']              = 'Name';
+$_['entry_cemail']             = 'Email id';
+$_['entry_cmessage']           = 'Request Message';
+$_['entry_cquantity']          = 'Required Quantity';
+$_['button_csubmit']           = 'Submit';
+$_['email_subject']            = 'Enquiry %s';
+
+$_['error_cname']              = 'Warning: Name must be between 3 and 25 characters!';
+$_['error_cquantity']          = 'Warning: Enter Required Quantity Details !';
+$_['error_ctext']              = 'Warning: Message Text must be between 25 and 1000 characters!';
+$_['error_captcha']            = 'Warning: Verification code does not match the image!';
+$_['error_cemail']              = 'E-Mail Address does not appear to be valid!';
+$_['text_csuccess']            = 'successfully send your message.';
+$_['text_cadmin']              = 'Dear Admin,';
+$_['text_cmsgcontent']         = 'You got a price request from ';
+$_['text_cexpitquantity']      = 'Expected Quantity = ';
+$_['text_cproductname']        = 'Product Name : ';
+$_['entry_cheader']            = 'Ask About ';
+
+//end ask for price]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+   
+    <!--catalog view file start-->
+    <file path="catalog/view/theme/*/template/module/featured.tpl">
+        
+
+<operation>
+            <search position="before" ><![CDATA[<?php if ($product['price']) { ?>]]></search>
+            <add><![CDATA[ <?php
+            if ($product['pricevalue']==$product['pricecheck']) {
+            ?>
+                <button type="button" class="btn  btn-primary btn-lg btn-block" data-toggle="modal" data-target="#myModal" onclick="addname(this)" id="<?php echo $product['name']; ?>">Ask for price</button>
+                <?php   }
+            else{
+              ?>]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search position="before" offset="2" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="before" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+            <add><![CDATA[<?php
+                 if ($product['pricevalue']==$product['pricecheck']) { ?>
+                <button type="button" id="buttondisable" data-loading-text="<?php echo $text_loading; ?>"   style=" background-image: linear-gradient(to bottom, #eeeeee, #dddddd);  "><i class="fa fa-shopping-cart"></i><?php echo $button_cart; ?></button>
+                <?php } else {  ?>]]>
+            </add>
+        </operation>
+<operation>
+            <search position="after" ><![CDATA[<button type="button" onclick="cart.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-shopping-cart"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $button_cart; ?></span></button>]]></search>
+            <add><![CDATA[<?php } ?>]]>
+            </add>
+        </operation>
+
+
+        <operation>
+             <search position="after" offset="5"><![CDATA[<button type="button" data-toggle="tooltip" title="<?php echo $button_compare; ?>" onclick="compare.add('<?php echo $product['product_id']; ?>');"><i class="fa fa-exchange"></i></button>]]></search>
+            <add><![CDATA[<div class="container">
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <center> <label style="font-size: 20px;"><?php echo $entry_cheader; ?></label> <label id="addproductname" name="addproductname" value="" style="font-size: 20px;"> </label>
+                    </center>
+                </div>
+                <div class="modal-body">
+
+                        <fieldset>
+                            <div id="price"></div>
+
+                            <div class="form-group required">
+
+                                <div class="col-sm-10" >
+                                    <label class="control-label" for="input-name"><?php echo $entry_cname; ?></label>
+                                    <input type="text" name="cname" value="<?php echo $cname; ?>" id="input-cname" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class=" control-label" for="input-email"><?php echo $entry_cemail; ?></label>
+                                    <input type="text" name="cemail" value="<?php echo $cemail; ?>" id="input-cemail" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class=" control-label" for="input-enquiry"><?php echo $entry_cmessage; ?></label>
+                                    <textarea name="cmessage" rows="5" id="input-cmessage" class="form-control"><?php echo $cmessage; ?></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group required">
+                                <div class="col-sm-10">
+                                    <label class="control-label" for="input-name"><?php echo $entry_cquantity; ?></label>
+                                    <input type="text" name="cquantity" value="<?php echo $cquantity; ?>" id="input-name" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+
+                                <div class="col-sm-10">
+                                    <?php if ($recaptcha) { ?>
+                                    <?php echo $recaptcha; ?>
+                                    <br />
+                                    <?php if ($error_captcha) { ?>
+                                    <span class="text-danger"><?php echo $error_captcha; ?></span>
+                                    <?php } ?>
+                                    <?php } ?>
+                                </div></div>
+                        </fieldset>
+                   
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="button-price" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary"><?php echo $button_csubmit; ?></button>
+                    <button type="button" class="btn btn-primary btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+<script type="text/javascript">
+
+    //ask for price start here
+    $(document).ready(function(){
+
+        $('#price').delegate('.pagination a', 'click', function(e) {
+            e.preventDefault();
+
+            $('#price').fadeOut('slow');
+
+            $('#price').load(this.href);
+
+            $('#price').fadeIn('slow');
+        });
+
+        $(document).on('click','#button-price', function() {
+
+            $urllink='&urllink='+ encodeURIComponent(window.location.href);
+
+
+
+            $productname='&productname=' + encodeURIComponent($('#addproductname').text());
+             $cname='cname=' + encodeURIComponent($('input[name=\'cname\']').val());
+            $cemail='&cemail=' + encodeURIComponent($('input[name=\'cemail\']').val());
+            $cmessage='&cmessage=' + encodeURIComponent($('textarea[name=\'cmessage\']').val());
+            $cquantity='&cquantity=' + encodeURIComponent($('input[name=\'cquantity\']').val());
+            $recaptcha = '&recaptcha_response_field=' + encodeURIComponent($('input[name=\'recaptcha_response_field\']').val()) + '&recaptcha_challenge_field=' + encodeURIComponent($('input[name=\'recaptcha_challenge_field\']').val());
+
+            $.ajax({
+		url: 'index.php?route=product/product/pricevalidate',
+                type: 'post',
+                dataType: 'json',
+                data: $cname + $cemail + $cmessage + $cquantity + $recaptcha + $productname + $urllink,
+                beforeSend: function() {
+                    $('#button-price').button('loading');
+                },
+                complete: function() {
+                    $('#button-price').button('reset');
+                },
+                success: function(json) {
+
+
+                    $('.alert-success, .alert-danger').remove();
+
+                    if (json['error']) {
+                        $('#price').after('<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' + json['error'] + '</div>');
+
+                        Recaptcha.reload();
+
+                    }
+
+                    if (json['success']) {
+                        
+
+                        $('input[name=\'cname\']').val('');
+                        $('textarea[name=\'cmessage\']').val('');
+                        $('input[name=\'cemail\']').val('');
+                        $('input[name=\'cquantity\']').val('');
+
+                        Recaptcha.reload();
+$(".close").trigger("click");
+
+$(window).scrollTop(0);
+
+$('#menu').after('<div class="alert alert-success">' + json['success'] + '<button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+
+                    }
+                }
+            });
+
+
+        });
+
+    });
+
+
+    function addname(obj){
+
+        $obj=$(obj).attr('id');
+        $('#addproductname').html($obj);
+    }
+
+
+
+</script>]]>
+            </add>
+        </operation>
+
+
+    </file>
+    <!-- catalog view file end-->
+
+				<!---category end here-->
+</modification>

@@ -1,0 +1,169 @@
+<modification>
+    <id>Minimum Order Total</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRS SOFT</author>
+
+    <file path="admin/controller/common/menu.php">
+	<operation>
+            <search position="after" ><![CDATA[$data['text_language'] = $this->language->get('text_language');]]></search>
+            <add><![CDATA[ 
+		$data['minimum_order_total_menu'] = $this->url->link('localisation/minimum_order_total', 'token=' . $this->session->data['token'], true);]]>
+            </add>
+        </operation>
+    </file>   
+    <file path="admin/view/template/common/menu.tpl">        
+        <operation>
+            <search position="after"><![CDATA[<li><a href="<?php echo $location; ?>"><?php echo $text_location; ?></a></li>]]></search>
+            <add><![CDATA[
+          <li><a href="<?php echo $minimum_order_total_menu; ?>"><?php echo "Minimum Order Total"; ?></a></li>
+	]]>
+            </add>
+        </operation>        
+    </file>
+    <file path="catalog/controller/checkout/cart.php">    
+ 	<operation>
+            <search position="after" ><![CDATA[$data['button_checkout'] = $this->language->get('button_checkout');]]></search>
+            <add><![CDATA[// Validate minimum cart Total Amount .
+			if($this->config->get('minimum_order_total_status')==1) {
+				$this->load->model('module/minimum_order_total');
+				$this->load->language('module/minimum_order_total');
+
+				$error_minimum_order_total = $this->language->get('error_minimum_order_total');
+
+				if ($this->cart->hasShipping()) {
+					if (isset($this->session->data['shipping_address']['country_id'])) {
+						$country_id = $this->session->data['shipping_address']['country_id'];
+					} else {
+						$country_id = $this->config->get('config_country_id');
+					}
+				} else {
+					$country_id = '';
+				}
+
+				$mot_details = $this->model_module_minimum_order_total->getGeozonedetails($country_id);
+				$mot_all_zone = $this->model_module_minimum_order_total->getMinimumordertotal();
+
+				if (isset($mot_details['mot_total'])) {
+					if ($this->cart->getTotal() < $mot_details['mot_total']) {
+						$minimumamount = $this->currency->format($mot_details['mot_total'], $this->session->data['currency']);
+						$this->session->data['error'] = $error_minimum_order_total . $minimumamount;
+					}
+				} else {
+					if (isset($mot_all_zone['mot_total'])) {
+						if ($this->cart->getTotal() < $mot_all_zone['mot_total']) {
+							$minimumamount = $this->currency->format($mot_all_zone['mot_total'], $this->session->data['currency']);
+							$this->session->data['error'] = $error_minimum_order_total . $minimumamount;
+						}
+					}
+				}
+			}
+           ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/controller/checkout/checkout.php">    
+ 	<operation>
+            <search position="before" ><![CDATA[$products = $this->cart->getProducts();]]></search>
+            <add><![CDATA[// Validate minimum cart Total Amount .
+		if($this->config->get('minimum_order_total_status')==1) {
+			$this->load->model('module/minimum_order_total');
+			if ($this->cart->hasShipping()) {
+				if (isset($this->session->data['shipping_address']['country_id'])) {
+					$country_id = $this->session->data['shipping_address']['country_id'];
+				} else {
+					$country_id = $this->config->get('config_country_id');
+				}
+			} else {
+				$country_id = '';
+			}
+
+			$mot_details = $this->model_module_minimum_order_total->getGeozonedetails($country_id);
+			$mot_all_zone = $this->model_module_minimum_order_total->getMinimumordertotal();
+
+			if (isset($mot_details['mot_total'])) {
+				if ($this->cart->getTotal() < $mot_details['mot_total']) {
+					$this->response->redirect($this->url->link('checkout/cart'));
+				}
+			} else {
+				if (isset($mot_all_zone['mot_total'])) {
+					if ($this->cart->getTotal() < $mot_all_zone['mot_total']) {
+						$this->response->redirect($this->url->link('checkout/cart'));
+					}
+				}
+			}
+		}
+           ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/controller/checkout/payment_address.php">    
+ 	<operation>
+            <search position="before" ><![CDATA[$this->response->addHeader('Content-Type: application/json');]]></search>
+            <add><![CDATA[// Validate minimum cart Total Amount .
+		if($this->config->get('minimum_order_total_status')==1) {
+			$this->load->model('module/minimum_order_total');
+
+			if ($this->cart->hasShipping()) {
+				if (isset($this->session->data['shipping_address']['country_id'])) {
+					$country_id = $this->session->data['shipping_address']['country_id'];
+				} else {
+					$country_id = $this->config->get('config_country_id');
+				}
+			} else {
+				$country_id = '';
+			}
+
+			$mot_details = $this->model_module_minimum_order_total->getGeozonedetails($country_id);
+			$mot_all_zone = $this->model_module_minimum_order_total->getMinimumordertotal();
+
+			if (isset($mot_details['mot_total'])) {
+				if ($this->cart->getTotal() < $mot_details['mot_total']) {
+					$json['redirect'] = $this->url->link('checkout/cart');
+				}
+			} else {
+				if (isset($mot_all_zone['mot_total'])) {
+					if ($this->cart->getTotal() < $mot_all_zone['mot_total']) {
+						$json['redirect'] = $this->url->link('checkout/cart');
+					}
+				}
+			}
+		}
+           ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/controller/checkout/shipping_address.php">    
+ 	<operation>
+            <search position="before" ><![CDATA[$this->response->addHeader('Content-Type: application/json');]]></search>
+            <add><![CDATA[// Validate minimum cart Total Amount .
+
+		if($this->config->get('minimum_order_total_status')==1) {
+			$this->load->model('module/minimum_order_total');
+
+			if (isset($this->session->data['shipping_address']['country_id'])) {
+				$country_id = $this->session->data['shipping_address']['country_id'];
+			} else {
+				$country_id = $this->config->get('config_country_id');
+			}
+			$mot_details = $this->model_module_minimum_order_total->getGeozonedetails($country_id);
+			$mot_all_zone = $this->model_module_minimum_order_total->getMinimumordertotal();
+
+			if (isset($mot_details['mot_total'])) {
+				if ($this->cart->getTotal() < $mot_details['mot_total']) {
+					$json['redirect'] = $this->url->link('checkout/cart');
+				}
+			} else {
+				if (isset($mot_all_zone['mot_total'])) {
+					if ($this->cart->getTotal() < $mot_all_zone['mot_total']) {
+						$json['redirect'] = $this->url->link('checkout/cart');
+					}
+				}
+			}
+		}
+           ]]>
+            </add>
+        </operation>
+    </file>
+
+</modification>

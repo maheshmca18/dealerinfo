@@ -1,0 +1,90 @@
+---------------------------------------------------------------------------------------------
+         Module : Invoice PDF Print & Mail
+---------------------------------------------------------------------------------------------
+
+
+This module sends the invoice as a PDF file in order mail.
+
+- Store Admin can see pdf button on order View page.
+- Store admin can customize options for attach invoice PDF to order email.
+
+Additional Features :
+- Option to add VAT / TIN number in PDF Invoice.
+- Option to show authorized signatory images in pdf invoice.
+- Option to create pdf invoice with store logo.
+- Option to automatic mail send.
+
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------------
+			
+1. First You must backup your opencart site/cart and also database. Because It adds new files and new tables.
+			
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin panel 
+
+	     	Extensions -> Extension Installer
+		
+			Upload irs_customer_birthdaycart.ocmod.xml file via Extension installer.
+
+4. Extensions -> Modification 
+
+		Click refresh button at the right top corner
+
+5. Go to the Modules Page [Extensions -> Modules]		
+
+		
+		step 1 : See the "PDF Invoice" Module then Click [install] link to install this Plugin.
+
+		step 2 : See the "PDF Invoice" Module then Click [edit] link.
+
+		step 3 : Select the Status [Enable/Disable]
+				[If Enabled status in the PDF Generate Button will be shown ]
+		
+		step 4 : Select the Store Logo [Enable/Disable]
+				[If Enabled logo added in the PDF ]
+		
+		step 5 : Select the PDF Invoice Mail [Enable/Disable]
+				[If Enabled, the Invoice PDF has attached to mail ]
+
+		step 6 : Select the authorized signatory Image and Upload the image
+				
+		step 7 : Select the authorized signatory [Enable/Disable]
+				[If Enabled, the signature is included in PDF ]
+
+		step 8 : Select the Automatic Mail Send [Enable/Disable]
+				[If Enabled, the Automatic Mail Send with PDF ]
+
+		step 9 : Select the Auto Mail Trigger On Order Status 
+				[If select Complete,the Order Status when change complete the Mail will be Send automaticly with PDF ]
+			
+		step 10 : If you Want to Mail Message Content , Enter the details
+				
+		step 11 : If you Want to Add Tax Detail
+				
+			=> Click the ADD Button
+				
+			=> Enter the Tax Name,Tax Number  and Click the Add button.
+					[It has added and displays in table ] 
+		        			
+			=> Click the edit button and then edit the Tax detail.		        
+				
+		step 12 :  And Click the save button.
+
+6. Go to the Sales order page [Sales/Order] 
+		
+		step 1 : Go to the order view page
+
+		step 2 : Once generates the Invoice Number, the PDF button will be shown
+
+		step 3 : If click PDF Invoice button, the invoice PDF will be downloaded.
+
+		step 4 : If click PDF Invoice mail, it sends order invoice mail with PDF attachment.   
+
+		
+

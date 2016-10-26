@@ -1,0 +1,90 @@
+---------------------------------------------------------------------------------------------
+         Module : Birthday Reminder
+---------------------------------------------------------------------------------------------
+
+This Plugin requires "vQmod".
+
+This extension has sends Birthday wishes automaticlly to all customers on them birthday.
+
+This extension has adds date of birth field in following forms:-
+       -> Customer Registration Form,
+       -> Customer Edit Form,
+       -> Checkout Registeration Form,
+       -> Admin's Add Customer,       
+       -> Admin's Edit Customer.
+
+
+Main Features:-
+=> Allows customer's to enter their date of birth on Account registeration and checkout registeration.
+=> Customers can edit the date of birth on Account edit page.
+=> Admin can add manually and edit the date of birth for each customer.
+=> Full calendar with year, month, week and day view.
+=> Manually build own email template for Birthday wish.
+=> Every day generates unique birthday wish for each customer.
+=> Every day notify to store owner the birthday celebrator details.
+=> Cron jobs for scheduled tasks.
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------------
+			
+1. First You must backup your opencart site/cart and also database. Because It adds new files and new tables.
+			
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin panel 
+
+4. Go to the Modules Page [Extensions -> Modules]		
+		
+		 See the "Birthday Reminder" Module then Click [install] link to install this Plugin.
+
+
+5. Go to the User Groups Page [System->Users->User Groups]
+
+		step 1 :  Click Edit button on the Administrator.
+
+		step 2 :  Select  sale/birthdaycalender  from the Access Permission 
+
+		step 3 :  Select  sale/birthdaycalender  from the Modify Permission
+		
+		step 4 :  And Click the save button. 
+
+
+6. Go to the Birthday Reminder page [Sales/Customers/Birthday Reminder]
+
+		The Calender Tab shows birthday celebrator.
+
+		Follow the below steps for adding Birthday Reminder Mail Setting :-
+
+		step 1 :  Go to the Mail Tab	
+		   
+		step 2 :  Enter the Mail Subject
+
+		step 3 :  Enter the Mail Message [ build your own wish message ]
+			 
+		step 4 :  Go to the Setting Tab	
+
+		step 5 :  Select the Customer Birthday Reminder [Enable/Disable]
+				[If Enabled mail will triggers automatically to customers birthday ]
+
+		step 6 :  Select the Seller Message [Enable/Disable]
+				[If Enabled notification mail will triggers automatically to store owner ]
+
+		step 7 :  Click the save button. 
+
+7. Go to the Customers list page [Sales/Customers/Customers]
+
+		The Date of Birth field displaying in Add Customer form and Edit Customer form
+
+
+8. Set following Url for Cron [For sending mail automatically birthday celebrator and store owner]
+		[Example : http://yourdomain.com/index.php?route=common/birthdaysendmail ]
+
+
+9. Go to the Store front and check the following forms, there will appears the Date of Birth field :-
+       -> Customer Registration Form,
+       -> Customer Edit Form,
+       -> Checkout Registeration Form.

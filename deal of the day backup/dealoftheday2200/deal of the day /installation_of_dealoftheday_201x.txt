@@ -1,0 +1,61 @@
+---------------------------------------------------------------------------------------------
+         Module : Deal Of The Day
+---------------------------------------------------------------------------------------------
+
+The Deal Of The Day module has allows the store admin can add Products for each and every day deal to display store front widget.
+
+And this module having Deal of the day page template also.
+
+Features :-
+------------------------------
+It allow you to set the daily deals. 
+It having timely deals feature with timer notification. 
+It helps to increase sale, attract customer and make them busy. 
+
+Using install/uninstall like others modules.
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because it has add new files .
+
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin Dashboard
+ 
+		Extensions -> Module ->  Deal Of The Day -> Then  Click [install] link to install this Plugin.
+		 
+4.Go to the Deal Of The Day Page
+
+        Extensions -> Module ->  Deal Of The Day -> Then Click [Edit]
+
+                -> The Deal Of The Day page shows week day in tabs
+
+                -> Add Products for each and every Day and displays store front Deal of the Day widget.
+
+	        -> Then Click the Save button.
+
+5.Go to 
+         Extensions -> Module -> Today Products -> Then  Click [install] link to install this Module.
+6.Go to
+         Extensions -> Module -> Today Products -> Then  Click [Edit] link to Edit this Module.
+
+        -> Enter Module Name
+	-> Enter Width
+	-> Enter Height 
+	-> Select view 
+	-> Select Status ["Widget Enabled/Disabled"]
+
+7. Go to 
+         Design -> Layout
+       
+       -> Add Deal of the day Module to your site's Layout ( Home, Product, Category,... )
+
+
+8.Go to Your Store Front and See the  Deal of the day widget.
+
+9.To see the Deal of the day widget page on your site .
+
+  

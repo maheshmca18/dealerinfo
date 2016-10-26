@@ -1,0 +1,38 @@
+---------------------------------------------------------------------------------------------
+         Module : WePay
+---------------------------------------------------------------------------------------------
+
+	WePay extension integrates seamlessly with your cart, allowing you to accept credit and net banking through your webstore.
+ 
+	They select payment methods, then fill in card details and proceed to checkout.
+	
+	There are more advanced and user friendly administrative features allowing you to manage orders, update status of orders such 		as successful, pending, cancel, voided etc.
+
+	WePay allows a Simple, Fast and Secure way to accept credit card payment anywhere any time.
+
+	
+=============
+Installation
+=============
+			
+1. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+2. Login to Admin panel 
+
+        Go to Payments page [ Extensions -> Payments ]
+		
+		step 1 : See the "WePay" Module then Click [install] link to install this Plugin.
+
+		step 2 : See the "WePay" Module then Click [edit] link.
+
+		step 3 : Enter your Client ID,Client Secret,Access Token,Account ID,Fee Payer,Mode and fill up other details.  
+
+			Click "Get API credentials" button and collect your credential details from wepay developer site. 
+
+		[Note : Kindly get API information from  https://www.wepay.com/developer ]
+			
+3. Now you can make your payment securely through WePay by selecting it as the Payment Method at the Checkout stage.
+	
+4. For testing in your site, change the payment mode in admin section, "Production" to "Staging"
+
+Use the test data link from the following url https://www.wepay.com/developer/reference/testing

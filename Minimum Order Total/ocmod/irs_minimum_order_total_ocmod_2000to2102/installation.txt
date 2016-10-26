@@ -1,0 +1,65 @@
+INSTALLATION FOR IRS Minimum Order Total OPENCART EXTENSION 
+=========================================================================
+1. First You must backup your opencart site/shop And Database.
+
+2. Upload the "catalog" & "admin" to your root folder. (No file are replaced, all files are new) Done.
+
+===============================================================================================
+Geo Zone Based Minimum Order Total 
+===============================================================================================
+
+Admin Login :
+
+	1. Extensions -> Extension Installer
+	
+		 Upload irs_minimum_order_total.ocmod.xml file via Extension installer.
+
+	2. Extensions -> Modification
+
+		 Click refresh on the top corner of Modifications.
+
+
+	3. Go to the Modules Page [Extensions -> Module]
+
+		step 1 : See the "Minimum Order Total" Module then Click [install] link for install this Plugin.
+
+		step 2 : See the "Minimum Order Total" Module then Click [edit] link.
+		
+		step 3 : Select status [Enabled/Disabled].
+
+		step 4 : And Click the save button.
+
+	4. Go to System->Users->User Groups 
+
+		step 1 :  Click Edit button on the Administrator.
+
+		step 2 :  Select localisation/minimum_order_total from the Access Permission 
+
+		step 3 :  Select localisation/minimum_order_total from the Modify Permission
+		
+		step 4 :  And Click the save button. 
+
+	5. Go to System->Localisation->Minimum Order Total
+
+		step 1 :  Click Add button on the Minimum Order Total page.
+		  
+		step 2 :  Enter the Minimum Order Amount,Geo Zone,status  and Click the Save button.
+		  
+		step 3 :  All the details displays on Table.
+		   	
+		step 4 :  If you want to edit particular Minimum Order Total details-> click edit button -> Then edit the Minimum Order 			   Total detail-> click the Save button.
+		        
+		step 7 :  If you want to delete  particular Minimum Order Total details-> click delete button.	
+
+	
+	6.  Go to store front 
+		
+		step 1 :  add product to cart. 
+		
+		step 2 :  Then Goto Cart Page 
+
+		step 3 :  If order total amount is less than the "Minimum Order Total Price" in customer zone, warning message will be 				  shown in
+
+ 		cart page
+		
+	

@@ -1,0 +1,75 @@
+---------------------------------------------------------------------------------------------
+         Module : Product short description and keyfeatures
+---------------------------------------------------------------------------------------------
+
+This Plugin requires "vQmod".
+
+The Product short description and keyfeatures module allows:-
+
+	The admin user can add new Product short description and keyfeatures.
+	The admin user can update existing Product short description and keyfeatures.
+	The admin user can delete existing Product short description and keyfeatures.
+	
+	It will displays on product detail page.
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------------
+
+1. First You must backup your opencart site/cart and also database. Because add a new files and new tables.
+
+		The new database tables are :
+		
+			(i) product_shortdescription
+			(ii) product_keyfeatures
+			
+			
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin panel 
+
+		Extensions -> Modules (Choose Module from Dropdown)
+		
+		 See the "Product short description and keyfeatures" Module then Click [install] link to install this Plugin.
+		 
+4. Go to Products page 
+
+	Follow below steps for adding Product short description :-
+
+        step 1 :  Go to Catalog -> Products 
+		  
+		step 2 :  Click Edit button on the Products list.
+		  
+		step 3 :  Click the  ShortDescription Tab	
+		   
+		step 4 :  Then enter the ShortDescription details  [If you have one or more languages choose your language]
+		        
+		step 5 :  And Click the save button. 
+		        
+
+5. Go to Products page
+
+	Follow below steps for manipulating Product Keyfeatures :-
+
+        step 1 :  Go to Catalog -> Products 
+		  
+		step 2 :  Click Edit button on the Products list.
+		  
+		step 3 :  Click the  Keyfeatures Tab
+		   
+		step 4 :  Enter the Keyfeature,sort  and Click the Add button. 
+		        
+		step 5 :  All the details displays on Table.
+				
+		step 6 :  If you want to edit particular Keyfeature details-> click edit button -> Then edit the Keyfeature detail-> click the update button.
+		        
+		step 7 :  If you want to delete  particular Keyfeature details-> click delete button.
+			 
+	[If you have one or more languages choose your language ]		        
+			
+		
+
+5.Now It Displays Product Short Description and Keyfeatures in Product detail page.

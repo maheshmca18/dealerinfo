@@ -1,0 +1,32 @@
+Endless Scroller OPENCART EXTENSION VQMOD
+========================================================
+1. First You must backup your opencart site/shop.
+
+2. Before install this addon you have to install "vQmod" in your shop.
+
+[NOTE : Opencart version 2.0.x ] install vQmod 2.3.2 version.
+
+3. Upload the "vqmod","catalog" & "admin" to your root folder. (No file are replaced, all files are new)
+Done.
+
+===============================================================================================
+				Advance Filter ===============================================================================================
+
+Admin Login :
+
+1. Go to the Modules Page [Extensions -> Modules]
+
+		step 1 : See the "Endless Scroller" Module then Click [install] link to install this Plugin.
+
+		The extension is now installed and enabled.
+
+2. Go to category page or search page, To Scroll view products now endless scroller will work.
+
+
+In case of problems, please contact me at opencartsupport@irssoft.com
+
+If you like the extension I would appreciate if you rated it on the OpenCart extension page at
+http://www.opencart.com/index.php?route=extension/extension/info&extension_id=25524
+
+Thank you!
+

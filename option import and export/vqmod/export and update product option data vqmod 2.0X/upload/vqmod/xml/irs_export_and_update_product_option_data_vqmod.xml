@@ -1,0 +1,918 @@
+<modification>
+	<id>Update and Export Product option data</id>
+	<version>2.0</version>
+	<vqmver>2.4.1</vqmver>
+	<author>IRSSOFT</author>
+	 
+<!-- Language -->
+	<file path="admin/language/english/english.php">
+		<operation>
+			<search position="after"><![CDATA[$_['button_approve']                = 'Approve';]]></search>
+			<add><![CDATA[$_['button_importoption']                = 'Update Option Data';
+$_['button_exportoption']                = 'Export Option Data';]]></add>
+		</operation>
+	</file>
+	
+<!-- product -->    
+<!-- Controller --> 
+  
+    <file path="admin/controller/catalog/product.php">
+	<operation>
+			<search position="before"><![CDATA[$data['button_insert'] = $this->language->get('button_insert');]]></search>
+            <add><![CDATA[$data['button_importoption'] = $this->language->get('button_importoption');
+        $data['importoption'] = $this->url->link('catalog/product/importoptiondata', 'token=' . $this->session->data['token'] . $url, 'SSL');
+
+        $data['button_exportoption'] = $this->language->get('button_exportoption');
+        $data['exportoption'] = $this->url->link('catalog/product/exportoptiondata', 'token=' . $this->session->data['token'] .$url, 'SSL');]]></add>
+		</operation>  
+	
+		<operation>
+			<search position="before"><![CDATA[public function add() {]]></search>
+			<add><![CDATA[ public function exportoptiondata() {
+
+        if (isset($this->request->get['filter_name'])) {
+            $filter_name = $this->request->get['filter_name'];
+        } else {
+            $filter_name = null;
+        }
+
+        if (isset($this->request->get['filter_model'])) {
+            $filter_model = $this->request->get['filter_model'];
+        } else {
+            $filter_model = null;
+        }
+
+        if (isset($this->request->get['filter_price'])) {
+            $filter_price = $this->request->get['filter_price'];
+        } else {
+            $filter_price = null;
+        }
+
+        if (isset($this->request->get['filter_quantity'])) {
+            $filter_quantity = $this->request->get['filter_quantity'];
+        } else {
+            $filter_quantity = null;
+        }
+
+        if (isset($this->request->get['filter_status'])) {
+            $filter_status = $this->request->get['filter_status'];
+        } else {
+            $filter_status = null;
+        }
+
+        if (isset($this->request->get['sort'])) {
+            $sort = $this->request->get['sort'];
+        } else {
+            $sort = 'pd.name';
+        }
+
+        if (isset($this->request->get['order'])) {
+            $order = $this->request->get['order'];
+        } else {
+            $order = 'ASC';
+        }
+
+        if (isset($this->request->get['page'])) {
+            $page = $this->request->get['page'];
+        } else {
+            $page = 1;
+        }
+
+        $this->load->model('catalog/product');
+
+        $data['products'] = array();
+
+        $data = array(
+            'filter_name'	  => $filter_name,
+            'filter_model'	  => $filter_model,
+            'filter_price'	  => $filter_price,
+            'filter_quantity' => $filter_quantity,
+            'filter_status'   => $filter_status,
+            'sort'            => $sort,
+            'order'           => $order,
+            //'start'           => ($page - 1) * $this->config->get('config_limit_admin'),
+            //'limit'           => $this->config->get('config_limit_admin')
+        );
+
+
+        if(isset($this->request->post['selected'])){
+
+            $data['selected']=implode(',',$this->request->post['selected']);
+
+        }
+
+
+        $results = $this->model_catalog_product->getProducts($data);
+        $product_details=array();
+        $temp=0;
+        foreach ($results as $result) {
+
+            $product_categoryname = $this->model_catalog_product->getProductcategoryname($result['product_id']);
+
+            $product_optiondetail = $this->model_catalog_product->getProductandoption($result['product_id']);
+
+            $i=0;
+            $product_details[$temp]['productname']=html_entity_decode($result['name'],ENT_QUOTES,'UTF-8');
+            $product_details[$temp]['categoryname']=html_entity_decode($product_categoryname,ENT_QUOTES,'UTF-8');
+            $product_details[$temp]['product_quantity']=$result['quantity'];
+            $product_details[$temp]['product_price']=$result['price'];
+            $j=0;
+            if(!empty($product_optiondetail)) {
+                foreach ($product_optiondetail as $product_option) {
+                    //print_r($product_option); exit;
+                    if ($j == $i) {
+                        $product_details[$temp]['option_name'] = $product_option['name'];
+                        $product_details[$temp]['option_required'] = ($product_option['required'] == 1)? "Yes":"No";
+                        $j++;
+                    } else {
+                        $product_details[$temp]['productname'] = '';
+                        $product_details[$temp]['categoryname'] = '';
+                        $product_details[$temp]['product_quantity'] = '';
+                        $product_details[$temp]['product_price'] = '';
+                        $product_details[$temp]['option_name'] = $product_option['name'];
+                        $product_details[$temp]['option_required'] =  ($product_option['required'] == 1)? "Yes":"No";
+                        $j++;
+                    }
+                    $k = 0;
+                    if(!empty($product_option['product_option_value'])) {
+                        foreach ($product_option['product_option_value'] as $product_option_value) {
+                            if ($k == $i) {
+                                $product_details[$temp]['option_value_name'] = $product_option_value['option_value_name'];
+                                $product_details[$temp]['quantity'] = $product_option_value['quantity'];
+                                $product_details[$temp]['subtract'] = ($product_option_value['subtract'] == 1)? "Yes":"No";
+                                $product_details[$temp]['price'] = $product_option_value['price'];
+                                $product_details[$temp]['price_prefix'] = ($product_option_value['price_prefix']=="+")? "Plus":"Minus";
+                                $product_details[$temp]['points'] = $product_option_value['points'];
+                                $product_details[$temp]['points_prefix'] = ($product_option_value['points_prefix']=="+")? "Plus":"Minus";
+                                $product_details[$temp]['weight'] = $product_option_value['weight'];
+                                $product_details[$temp]['weight_prefix'] = ($product_option_value['weight_prefix']=="+")? "Plus":"Minus";
+                                $temp++;
+                                $k++;
+
+                            } else {
+
+                                $product_details[$temp]['productname'] = '';
+                                $product_details[$temp]['categoryname'] = '';
+                                $product_details[$temp]['product_quantity'] = '';
+                                $product_details[$temp]['product_price'] = '';
+                                $product_details[$temp]['option_name'] = '';
+                                $product_details[$temp]['option_required'] = '';
+                                $product_details[$temp]['option_value_name'] = $product_option_value['option_value_name'];
+                                $product_details[$temp]['quantity'] = $product_option_value['quantity'];
+                                $product_details[$temp]['subtract'] = ($product_option_value['subtract'] == 1)? "Yes":"No";
+                                $product_details[$temp]['price'] = $product_option_value['price'];
+                                $product_details[$temp]['price_prefix'] = ($product_option_value['price_prefix']=="+")? "Plus":"Minus";
+                                $product_details[$temp]['points'] = $product_option_value['points'];
+                                $product_details[$temp]['points_prefix'] = ($product_option_value['points_prefix']=="+")? "Plus":"Minus";
+                                $product_details[$temp]['weight'] = $product_option_value['weight'];
+                                $product_details[$temp]['weight_prefix'] = ($product_option_value['weight_prefix']=="+")? "Plus":"Minus";
+                                $temp++;
+                                $k++;
+
+                            }
+                        }
+                    }else{
+                        $product_details[$temp]['option_value_name'] = '';
+                        $product_details[$temp]['quantity'] = '';
+                        $product_details[$temp]['subtract'] = '';
+                        $product_details[$temp]['price'] = '';
+                        $product_details[$temp]['price_prefix'] = '';
+                        $product_details[$temp]['points'] = '';
+                        $product_details[$temp]['points_prefix'] = '';
+                        $product_details[$temp]['weight'] = '';
+                        $product_details[$temp]['weight_prefix'] = '';
+                        $temp++;
+                    }
+                }
+            }
+            else{
+                $product_details[$temp]['option_name'] = '';
+                $product_details[$temp]['option_required'] = '';
+                $product_details[$temp]['option_value_name'] = '';
+                $product_details[$temp]['quantity'] = '';
+                $product_details[$temp]['subtract'] = '';
+                $product_details[$temp]['price'] = '';
+                $product_details[$temp]['price_prefix'] = '';
+                $product_details[$temp]['points'] = '';
+                $product_details[$temp]['points_prefix'] = '';
+                $product_details[$temp]['weight'] = '';
+                $product_details[$temp]['weight_prefix'] = '';
+                $temp++;
+            }
+        }
+
+        require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+        // Instantiate a new PHPExcel object
+        $objPHPExcel = new PHPExcel();
+        $objPHPExcel->setActiveSheetIndex(0);
+        // Initialise the Excel row number
+        $rowCount = 1;
+        $objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Name');
+        $objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Categories');
+        $objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Quantity');
+        $objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Price');
+
+        $objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, 'Select Type');
+        $objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, 'Requried');
+        $objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, 'Option Value ');
+        $objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, 'Quantity');
+        $objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, 'Subtrack stock');
+        $objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, 'Price');
+
+        $objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, 'Price Prefix');
+        $objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, 'Points');
+        $objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, 'Points Prefix');
+        $objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, 'Weight');
+        $objPHPExcel->getActiveSheet()->SetCellValue('O'.$rowCount, 'Weight Prefix');
+
+        $rowCount=$rowCount+1;
+
+        foreach($product_details as $productdetails) {
+
+
+               $objPHPExcel->getActiveSheet()->SetCellValue('A' . $rowCount, $productdetails["productname"]);
+               $objPHPExcel->getActiveSheet()->SetCellValue('B' . $rowCount, $productdetails["categoryname"]);
+               $objPHPExcel->getActiveSheet()->SetCellValue('C' . $rowCount, $productdetails["product_quantity"]);
+               $objPHPExcel->getActiveSheet()->SetCellValue('D' . $rowCount, $productdetails["product_price"]);
+
+               $objPHPExcel->getActiveSheet()->SetCellValue('E' . $rowCount, $productdetails["option_name"]);
+               $objPHPExcel->getActiveSheet()->SetCellValue('F' . $rowCount, $productdetails["option_required"]);
+
+
+               $objPHPExcel->getActiveSheet()->SetCellValue('G' . $rowCount, $productdetails['option_value_name']);
+               $objPHPExcel->getActiveSheet()->SetCellValue('H' . $rowCount, $productdetails['quantity']);
+               $objPHPExcel->getActiveSheet()->SetCellValue('I' . $rowCount, $productdetails['subtract']);
+               $objPHPExcel->getActiveSheet()->SetCellValue('J' . $rowCount, $productdetails['price']);
+
+               $objPHPExcel->getActiveSheet()->SetCellValue('K' . $rowCount, $productdetails['price_prefix']);
+               $objPHPExcel->getActiveSheet()->SetCellValue('L' . $rowCount, $productdetails['points']);
+               $objPHPExcel->getActiveSheet()->SetCellValue('M' . $rowCount, $productdetails['points_prefix']);
+               $objPHPExcel->getActiveSheet()->SetCellValue('N' . $rowCount, $productdetails['weight']);
+               $objPHPExcel->getActiveSheet()->SetCellValue('O' . $rowCount, $productdetails['weight_prefix']);
+
+                   $rowCount++;
+
+        }
+
+       /* $i = 0;
+        while ($objPHPExcel->setActiveSheetIndex($i)){
+
+            $objWorksheet = $objPHPExcel->getActiveSheet();
+            //now do whatever you want with the active sheet
+
+            $i++;
+
+        }*/
+
+        // Redirect output to a client’s web browser (Excel5)
+        //header('Content-Type: application/vnd.ms-excel');
+        header("Content-Type: text/csv; charset=utf-8");
+        header('Content-Disposition: attachment;filename="product_list_'.date("Y m d G i s").'.csv"');
+        header('Cache-Control: max-age=0');
+
+        // Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'CSV');
+        // Write the Excel file to filename some_excel_file.xlsx in the current directory
+
+        /* Download CsV file in downloads */
+        $objWriter->save('php://output');
+
+
+    }
+
+
+    public function importoptiondata() {
+
+        $excel_field_error = 0;
+        $_SESSION['productlist']=array();
+
+        $this->load->language('catalog/product');
+
+        $this->load->model('catalog/product');
+        $this->load->model('catalog/category');
+       
+        $data['heading_title'] = "Update Product Option Data";
+
+        $data['entry_import'] = $this->language->get('Upload CSV File');
+
+        $data['entry_insertonly'] = $this->language->get('Insert Only');
+
+        $data['action'] = $this->url->link('catalog/product/importoptiondata', 'token=' . $this->session->data['token'], 'SSL');
+
+        $data['importdataurl'] = $this->url->link('catalog/product/importproductsoptiondata', 'token=' . $this->session->data['token'], 'SSL');
+
+
+        $data['sampleexport'] = $this->url->link('catalog/product/productsampleexportoptiondata', 'token=' . $this->session->data['token'], 'SSL');
+        $data['sample_export'] = $this->language->get('Sample Csv File');
+
+        $data['breadcrumbs'] = array();
+
+        $data['breadcrumbs'][] = array(
+            'text'      => $this->language->get('text_home'),
+            'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),
+            'separator' => false
+        );
+
+        $data['breadcrumbs'][] = array(
+            'text'      => $this->language->get('heading_title'),
+            'href'      => $this->url->link('catalog/product', 'token=' . $this->session->data['token'], 'SSL'),
+            'separator' => ' :: '
+        );
+
+
+        if(isset($_POST['submit']))
+        {
+            $insertonly=0;
+
+            if(isset($_POST['insertonly']) && $_POST['insertonly']==1)
+                $insertonly=1;
+
+
+            if($this->validateImportoption())
+            {  // import form validate start
+
+                if ((isset($this->request->files['file'])) && (is_uploaded_file($this->request->files['file']['tmp_name'])))
+                { //file upload start
+
+                    @set_time_limit(3600);
+                    if (substr(@ini_get("memory_limit"), 0, -1) < "512") {
+                        @ini_set("memory_limit", "512M");
+                    }
+                    ini_set("memory_limit", "512M");
+                    ini_set("max_execution_time", 180);
+                    ini_set('display_errors', 1);
+                    ini_set('log_errors', 1);
+                    error_reporting(E_ALL);
+                    //set_time_limit( 60 );
+
+                    $filename = $this->request->files['file']['tmp_name'];
+
+                    require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+                    $inputFileType = PHPExcel_IOFactory::identify($filename);
+                    $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+                    //$objReader->setReadDataOnly(true);
+                    $reader = $objReader->load($filename);
+                    $reader = &$reader;
+                    //			$this->clearCache();
+
+                    $xldata = $reader->getSheet(0);
+
+                    $isFirstRow = TRUE;
+
+                    $i = 0;
+
+                    $k = $xldata->getHighestRow();
+
+                    $columns = PHPExcel_Cell::columnIndexFromString($xldata->getHighestColumn());
+
+
+                    $product_array = array();
+
+                    if($columns == 15)
+                    {
+                        $customer_list_array=array();
+
+                        $option_id='';
+
+                        $a=0;
+                        $b=0;
+
+                        $custom_language_id=is_numeric($this->config->get('config_language_id'))?$this->config->get('config_language_id'):1;
+
+
+                        for ($i = 0; $i < $k; $i++) {  // Excel row loop start
+
+
+                            //Skip the header row
+                            if ($isFirstRow) {
+                                $isFirstRow = FALSE;
+                                continue;
+                            }
+
+                            $product_categories=array();
+
+                            // Collect Detail
+                            $productname = trim($this->getCelloption($xldata, $i, 1));
+
+                            $type = $this->getCelloption($xldata, $i, 5);
+
+                            if($productname!=''){
+
+                                $product_option_value=array();
+
+                                $b++;
+                                $product_array[$b]['product_name']=$productname;
+
+                                $a=0;
+                                //parent category
+                                $categorynames = $this->getCelloption($xldata, $i, 2);
+                                $categorynamesloop = explode(',',$categorynames);
+                                foreach($categorynamesloop as $categoryname) {
+                                    $product_categories[] = $this->model_catalog_category->getCategoryId(trim($categoryname));
+                                }
+
+                                $quantity = $this->getCelloption($xldata, $i, 3);
+                                $price = $this->getCelloption($xldata, $i, 4);
+
+                                //loop name and description by language
+                                $product_description[$custom_language_id]['name'] = $productname;
+
+                                $product_array[$b]['product_description'] = $product_description;
+                                // loop categories
+                                $product_array[$b]['product_category'] = $product_categories;
+
+                                $product_array[$b]['categorynames'] = $categorynames;
+                                $product_array[$b]['quantity'] = $quantity;
+
+                                $product_array[$b]['price'] = $price;
+
+                                $type = $this->getCelloption($xldata, $i, 5);
+
+                                $option_id = $this->model_catalog_product->getOptionid(trim($type));
+
+                                $required = $this->getCelloption($xldata, $i, 6);
+				if($type){
+                                $product_array[$b]['product_option'][$a]['type']=$option_id['type'];
+				} else {
+				$product_array[$b]['product_option'][$a]['type']='';
+				}
+                                $product_array[$b]['product_option'][$a]['product_option_id']=0;
+				if( $option_id){
+                                $product_array[$b]['product_option'][$a]['option_id']=$option_id['option_id'];
+				}  else {		
+				$product_array[$b]['product_option'][$a]['option_id']='';
+				}
+                                $product_array[$b]['product_option'][$a]['required']=($required == "Yes")?1:0;
+
+
+                                $optiondata=array();
+                                $option_value = $this->getCelloption($xldata, $i, 7);
+                                $optiondata['option_value'] = $option_value;
+				if( $option_id){
+                                $option_value_id = $this->model_catalog_product->getOptionvalue($option_id['option_id'],$option_value);
+				}
+                                $optiondata['product_option_value_id'] =0;
+				if($option_value_id){
+                                $optiondata['option_value_id'] =$option_value_id['option_value_id'];
+				} else {
+				$optiondata['option_value_id'] ='';
+				}
+                                $optiondata['quantity'] = $this->getCelloption($xldata, $i, 8);
+
+                                $option_subtrack_stock = $this->getCelloption($xldata, $i, 9);
+                                $optiondata['subtract'] = ($option_subtrack_stock == "Yes")?1:0;
+
+                                $optiondata['price'] = $this->getCelloption($xldata, $i, 10);
+                                $price_prefix = $this->getCelloption($xldata, $i, 11);
+                                $optiondata['price_prefix'] = ($price_prefix == "Plus")?'+':'-';
+                                $optiondata['points'] = $this->getCelloption($xldata, $i, 12);
+                                $points_prefix = $this->getCelloption($xldata, $i, 13);
+                                $optiondata['points_prefix'] = ($points_prefix == "Plus")?'+':'-';
+                                $optiondata['weight'] = $this->getCelloption($xldata, $i, 14);
+                                $weight_prefix = $this->getCelloption($xldata, $i, 15);
+                                $optiondata['weight_prefix'] = ($weight_prefix == "Plus")?'+':'-';
+
+                                $product_option_value[]=$optiondata;
+                                $product_array[$b]['product_option'][$a]['product_option_value']= $product_option_value;
+
+                            }
+                            else{
+
+                                if(empty($type)){
+
+                                    $optiondata=array();
+                                    $option_value = $this->getCelloption($xldata, $i, 7);
+
+                                    $option_value_id = $this->model_catalog_product->getOptionvalue($option_id['option_id'],$option_value);
+
+                                    $optiondata['product_option_value_id'] =0;
+                                    $optiondata['option_value_id'] =$option_value_id['option_value_id'];
+
+                                    $optiondata['quantity'] = $this->getCelloption($xldata, $i, 8);
+                                    $option_subtrack_stock = $this->getCelloption($xldata, $i, 9);
+                                    $optiondata['subtract'] = ($option_subtrack_stock == "Yes")?1:0;
+
+                                    $optiondata['price'] = $this->getCelloption($xldata, $i, 10);
+                                    $price_prefix = $this->getCelloption($xldata, $i, 11);
+                                    $optiondata['price_prefix'] = ($price_prefix == "Plus")?'+':'-';
+                                    $optiondata['points'] = $this->getCelloption($xldata, $i, 12);
+                                    $points_prefix = $this->getCelloption($xldata, $i, 13);
+                                    $optiondata['points_prefix'] = ($points_prefix == "Plus")?'+':'-';
+                                    $optiondata['weight'] = $this->getCelloption($xldata, $i, 14);
+                                    $weight_prefix = $this->getCelloption($xldata, $i, 15);
+                                    $optiondata['weight_prefix'] = ($weight_prefix == "Plus")?'+':'-';
+
+                                    array_push($product_array[$b]['product_option'][$a]['product_option_value'],$optiondata);
+
+                                }
+                                else{
+
+                                    $product_option_value=array();
+                                    $a++;
+
+                                    $type = $this->getCelloption($xldata, $i, 5);
+
+                                    $option_id = $this->model_catalog_product->getOptionid(trim($type));
+
+                                    $required = $this->getCelloption($xldata, $i, 6);
+
+                                    $product_array[$b]['product_option'][$a]['type']=$option_id['type'];
+                                    $product_array[$b]['product_option'][$a]['product_option_id']=0;
+                                    $product_array[$b]['product_option'][$a]['option_id']=$option_id['option_id'];
+                                    $product_array[$b]['product_option'][$a]['required']=($required == "Yes")?1:0;
+
+
+                                    $optiondata=array();
+                                    $option_value = $this->getCelloption($xldata, $i, 7);
+                                    $optiondata['option_value'] = $option_value;
+
+                                    $option_value_id = $this->model_catalog_product->getOptionvalue($option_id['option_id'],$option_value);
+
+                                    $optiondata['product_option_value_id'] =0;
+                                    $optiondata['option_value_id'] =$option_value_id['option_value_id'];
+                                    $optiondata['quantity'] = $this->getCelloption($xldata, $i, 8);
+
+                                    $option_subtrack_stock = $this->getCelloption($xldata, $i, 9);
+                                    $optiondata['subtract'] = ($option_subtrack_stock == "Yes")?1:0;
+
+                                    $optiondata['price'] = $this->getCelloption($xldata, $i, 10);
+                                    $price_prefix = $this->getCelloption($xldata, $i, 11);
+                                    $optiondata['price_prefix'] = ($price_prefix == "Plus")?'+':'-';
+                                    $optiondata['points'] = $this->getCelloption($xldata, $i, 12);
+                                    $points_prefix = $this->getCelloption($xldata, $i, 13);
+                                    $optiondata['points_prefix'] = ($points_prefix == "Plus")?'+':'-';
+                                    $optiondata['weight'] = $this->getCelloption($xldata, $i, 14);
+                                    $weight_prefix = $this->getCelloption($xldata, $i, 15);
+                                    $optiondata['weight_prefix'] = ($weight_prefix == "Plus")?'+':'-';
+
+                                    $product_option_value[]=$optiondata;
+                                    $product_array[$b]['product_option'][$a]['product_option_value']= $product_option_value;
+
+                                }
+                            }
+
+                        } // Excel row loop end
+
+                    }
+                    else
+                    {
+                        $excel_field_error = 1;
+                    }
+                    //chdir('../../..');	// change directory to site
+
+                } //file upload end
+
+                if(!$excel_field_error)
+                {
+                    $data['sampletabledata']=$product_array;
+
+                    $_SESSION['productlist'] = $product_array;
+                }
+
+            } // import form validate end
+
+        }
+
+        if (isset($this->error['warning'])) {
+            $data['error_warning'] = $this->error['warning'];
+        } else {
+            $data['error_warning'] = '';
+        }
+
+        if (isset($this->error['errorfile'])) {
+            $data['error_file'] = $this->error['errorfile'];
+        } else {
+            $data['error_file'] = '';
+        }
+
+        if($excel_field_error)
+        {
+            $data['error_fields'] = 'Upload like our Sample Excel File';
+        }
+        else
+        {
+            $data['error_fields'] = '';
+        }
+
+        $this->load->model('design/layout');
+        $data['layouts']=$this->model_design_layout->getLayouts();
+
+        $data['header']=$this->load->controller('common/header');
+        $data['footer']=$this->load->controller('common/footer');
+        $data['column_left']=$this->load->controller('common/column_left');
+
+
+        $this->response->setOutput($this->load->view('catalog/product_importoptiondata.tpl',$data));
+
+    }
+
+    public function importproductsoptiondata()
+    {
+        $this->load->model('catalog/product');
+
+        if(isset($_SESSION['productlist']) && is_array($_SESSION['productlist']))
+        {
+            foreach($_SESSION['productlist'] as $productdata)
+            {
+                foreach($productdata['product_description'] as $langkey => $langval)
+                {
+                    $productexist = $this->model_catalog_product->getoptionProductId($langval['name'],$productdata['product_category']['0']);
+                    if($productexist != 0)
+                    {
+                        $product_id = $productexist;
+                        $this->model_catalog_product->editoptionProduct($product_id,$productdata);
+                    }
+                    else
+                    {
+                        //$this->model_catalog_product->addProduct($productdata);
+                    }
+                } // foreach2
+            } // foreach1
+
+
+            unset($_SESSION['productlist']);
+            $url = '';
+            //print_r("hai"); exit;
+            $this->response->redirect($this->url->link('catalog/product', 'token=' . $this->session->data['token'] . $url, 'SSL'));
+
+        }
+
+
+    }
+
+
+    function getCelloption(&$worksheet, $row, $col, $default_val = '') {
+        $col -= 1; // we use 1-based, PHPExcel uses 0-based column index
+        $row += 1; // we use 0-based, PHPExcel used 1-based row index
+        return ($worksheet->cellExistsByColumnAndRow($col, $row)) ? $worksheet->getCellByColumnAndRow($col, $row)->getValue() : $default_val;
+    }
+
+
+    public function productsampleexportoptiondata()
+    {
+        /* Include PHPExcel class */
+        //chdir('../system/library/PHPExcel');
+        //require_once( 'Classes/PHPExcel.php' );
+        //chdir('../../../admin');
+
+        require_once('../system/library/PHPExcel/Classes/PHPExcel.php' );
+
+        // Instantiate a new PHPExcel object
+        $objPHPExcel = new PHPExcel();
+        // Set the active Excel worksheet to sheet 0
+        $objPHPExcel->setActiveSheetIndex(0);
+        // Initialise the Excel row number
+        $rowCount = 1;
+
+        /* Add Heading Row */
+        $objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'Product Name');
+        $objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Categories');
+        $objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, 'Quantity');
+        $objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, 'Price');
+
+        $objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, 'Select Type');
+        $objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, 'Requried');
+        $objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, 'Option Value ');
+        $objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, 'Quantity');
+        $objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, 'Subtrack stock');
+        $objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, 'Price');
+
+        $objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, 'Price Prefix');
+        $objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, 'Points');
+        $objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, 'Points Prefix');
+        $objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, 'Weight');
+        $objPHPExcel->getActiveSheet()->SetCellValue('O'.$rowCount, 'Weight Prefix');
+
+
+        /* Add data Rows */
+          $rowCount = 2;
+
+         $objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, 'iPod Nano');
+        $objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'MP3 Players');
+        $objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, '1000');
+        $objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, '1250');
+
+        $objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, 'Select');
+        $objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, 'Yes');
+        $objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, 'Blue');
+        $objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, '10');
+        $objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, 'Yes');
+        $objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, '10');
+
+        $objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, 'Plus');
+        $objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, '10');
+        $objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, 'Plus');
+        $objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, '10');
+        $objPHPExcel->getActiveSheet()->SetCellValue('O'.$rowCount, 'Plus');
+    
+        // Redirect output to a client’s web browser (Excel5)
+        header("Content-Type: text/csv; charset=utf-8");
+        header('Content-Disposition: attachment;filename="product_list_'.date("Y m d G i s").'.csv"');
+        header('Cache-Control: max-age=0');
+
+        // Instantiate a Writer to create an OfficeOpenXML Excel .xlsx file
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'CSV');
+
+        /* Download CsV file in downloads */
+        $objWriter->save('php://output');
+
+//        chdir('../../..');
+    }
+    protected function validateImportoption() {
+       
+        if (!$this->request->files['file']['tmp_name']) {
+            $this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+        }
+        elseif($_FILES["file"]["name"])
+        {
+            $allowedExts = array("csv", "xlsx", "xls");
+            $temp = explode(".", $_FILES["file"]["name"]);
+            $extension = end($temp);
+
+            if(!in_array($extension, $allowedExts))
+                $this->error['errorfile'] = $this->language->get('Please Upload a Excel/CSV file');
+        }
+
+        if (!$this->error) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+	]]></add>
+		</operation>  
+        
+	</file>	
+	
+	
+   
+<!-- Product Model -->
+
+<file path="admin/model/catalog/category.php">
+		<operation>
+			<search position="before"><![CDATA[public function getCategory($category_id) {]]></search>
+			<add><![CDATA[public function getCategoryId($category,$parentid=0) {
+			
+		if($parentid==0){
+		$query = $this->db->query("SELECT category_id FROM " . DB_PREFIX . "category_description WHERE name LIKE '".$category."'");
+		}else{$query = $this->db->query("SELECT cd.category_id,cp.parent_id FROM " . DB_PREFIX . "category_description AS cd LEFT JOIN " . DB_PREFIX . "category AS cp ON cd.category_id=cp.category_id WHERE cd.name LIKE '".$category."' AND cp.parent_id='".$parentid."'");
+		}
+		if($query->row)
+		{
+			return $query->row['category_id'];
+		}
+		else
+		{
+			return 0;		
+		}	
+	} 
+	]]></add>
+		</operation>
+	</file>	
+
+	<file path="admin/model/catalog/product.php">
+		<operation>
+			<search position="before"><![CDATA[public function getProduct($product_id) {]]></search>
+			<add><![CDATA[public function getoptionProductId($product,$categoryid) {			
+
+$query = $this->db->query("SELECT pd.product_id,pc.category_id FROM " . DB_PREFIX . "product_description AS pd 
+LEFT JOIN " . DB_PREFIX . "product_to_category AS pc ON pd.product_id = pc.product_id WHERE pd.name LIKE '".$product."' AND  pc.category_id='".$categoryid."'");
+
+		if($query->row)
+		{
+			return $query->row['product_id'];
+		}
+		else
+		{
+			return 0;		
+		}	
+	} 
+ public function getProductcategoryname($product_id) {
+        $product_categoryname = $this->db->query("SELECT * FROM `" . DB_PREFIX . "product_to_category` ptc LEFT JOIN " . DB_PREFIX . "category c ON (c.category_id = ptc.category_id) LEFT JOIN `" . DB_PREFIX . "category_description` cd ON (c.category_id = cd.category_id)  WHERE ptc.product_id = '" . (int)$product_id . "'");
+        $category_name = array();
+
+        foreach($product_categoryname->rows as $categoryname){
+
+            $category_name=$categoryname['name'];
+
+        }
+      
+        return $category_name;
+    }
+
+    public function getProductandoption($product_id) {
+        $product_option_data = array();
+
+        $product_option_query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "product_option` po LEFT JOIN `" . DB_PREFIX . "option` o ON (po.option_id = o.option_id) LEFT JOIN `" . DB_PREFIX . "option_description` od ON (o.option_id = od.option_id) WHERE po.product_id = '" . (int)$product_id . "' AND od.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+
+        foreach ($product_option_query->rows as $product_option) {
+            $product_option_value_data = array();
+
+            if($product_option['type']=="select" || $product_option['type']=="checkbox" || $product_option['type']=="radio"){
+
+           $product_option_value_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_option_value pov LEFT JOIN `" . DB_PREFIX . "option_value` ov ON (pov.option_value_id = ov.option_value_id) LEFT JOIN `" . DB_PREFIX . "option_value_description` ovd ON (ov.option_value_id = ovd.option_value_id) WHERE pov.product_option_id = '" . (int)$product_option['product_option_id'] . "'AND ovd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+            foreach ($product_option_value_query->rows as $product_option_value) {
+
+                $product_option_value_data[] = array(
+
+                    'option_value_name'       => $product_option_value['name'],
+                    'quantity'                => $product_option_value['quantity'],
+                    'subtract'                => $product_option_value['subtract'],
+                    'price'                   => $product_option_value['price'],
+                    'price_prefix'            => $product_option_value['price_prefix'],
+                    'points'                  => $product_option_value['points'],
+                    'points_prefix'           => $product_option_value['points_prefix'],
+                    'weight'                  => $product_option_value['weight'],
+                    'weight_prefix'           => $product_option_value['weight_prefix']
+                );
+            }
+
+            $product_option_data[] = array(
+
+                'name'                 => $product_option['name'],
+                'required'             => $product_option['required'],
+                'product_option_value' => $product_option_value_data
+            );
+
+                  }
+
+        }
+
+        return $product_option_data;
+
+    }	public function getOptionid($optionname){
+
+    $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "option` o LEFT JOIN " . DB_PREFIX . "option_description od ON (o.option_id = od.option_id) WHERE o.type = '" . $optionname . "' AND od.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+
+    return $query->row;
+
+}
+
+    public function getOptionvalue($option_id,$option_value){
+
+        $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "option_value_description` WHERE name LIKE '".$option_value."'AND option_id='".$option_id."' AND language_id = '" . (int)$this->config->get('config_language_id') . "'");
+
+        return $query->row;
+
+    }
+
+
+
+    public function editoptionProduct($product_id, $data)  {
+
+         $this->db->query("UPDATE " . DB_PREFIX . "product SET  quantity = '" . (int)$data['quantity'] . "', price = '" . (float)$data['price'] . "',  date_modified = NOW() WHERE product_id = '" . (int)$product_id . "'");
+
+        $this->db->query("DELETE FROM " . DB_PREFIX . "product_option WHERE product_id = '" . (int)$product_id . "'");
+        $this->db->query("DELETE FROM " . DB_PREFIX . "product_option_value WHERE product_id = '" . (int)$product_id . "'");
+
+        if (isset($data['product_option'])) {
+
+              foreach ($data['product_option'] as $product_option) {
+
+                if ($product_option['type'] == 'select' || $product_option['type'] == 'radio' || $product_option['type'] == 'checkbox' ) {
+
+
+                    if (isset($product_option['product_option_value'])) {
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "product_option SET product_option_id = '" . (int)$product_option['product_option_id'] . "', product_id = '" . (int)$product_id . "', option_id = '" . (int)$product_option['option_id'] . "', required = '" . (int)$product_option['required'] . "'");
+
+                        $product_option_id = $this->db->getLastId();
+
+                        foreach ($product_option['product_option_value'] as $product_option_value) {
+                            $this->db->query("INSERT INTO " . DB_PREFIX . "product_option_value SET product_option_value_id = '" . (int)$product_option_value['product_option_value_id'] . "', product_option_id = '" . (int)$product_option_id . "', product_id = '" . (int)$product_id . "', option_id = '" . (int)$product_option['option_id'] . "', option_value_id = '" . (int)$product_option_value['option_value_id'] . "', quantity = '" . (int)$product_option_value['quantity'] . "', subtract = '" . (int)$product_option_value['subtract'] . "', price = '" . (float)$product_option_value['price'] . "', price_prefix = '" . $this->db->escape($product_option_value['price_prefix']) . "', points = '" . (int)$product_option_value['points'] . "', points_prefix = '" . $this->db->escape($product_option_value['points_prefix']) . "', weight = '" . (float)$product_option_value['weight'] . "', weight_prefix = '" . $this->db->escape($product_option_value['weight_prefix']) . "'");
+                        }
+                    }
+                } else {
+
+                    $this->db->query("INSERT INTO " . DB_PREFIX . "product_option SET product_option_id = '" . (int)$product_option['product_option_id'] . "', product_id = '" . (int)$product_id . "', option_id = '" . (int)$product_option['option_id'] . "', value = '" . $this->db->escape($product_option['value']) . "', required = '" . (int)$product_option['required'] . "'");
+                }
+            }
+        }
+
+        $this->cache->delete('product');
+
+        $this->event->trigger('post.admin.product.edit', $product_id);
+
+
+    }
+]]></add>
+		</operation>
+<operation>
+			<search position="after"><![CDATA[$sql = "SELECT * FROM " . DB_PREFIX . "product p LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) WHERE pd.language_id = '" . (int)$this->config->get('config_language_id') . "'";]]></search>
+			<add><![CDATA[ if (!empty($data['selected'])) {
+            $sql .= " AND p.product_id in(" . $this->db->escape($data['selected']) .")";
+        }]]></add>
+		</operation>
+	</file>
+	
+<!-- Product View -->
+
+	<file path="admin/view/template/catalog/product_list.tpl">
+		<operation>
+			<search position="before"><![CDATA[<button type="submit" form="form-product" formaction="<?php echo $copy; ?>" data-toggle="tooltip" title="<?php echo $button_copy; ?>" class="btn btn-default"><i class="fa fa-copy"></i></button>]]></search>
+			<add><![CDATA[<button type="button" style="background-color: inactivecaptiontext;" data-toggle="tooltip" title="<?php echo $button_exportoption; ?>" class="btn btn-success" onclick="$('#form-product').attr('action', '<?php echo $exportoption; ?>').submit()"><i class="glyphicon glyphicon-export"></i></button> <a href="<?php echo $importoption; ?>" data-toggle="tooltip" style="background-color: inactivecaptiontext;" title="<?php echo $button_importoption; ?>" class="btn btn-success"><i class="glyphicon glyphicon-import"></i></a>]]></add>
+		</operation>
+	</file>
+		 
+</modification>

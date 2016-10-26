@@ -1,0 +1,790 @@
+<modification>
+    <name>Product Short Description And Keyfeatures</name>
+    <code>productshortdescriptionandkeyfeatures</code>
+    <version>2.0</version>
+    <authour>IRS SOFT</authour>
+
+    <!--Product keyfeatures start here -->
+    <!-- controller file start-->
+    <file path="admin/controller/catalog/product.php">
+        <operation>
+            <search><![CDATA[$data['tab_design'] = $this->language->get('tab_design');]]></search>
+            <add position="after" ><![CDATA[$data['entry_keyfeatures'] = $this->language->get('entry_keyfeatures');]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search><![CDATA[protected function getList() {]]></search>
+            <add position="before" ><![CDATA[//KEY FEATURES START HERE
+    public function keyfeatures() {
+
+        if($_POST['action']=='language') {
+
+            $keyproduct_id = $_POST['proid'];
+            $language_id = $_POST['langid'];
+            $this->load->model('catalog/product');
+            $data = $this->model_catalog_product->addKeyfeaturesselect($keyproduct_id, $language_id);
+            $this->response->setOutput(json_encode($data));
+        }
+
+     //insert query function here
+    if($_POST['action']=='insert') {
+
+        $keyfeatures=$_POST['name'];
+        $sort=$_POST['sort'];
+        $keyproduct_id=$_POST['product_id'];
+        $language_id=$_POST['langid'];
+        $this->load->model('catalog/product');
+        $data = $this->model_catalog_product->addKeyfeatures($keyfeatures,$sort,$keyproduct_id,$language_id);
+        $this->response->setOutput(json_encode($data));
+
+    }
+
+    //delete query function here
+     if($_POST['action']=='delete') {
+
+            $id = $_POST['info'];
+            $keyproduct_id=$_POST['proid'];
+         $language_id=$_POST['languid'];
+            $this->load->model('catalog/product');
+            $this->model_catalog_product->addKeyfeaturesdelete($id,$keyproduct_id,$language_id);
+            $data = $this->model_catalog_product->addKeyfeaturesdelete($id,$keyproduct_id,$language_id);
+            $this->response->setOutput(json_encode($data));
+        }
+
+        //update query function here
+     if($_POST['action']=='update') {
+
+            $id = $_POST['id'];
+            $keyproduct_id = $_POST['proid'];
+            $language_id = $_POST['lang'];
+            $keyfeatures = $_POST['features'];
+            $sort = $_POST['sort'];
+            $this->load->model('catalog/product');
+            $this->model_catalog_product->addKeyfeaturesupdate($keyfeatures,$sort,$keyproduct_id,$language_id,$id);
+            $data = $this->model_catalog_product->addKeyfeaturesupdate($keyfeatures,$sort,$keyproduct_id,$language_id,$id);
+            $this->response->setOutput(json_encode($data));
+        }
+
+
+    }
+      //KEY FEATRUES END HERE]]>
+
+            </add>
+        </operation>
+
+    </file>
+    <!-- controller file end-->
+    <!-- model file start-->
+    <file path="admin/model/catalog/product.php">
+
+
+        <operation>
+            <search><![CDATA[public function getTotalProductsByLayoutId($layout_id) {]]></search>
+            <add position="before" ><![CDATA[public function addKeyfeatures($keyfeatures,$sort,$keyproduct_id,$language_id) {
+        $this->db->query("INSERT INTO " . DB_PREFIX . "product_keyfeatures SET product_id = '" . (int)$keyproduct_id . "', language_id = '" . (int)$language_id . "',  product_keyfeatures = '" . $keyfeatures . "', sort = '" . (int)$sort . "'");
+          $product_keyfeatures = array();
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_keyfeatures WHERE product_id = '" . (int)$keyproduct_id . "' AND language_id = '" . (int)$language_id . "'ORDER BY `sort` ASC");
+            foreach ($query->rows as $result) {
+                $product_keyfeatures[][$result['product_id']] = array(
+
+                    'id' => $result['product_keyfeatures_id'],
+                    'product_id' => $result['product_id'],
+                    'language_id' => $result['language_id'],
+                    'product_keyfeatures' => $result['product_keyfeatures'],
+                    'sort' => $result['sort'],
+                );
+            }
+            return $product_keyfeatures;
+    }
+
+    public function addKeyfeaturesdelete($id,$keyproduct_id,$language_id) {
+        $this->db->query("DELETE FROM " . DB_PREFIX . "product_keyfeatures WHERE product_keyfeatures_id = '" . (int)$id . "' ");
+        $product_keyfeaturesupdate = array();
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_keyfeatures WHERE product_id = '" . (int)$keyproduct_id . "' AND language_id = '" . (int)$language_id . "'ORDER BY `sort` ASC");
+        foreach ($query->rows as $result) {
+            $product_keyfeaturesupdate[][$result['product_id']] = array(
+                'id' => $result['product_keyfeatures_id'],
+                'product_id' => $result['product_id'],
+                'language_id' => $result['language_id'],
+                'product_keyfeatures' => $result['product_keyfeatures'],
+                'sort' => $result['sort'],
+            );
+        }
+        return $product_keyfeaturesupdate;
+    }
+
+    public function addKeyfeaturesupdate($keyfeatures,$sort,$keyproduct_id,$language_id,$id) {
+        $this->db->query("UPDATE " . DB_PREFIX . "product_keyfeatures SET product_id = '" . $keyproduct_id . "', language_id = '" . $language_id . "', product_keyfeatures = '" . $keyfeatures . "', sort = '" . $sort . "' WHERE product_keyfeatures_id = '" . (int)$id . "'");
+        $product_keyfeaturesupdate = array();
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_keyfeatures WHERE product_id = '" . (int)$keyproduct_id . "' AND language_id = '" . (int)$language_id . "'ORDER BY `sort` ASC");
+        foreach ($query->rows as $result) {
+            $product_keyfeaturesupdate[][$result['product_id']] = array(
+                'id' => $result['product_keyfeatures_id'],
+                'product_id' => $result['product_id'],
+                'language_id' => $result['language_id'],
+                'product_keyfeatures' => $result['product_keyfeatures'],
+                'sort' => $result['sort'],
+            );
+        }
+        return $product_keyfeaturesupdate;
+    }
+
+    public function addKeyfeaturesselect($keyproduct_id,$language_id) {
+       $product_keyfeatures = array();
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_keyfeatures WHERE product_id = '" . (int)$keyproduct_id . "' AND language_id = '" . (int)$language_id . "'ORDER BY `sort` ASC");
+        foreach ($query->rows as $result) {
+            $product_keyfeatures[][$result['product_id']] = array(
+
+                'id' => $result['product_keyfeatures_id'],
+                'product_id' => $result['product_id'],
+                'language_id' => $result['language_id'],
+                'product_keyfeatures' => $result['product_keyfeatures'],
+                'sort' => $result['sort'],
+            );
+        }
+       return $product_keyfeatures;
+
+    }]]>
+
+            </add>
+        </operation>
+    </file>
+    <!-- model file end-->
+    <!-- language file start-->
+    <file path="admin/language/english/catalog/product.php">
+        <operation>
+            <search><![CDATA[$_['entry_name']             = 'Product Name';]]></search>
+            <add position="after" ><![CDATA[$_['entry_keyfeatures']      = 'Key Features';]]>
+            </add>
+        </operation>
+
+    </file>
+    <!-- language file end-->
+    <!-- language file end-->
+    <!-- view file start-->
+    <file path="admin/view/template/catalog/product_form.tpl">
+
+        <operation>
+            <search><![CDATA[<li><a href="#tab-design" data-toggle="tab"><?php echo $tab_design; ?></a></li>]]></search>
+            <add position="after" ><![CDATA[<li ><a href="#tab-keyfeatures" data-toggle="tab"><?php echo $entry_keyfeatures; ?></a></li>]]>
+
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[<div class="tab-pane" id="tab-design">]]></search>
+            <add position="before" ><![CDATA[
+                                        <div class="tab-pane" id="tab-keyfeatures">
+                                            <ul class="nav nav-tabs" id="language">
+                                                <?php foreach ($languages as $language) { ?>
+                                                <li><a href="#" onclick="showtab(this,<?php echo $_GET['product_id']; ?>);" class="<?php echo $language['language_id']; ?>" data-toggle="tab"><img src="view/image/flags/<?php echo $language['image']; ?>" title="<?php echo $language['name']; ?>" /> <?php echo $language['name']; ?></a></li>
+                                                <?php } ?>
+                                            </ul>
+                                            <div id="update" class="update">
+
+                                            </div>
+                                        </div>]]>
+
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[<?php echo $footer; ?>]]></search>
+            <add position="before" ><![CDATA[<script type="text/javascript">
+
+   function showtab(obj,proid){
+        $langid=$(obj).attr('class');
+        $proid=proid;
+        $action='language';
+        $.ajax({
+            url: "index.php?route=catalog/product/keyfeatures&token=<?php echo $token; ?>",
+            type: "POST",
+            dataType: "json",
+            data: { action: $action,langid:$langid, proid:$proid},
+            success: function (data) {
+                if (data != "") {
+                    var passingtoHTML = "";
+                    passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' > ";
+                    passingtoHTML += " <thead><tr><th style='display: none;'>NO</th><th style='display: none;'>PRO ID</th><th style='display: none;'>LANG</th><th>Features</th><th>SORT</th><th>ACTION</th></tr></thead><tbody>";
+                    $.each(data, function (id, row) {
+                        $.each(row, function (id1, row_array) {
+                            //construct tr
+                            passingtoHTML += "<tr  class='record'>";
+                            passingtoHTML += "<td class='td' title='id' style='display: none;'>" + row_array["id"] + "</td>";
+                            passingtoHTML += "<td class='td' title='proid' style='display: none;'>" + row_array["product_id"] + "</td>";
+                            passingtoHTML += "<td class='td' title='lang' style='display: none;'>" + row_array["language_id"] + "</td>";
+                            passingtoHTML += "<td class='td' title='features'>" + row_array["product_keyfeatures"] + "</td>";
+                            passingtoHTML += "<td class='td' title='sort' width='20%'>" + row_array["sort"] + "</td>";
+                            passingtoHTML += " <td class='button' title='button' width='20%'><button title='Edit' class='edit btn btn-primary' ><i class='fa fa-pencil'></i></button><button title='Remove' class='delete btn btn-danger' ><i class='fa fa-minus-circle'></i></button></td>";
+                            passingtoHTML += "</tr>";
+
+                            //show in table
+                        });//for each
+                    });//for each
+                    passingtoHTML += "</tbody><tfoot><tr class='record'><td colspan='2'></td><td><button type='button' title='Add' onclick='addKeyfea(this,$langid,$proid);' class='hideonclick  btn btn-primary'><i class='fa fa-plus-circle'></i></button></td></tr></tfoot>";
+                    $('.update').html(passingtoHTML);
+                }
+                else {
+                    var passingtoHTML = "";
+                    passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' > ";
+                    passingtoHTML += " <thead><tr><th style='display: none;'>NO</th><th style='display: none;'>PRO ID</th><th style='display: none;'>LANG</th><th>Features</th><th>SORT</th><th>ACTION</th></tr></thead><tbody>";
+                    passingtoHTML += "<tr  class='record'><td colspan='3'> <center><span style='color:red'>No record</span></center>  </td> </tr>";
+                    passingtoHTML += "</tbody><tfoot><tr class='record'><td colspan='2'></td><td width='20%'><button type='button' title='Add' onclick='addKeyfea(this,$langid,$proid);' class='hideonclick  btn btn-primary'><i class='fa fa-plus-circle'></i></button></td></tr></tfoot>";
+                    $('.update').html(passingtoHTML);
+                }
+            },// eo success
+            error: function (data) {
+                console.log("Error"+data);
+            }
+        });//ajax
+
+        return false;
+    }
+
+    function addKeyfea(obj,langid,proid) {
+
+        html  = "<tr ><input type='hidden' id='hai' class='languageid' value=''><input type='hidden' id='hai' class='product_id' value=''>";
+        html += "  <td class='text-left'><center><input type='text' id='hai' class='keyfeatures form-control' style='width:35em'><span class='errormsg' style='font-size: 1em; color: #681818;'></span></center></td>";
+        html += "  <td class='text-left'><center><input type='text' id='hai' class='sort form-control' style='width:10em'><span class='errormsgsort' style='font-size: 1em; color: #681818;'></span></center></td>";
+        html += "  <td class='text-left' > <button title='Save' class='addinsert btn btn-primary'><i class='fa fa-plus-circle'></i></button></td>";
+        html += "</tr>";
+        $('.update-table tbody').append(html);
+
+        $('.languageid').val(langid);
+        $('.product_id').val(proid);
+
+        $('.hideonclick').hide();
+        return false;
+    }
+    $(document).ready(function() { //READY STARTS HERE
+        //-----------------------------------------------------//
+        $(document).on('click','.addinsert',function () {
+
+            $langid= $('.languageid').val();
+            $product_id= $('.product_id').val();
+            $name= $('.keyfeatures').val();
+            $sort= $('.sort').val();
+            $action='insert';
+            if($name=="") {
+                var chars="Enter the keyfeatures";
+                $(".errormsg").html(chars);
+            }
+
+            else{
+                $.ajax({
+                    url: "index.php?route=catalog/product/keyfeatures&token=<?php echo $token; ?>",
+                    type: "POST",
+                    dataType: "json",
+                    data: {name: $name, sort: $sort, action: $action, langid:$langid, product_id:$product_id},
+                    success: function (data) {
+                        $('.keyfeatures').val("");
+                        $('.sort').val("");
+                        if (data != "") {
+                            var passingtoHTML = "";
+
+                            passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' > ";
+                            passingtoHTML += " <thead><tr><th style='display: none;'>NO</th><th style='display: none;'>PRO ID</th><th style='display: none;'>LANG</th><th>Features</th><th>SORT</th><th>ACTION</th></tr></thead><tbody>";
+                            $.each(data, function (id, row) {
+                                $.each(row, function (id1, row_array) {
+                                    //construct tr
+                                    passingtoHTML += "<tr  class='record'>";
+                                    passingtoHTML += "<td class='td' title='id' style='display: none;'>" + row_array["id"] + "</td>";
+                                    passingtoHTML += "<td class='td' title='proid' style='display: none;'>" + row_array["product_id"] + "</td>";
+                                    passingtoHTML += "<td class='td' title='lang' style='display: none;'>" + row_array["language_id"] + "</td>";
+                                    passingtoHTML += "<td class='td' title='features'>" + row_array["product_keyfeatures"] + "</td>";
+                                    passingtoHTML += "<td class='td' title='sort' width='20%'>" + row_array["sort"] + "</td>";
+                                    passingtoHTML += " <td class='button' title='button' width='20%'><button title='Edit' class='edit btn btn-primary' ><i class='fa fa-pencil'></i></button><button title='Remove' class='delete btn btn-danger' ><i class='fa fa-minus-circle'></i></button></td>";
+                                    passingtoHTML += "</tr>";
+
+                                    //show in table
+                                });//for each
+                            });//for each
+                            passingtoHTML += "</tbody><tfoot><tr class='record'><td colspan='2'></td><td><button type='button' title='Add' onclick='addKeyfea(this,$langid,$proid);' class='hideonclick  btn btn-primary'><i class='fa fa-plus-circle'></i></button></td></tr></tfoot>";
+                            $('.update-table').html(passingtoHTML);
+                        }
+                        else {
+                            var passingtoHTML = "";
+                            passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' > ";
+                            passingtoHTML += " <thead><tr><th style='display: none;'>NO</th><th style='display: none;'>PRO ID</th><th style='display: none;'>LANG</th><th>Features</th><th>SORT</th><th>ACTION</th></tr></thead><tbody>";
+                            passingtoHTML += "<tr  class='record'><td colspan='3'> <center><span style='color:red'>No record</span></center>  </td> </tr>";
+                            passingtoHTML += "</tbody><tfoot><tr class='record'><td colspan='2'></td><td width='20%'><button type='button' title='Add' onclick='addKeyfea(this,$langid,$proid);' class='hideonclick  btn btn-primary'><i class='fa fa-plus-circle'></i></button></td></tr></tfoot>";
+
+                            $('.update-table').html(passingtoHTML);
+                        }
+                    },// eo success
+                    error: function (data) {
+
+                        console.log("Error"+data);
+                    }
+                });//ajax
+            }
+            return false;
+        });//ADD onclick function end
+
+
+        //DELETE
+        $(document).on('click','.delete',function(){
+            //Save the link in a variable called element
+            $info = $(this).parent('td').parent('tr').children('td').eq(0).html();
+            $proid = $(this).parent('td').parent('tr').children('td').eq(1).html();
+            $languid = $(this).parent('td').parent('tr').children('td').eq(2).html();
+            $action='delete';
+            $.ajax({
+                type: "POST",
+                url: "index.php?route=catalog/product/keyfeatures&token=<?php echo $token; ?>",
+                data: {info: $info ,  action: $action ,proid:$proid,languid:$languid},
+                dataType: "json",
+                success: function(data){
+
+                    if (data != "") {
+                        var passingtoHTML = "";
+
+                        //parse data using foreach
+                        passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' width='100%'  > ";
+                        passingtoHTML += "<thead> <tr><th style='display: none;'>NO</th><th style='display: none;'>PRO ID</th><th style='display: none;'>LANG</th><th>Features</th><th>SORT</th><th>ACTION</th></tr></thead><tbody>";
+                        $.each(data, function (id, row) {
+                            $.each(row, function (id1, row_array) {
+                                //construct tr
+                                passingtoHTML += "<tr  class='record'>";
+                                passingtoHTML += "<td class='td' title='id' style='display: none;'>" + row_array["id"] + "</td>";
+                                passingtoHTML += "<td class='td' title='proid' style='display: none;'>" + row_array["product_id"] + "</td>";
+                                passingtoHTML += "<td class='td' title='lang' style='display: none;'>" + row_array["language_id"] + "</td>";
+                                passingtoHTML += "<td class='td' title='features'>" + row_array["product_keyfeatures"] + "</td>";
+                                passingtoHTML += "<td class='td' title='sort' width='20%'>" + row_array["sort"] + "</td>";
+                                passingtoHTML += " <td class='button' title='button' width='20%'><button title='Edit' class='edit btn btn-primary' ><i class='fa fa-pencil'></i></button><button title='Remove' class='delete btn btn-danger' ><i class='fa fa-minus-circle'></i></button></td>";
+                                passingtoHTML += "</tr>";
+                               //show in table
+                            });//for each
+                        });//for each
+                        passingtoHTML += "</tbody><tfoot><tr class='record'><td colspan='2'></td><td><button type='button' title='Add' onclick='addKeyfea(this,$langid,$proid);' class='hideonclick  btn btn-primary'><i class='fa fa-plus-circle'></i></button></td></tr></tfoot>";
+                        $('.update-table').html(passingtoHTML);
+                    }
+                    else {
+                        var passingtoHTML = "";
+                        passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' > ";
+                        passingtoHTML += " <thead><tr><th style='display: none;'>NO</th><th style='display: none;'>PRO ID</th><th style='display: none;'>LANG</th><th>Features</th><th>SORT</th><th>ACTION</th></tr></thead><tbody>";
+                        passingtoHTML += "<tr  class='record'><td colspan='3'> <center><span style='color:red'>No record</span></center>  </td> </tr>";
+                        passingtoHTML += "</tbody><tfoot><tr class='record'><td colspan='2'></td><td width='20%'><button type='button' title='Add' onclick='addKeyfea(this,$langid,$proid);' class='hideonclick  btn btn-primary'><i class='fa fa-plus-circle'></i></button></td></tr></tfoot>";
+
+                        $('.update-table').html(passingtoHTML);
+                    }
+                }
+            });//ajax end
+
+            return false;
+        });
+
+
+        //-----------------------------------------------------//
+        //EDIT
+        $(document).on('click','.edit',function(){
+            var tr = $(this).closest("tr");
+            tr.find(".td").each(function(){
+                var name = $(this).attr("title");
+                var value = $(this).html();
+                var input = "<input type='text' name='"+name+"' value='"+value+"' id='"+name+"' class='form-control'/><span class='"+name+"' style='font-size: 1em; color: #681818;'></span>";
+                $(this).html(input);
+            });//end of each function
+            var submit = "<button type='button' class='table-update btn btn-primary' name='ss' title='Update'><i class='fa fa-pencil-square'></i></button>";
+            tr.find(".button").html(submit);
+        });//end of onclick function
+        $(document).on('click','.table-update',function(){
+            var id=$('#id').val();
+            var proid=$('#proid').val();
+            var lang=$('#lang').val();
+            ////var row = $(this).parent('td').parent('tr').children('td').children('input').val();
+            var features = $(this).parent('td').parent('tr').children('td').eq(3).children('input').val();
+            var sort = $(this).parent('td').parent('tr').children('td').eq(4).children('input').val();
+            var action='update';
+            $features=features;
+            $sort=sort;
+            // alert(features)
+            if($sort=="")
+            {
+               var sort="0";
+            }
+            if($features=="")
+            {
+                var chars="Enter the keyfeatures";
+                $(".features").html(chars);
+            }
+
+            else {
+
+
+                $.ajax({
+                    type: "POST",
+                    url: "index.php?route=catalog/product/keyfeatures&token=<?php echo $token; ?>",
+                    data:{id:id, proid: proid,lang:lang,features:features,sort:sort,action: action},
+                    dataType: "json",
+                    success: function (data) {
+
+                        if (data != "") {
+                            var passingtoHTML = "";
+
+                            //parse data using foreach
+                            passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' width='100%'  > ";
+                            passingtoHTML += " <thead><tr><th style='display: none;'>NO</th><th style='display: none;'>PRO ID</th><th style='display: none;'>LANG</th><th>Features</th><th>SORT</th><th>ACTION</th></tr></thead><tbody>";
+                            $.each(data, function (id, row) {
+                                $.each(row, function (id1, row_array) {
+                                    //construct tr
+                                    passingtoHTML += "<tr  class='record'>";
+                                    passingtoHTML += "<td class='td' title='id' style='display: none;'>" + row_array["id"] + "</td>";
+                                    passingtoHTML += "<td class='td' title='proid' style='display: none;'>" + row_array["product_id"] + "</td>";
+                                    passingtoHTML += "<td class='td' title='lang' style='display: none;'>" + row_array["language_id"] + "</td>";
+                                    passingtoHTML += "<td class='td' title='features'>" + row_array["product_keyfeatures"] + "</td>";
+                                    passingtoHTML += "<td class='td' title='sort' width='20%'>" + row_array["sort"] + "</td>";
+                                    passingtoHTML += " <td class='button' title='button' width='20%'><button title='Edit' class='edit btn btn-primary' ><i class='fa fa-pencil'></i></button><button title='Remove' class='delete btn btn-danger' ><i class='fa fa-minus-circle'></i></button></td>";
+                                    passingtoHTML += "</tr>";
+
+                                    //show in table
+                                });//for each
+                            });//for each
+                            passingtoHTML += "</tbody><tfoot><tr class='record'><td colspan='2'></td><td><button type='button' title='Add' onclick='addKeyfea(this,$langid,$proid);' class='hideonclick  btn btn-primary'><i class='fa fa-plus-circle'></i></button></td></tr></tfoot>";
+                            $('.update-table').html(passingtoHTML);
+                        }
+                        else {
+                            var passingtoHTML = "";
+                            passingtoHTML += "<table border='1' class='update-table table table-striped table-bordered table-hover' > ";
+                            passingtoHTML += " <thead><tr><th style='display: none;'>NO</th><th style='display: none;'>PRO ID</th><th style='display: none;'>LANG</th><th>Features</th><th>SORT</th><th>ACTION</th></tr></thead><tbody>";
+                            passingtoHTML += "<tr  class='record'><td colspan='3'> <center><span style='color:red'>No record</span></center>  </td> </tr>";
+                            passingtoHTML += "</tbody><tfoot><tr class='record'><td colspan='2'></td><td width='20%'><button type='button' title='Add' onclick='addKeyfea(this,$langid,$proid);' class='hideonclick  btn btn-primary'><i class='fa fa-plus-circle'></i></button></td></tr></tfoot>";
+
+                            $('.update-table').html(passingtoHTML);
+                        }
+                    }
+                });//end ajax function
+            }
+        });//end onclick function
+    });//READY ENDS HERE
+</script>]]>
+
+            </add>
+        </operation>
+    </file>
+    <!-- view file end-->
+
+    <!--catalog controller file start-->
+    <file path="catalog/controller/product/product.php">
+        <operation>
+            <search><![CDATA[$data['tab_attribute'] = $this->language->get('tab_attribute');]]></search>
+            <add position="after" ><![CDATA[$data['tab_keyfeature'] = $this->language->get('tab_keyfeatures');]]>
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[$data['description'] = html_entity_decode($product_info['description'], ENT_QUOTES, 'UTF-8');]]></search>
+            <add position="after" ><![CDATA[ $data['keyfeatures'] = $this->model_catalog_product->getProductKeyfeatures($this->request->get['product_id']);]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog controller file end-->
+
+    <!--catalog language file start-->
+    <file path="catalog/language/english/product/product.php">
+        <operation>
+            <search><![CDATA[$_['tab_review']               = 'Reviews (%s)';]]></search>
+            <add position="after" ><![CDATA[$_['tab_keyfeatures']          = 'Key Features';]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+    <!--catalog model file start-->
+    <file path="catalog/model/catalog/product.php">
+        <operation>
+            <search><![CDATA[public function getTotalProductSpecials() {]]></search>
+            <add position="before" ><![CDATA[  public function getProductKeyfeatures($product_id) {
+        $product_keyfeatures_data = array();
+
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_keyfeatures WHERE product_id = '" . (int)$product_id . "' AND language_id = '" . (int)$this->config->get('config_language_id') . "'ORDER BY `sort` ASC");
+
+        foreach ($query->rows as $result) {
+
+            $product_keyfeatures_data[][$result['language_id']] = array(
+
+
+                'id' => $result['product_keyfeatures_id'],
+                'product_id' => $result['product_id'],
+                'language_id'=> $result['language_id'],
+                'product_keyfeatures'      => $result['product_keyfeatures'],
+                'sort'      => $result['sort'],
+
+
+            );
+        }
+
+
+        return $product_keyfeatures_data;
+
+    }]]>
+            </add>
+        </operation>
+
+
+    </file>
+    <!-- catalog model file end-->
+
+    <!--catalog view file start-->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search><![CDATA[<li><a href="#tab-review" data-toggle="tab"><?php echo $tab_review; ?></a></li>]]></search>
+            <add position="after" offset="1"><![CDATA[<!--keyfeatures--->
+             
+              <li><a href="#tab-keyfeatures" data-toggle="tab"><?php echo $tab_keyfeature; ?></a></li>]]>
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[<div class="tab-pane active" id="tab-description"><?php echo $description; ?></div>]]></search>
+            <add position="before"><![CDATA[ <div class="tab-pane " id="tab-keyfeatures">
+
+                      <?php foreach ($keyfeatures as $languagekey){
+                      foreach ($languagekey as $languagekey1) {
+                            ?>
+                  <li>
+                  <?php
+                         echo  $languagekey1['product_keyfeatures'] ;
+                         ?></li><?php
+
+                                                       }  }
+                                                       ?>
+
+
+
+                  </div>]]>
+            </add>
+        </operation>
+
+
+    </file>
+    <!--Product short description start here -->
+    <!-- catalog view file end-->
+    <file path="admin/controller/catalog/product.php">
+        <operation>
+            <search><![CDATA[$data['tab_design'] = $this->language->get('tab_design');]]></search>
+            <add position="after" ><![CDATA[$data['entry_shortdescription'] = $this->language->get('entry_shortdescription');]]>
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[$data['languages'] = $this->model_localisation_language->getLanguages();]]></search>
+            <add position="after" ><![CDATA[if (isset($this->request->post['product_shortdescription'])) {
+            $data['product_shortdescription'] = $this->request->post['product_shortdescription'];
+        } elseif (isset($this->request->get['product_id'])) {
+            $data['product_shortdescription'] = $this->model_catalog_product->getProductShortdescriptions($this->request->get['product_id']);
+        } else {
+            $data['product_shortdescription'] = array();
+        }]]>
+
+            </add>
+        </operation>
+
+    </file>
+    <file path="admin/model/catalog/product.php">
+        <operation>
+            <search><![CDATA[$this->event->trigger('pre.admin.product.add', $data);]]></search>
+            <add position="after" ><![CDATA[foreach ($data['product_shortdescription'] as $language_id => $value) {
+            $this->db->query("INSERT INTO " . DB_PREFIX . "product_shortdescription SET product_id = '" . (int)$product_id . "', language_id = '" . (int)$language_id . "',  product_shortdescription = '" . $this->db->escape($value['shortdescription']) . "'");
+
+        }]]>
+
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[$this->event->trigger('pre.admin.product.edit', $data);]]></search>
+            <add position="after" ><![CDATA[$this->db->query("DELETE FROM " . DB_PREFIX . "product_shortdescription WHERE product_id = '" . (int)$product_id . "'");
+
+        foreach ($data['product_shortdescription'] as $language_id => $value) {
+            $this->db->query("INSERT INTO " . DB_PREFIX . "product_shortdescription SET product_id = '" . (int)$product_id . "', language_id = '" . (int)$language_id . "', product_shortdescription = '" . $this->db->escape($value['shortdescription']) . "'");
+        }]]>
+
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[$data['product_description'] = $this->getProductDescriptions($product_id);]]></search>
+            <add position="after"><![CDATA[$data['product_shortdescription'] = $this->getProductShortdescriptions($product_id);]]>
+
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[$this->event->trigger('pre.admin.product.delete', $product_id);]]></search>
+            <add position="after" ><![CDATA[$this->db->query("DELETE FROM " . DB_PREFIX . "product_shortdescription WHERE product_id = '" . (int)$product_id . "'");]]>
+
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[public function getProductDescriptions($product_id) {]]></search>
+            <add position="before" ><![CDATA[public function getProductShortdescriptions($product_id) {
+        $product_shortdescription_data = array();
+
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_shortdescription WHERE product_id = '" . (int)$product_id . "'");
+
+        foreach ($query->rows as $result) {
+            $product_shortdescription_data[$result['language_id']] = array(
+
+                'shortdescription'      => $result['product_shortdescription'],
+
+            );
+        }
+
+        return $product_shortdescription_data;
+    }]]>
+            </add>
+        </operation>
+    </file>
+    <file path="admin/language/english/catalog/product.php">
+        <operation>
+            <search><![CDATA[$_['entry_name']             = 'Product Name';]]></search>
+            <add position="after" ><![CDATA[$_['entry_shortdescription']      = 'Short Description';]]>
+            </add>
+        </operation>
+
+    </file>
+    <file path="admin/view/template/catalog/product_form.tpl">
+
+        <operation>
+            <search><![CDATA[<li><a href="#tab-design" data-toggle="tab"><?php echo $tab_design; ?></a></li>]]></search>
+            <add position="after" ><![CDATA[<li><a href="#tab-shortdesc" data-toggle="tab"><?php echo $entry_shortdescription; ?></a></li>]]>
+
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[<div class="tab-pane" id="tab-design">]]></search>
+            <add position="before" ><![CDATA[ <div class="tab-pane " id="tab-shortdesc">
+
+                                <ul class="nav nav-tabs" id="language">
+                                    <?php foreach ($languages as $language) { ?>
+                                    <li ><a href="#language<?php echo $language['language_id']; ?>" class="language<?php echo $language['language_id']; ?>" data-toggle="tab"><img src="view/image/flags/<?php echo $language['image']; ?>" title="<?php echo $language['name']; ?>" /> <?php echo $language['name']; ?></a></li>
+                                    <?php } ?>
+                                </ul>
+                                <div class="tab-content">
+                                    <?php foreach ($languages as $language) { ?>
+                                    <div class="tab-pane" id="language<?php echo $language['language_id']; ?>">
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label" for="input-description<?php echo $language['language_id']; ?>"><?php echo $entry_description; ?></label>
+                                        <div class="col-sm-10">
+                                            <textarea name="product_shortdescription[<?php echo $language['language_id']; ?>][shortdescription]" placeholder="<?php echo $entry_description; ?>" id="input-description<?php echo $language['language_id']; ?>" rows="4" cols="35" onkeyup="LimtCharacters(this,140,'lblcount');"><?php echo isset($product_shortdescription[$language['language_id']]) ? $product_shortdescription[$language['language_id']]['shortdescription'] : ''; ?></textarea>
+                                            <p class="chardisplay" style="font-size: 1em; color: red;"> </p>
+                                            <label id="lblcount" style="background-color:#E2EEF1;color:Red;font-weight:bold;"></label>
+
+                                        </div>
+                                    </div> </div>
+                                    <?php } ?>
+                                </div>
+                        </div>]]>
+
+            </add>
+        </operation>
+        <operation>
+            <search><![CDATA[<?php echo $footer; ?>]]></search>
+            <add position="before" ><![CDATA[<script type="text/javascript">
+    function LimtCharacters(txtMsg, CharLength, indicator) {
+        chars = txtMsg.value.length+" Character Entered";
+        //alert(chars);
+        $(".chardisplay").html(chars);
+        /*document.getElementById(indicator).innerHTML = "";
+        if (chars > CharLength) {
+            txtMsg.value = txtMsg.value.substring(0, CharLength);
+            document.getElementById(indicator).innerHTML = "limited char only";
+        }
+        else{
+            document.getElementById(indicator).innerHTML = "";
+
+        }*/
+    }
+
+    $('#tab-shortdesc ul li a').on('click', function (e) {
+        e.preventDefault();
+        var language=$(this).attr('class');
+        var id='#tab-shortdesc .tab-content #'+language;
+        $('#tab-shortdesc .tab-content .tab-pane').removeClass('active');
+
+
+        $(id).addClass('active');
+    });
+
+
+</script>]]>
+
+            </add>
+        </operation>
+    </file>
+
+
+    <!--catalof files-->
+    <!--catalog controller file start-->
+    <file path="catalog/controller/product/product.php">
+        <operation>
+            <search><![CDATA[$data['description'] = html_entity_decode($product_info['description'], ENT_QUOTES, 'UTF-8');]]></search>
+            <add position="after" ><![CDATA[ $data['shortdescription'] = $this->model_catalog_product->getProductshort($this->request->get['product_id']);]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog controller file end-->
+
+    <!--catalog language file start-->
+    <file path="catalog/language/english/product/product.php">
+        <operation>
+            <search><![CDATA[$_['tab_review']               = 'Reviews (%s)';]]></search>
+            <add position="after" ><![CDATA[$_['text_shortdesc']           = 'Short Description';]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+    <!--catalog model file start-->
+    <file path="catalog/model/catalog/product.php">
+
+        <operation>
+            <search><![CDATA[public function getTotalProductSpecials() {]]></search>
+            <add position="before" ><![CDATA[ public function getProductshort($product_id) {
+        $product_keyfeatures_data1 = array();
+        //echo "SELECT * FROM " . DB_PREFIX . "product_keyfeatures WHERE product_id = '" . (int)$product_id . "'";
+       // $query = $this->db->query("SELECT  * from " . DB_PREFIX . "product_shortdescription where product_id=' AND $product_id' AND language_id = '" . (int)$this->config->get('config_language_id') . "'");
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_shortdescription WHERE product_id = '" . (int)$product_id . "' AND language_id = '" . (int)$this->config->get('config_language_id') . "'");
+
+        foreach ($query->rows as $result) {
+
+            $product_keyfeatures_data1[$result['language_id']] = array(
+
+
+                'shortdesc'      => $result['product_shortdescription'],
+
+
+
+            );
+        }
+
+
+
+        // print_r($product_keyfeatures_data1);
+        return $product_keyfeatures_data1;
+    }]]>
+            </add>
+        </operation>
+
+
+    </file>
+    <!-- catalog model file end-->
+
+    <!--catalog view file start-->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search><![CDATA[<h1><?php echo $heading_title; ?></h1>]]></search>
+            <add position="after" ><![CDATA[ <div>
+               <p><?php// echo $shortdescription; ?></p>
+                <?php
+                foreach ($shortdescription as $languagekey){
+                        echo  $languagekey['shortdesc'] ;
+
+                                                       }
+                                                       ?>
+            </div>]]>
+            </add>
+        </operation>
+
+
+
+    </file>
+    <!-- catalog view file end-->
+
+
+
+</modification>

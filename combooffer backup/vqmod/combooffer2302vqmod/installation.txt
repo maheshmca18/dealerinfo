@@ -1,0 +1,82 @@
+INSTALLATION Combo Offer
+========================================================
+1. First You must backup your opencart site/shop.
+
+2. Before install this addon you have to install "vQmod" in your shop.
+
+[NOTE : Opencart version 2.0.x to version 2.1.x ] install vQmod 2.x version.
+[NOTE : Opencart version 2.2.x ] install vQmod 2.6.x version.
+
+3. Upload the "vqmod","catalog" & "admin" to your root folder. (No file are replaced, all files are new)
+Done.
+
+===============================================================================================
+				Combo Offer ===============================================================================================
+
+Admin Login :
+
+1. Go to the Modules Page [Extensions -> Modules]
+
+		step 1 : See the "Combo Offer" Module then Click [install] link to install this Plugin.
+		
+2. Go to the User Groups Page [System -> Users -> User Groups]
+
+		step 1 :  Click Edit button on the Administrator.
+
+		step 2 :  Select  localisation/combo_offerl from the Access Permission 
+
+		step 3 :  Select  localisation/combo_offerl from the Modify Permission
+		
+		step 4 :  And Click the save button. 	
+
+3. Go to System->Localisation->Combo Offer
+
+		step 1 :  Click Add button on the Combo Offer page.
+		  
+		step 2 :  Enter the Combo Offer,Discount Price,Products,Start Date,End Date,Sort Order,status and Click the Save button.
+		  
+		step 3 :  All the details displays on Table.
+		   	
+		step 4 :  If you want to edit particular Combo Offer-> click edit button -> Then edit the Combo Offer 				  detail-> click the Save button.
+		        
+		step 5 :  If you want to delete  particular Combo Offer-> Select the Combo Offer -> click delete button.
+
+4. Go to the Modules Page [Extensions -> Modules]
+
+		step 1 : See the "Combo Offer" Module then Click [edit] link.
+		
+				=>  Enter Module Name 
+				=>  Select Combo Offer Name [Auto Complete]
+				=>  Enter Combo Limit for Home Page
+				=>  Enter Image Width
+				=>  Enter Image Height
+				=>  Select Carousel Auto Play ["Enabled/Disabled"]
+				=>  Select Status ["Widget Enabled/Disabled"]			
+
+		step 2 : And Click the save button.
+
+5. Go to the Modules Page [Extensions -> Order Totals]
+
+		step 1 : See the "Combo Offer Total" Module then Click [install] link to install this Plugin.
+
+		step 2 : See the "Combo Offer Total" Module then Click [edit] link.
+		
+		step 3 : Select Status Enabled and Enter the Sort Order.
+			 [Note : Give the  "Combo Offer Total" Sort Order Number less Then the "Total" Sort Order Number] 
+
+		step 4 : And Click the save button.
+
+6. Go to the  Design -> Layouts
+       
+      		step 1 : Add Combo Offer Module to your site's Layout ( Home, Product, Category)
+
+7. Go to the Design -> Layout
+       
+      		step 1 : Add Combo Offer Module to your site's Layout ( Home, Product, Category)
+
+
+8.Go to Your Store Front and See the Combo Offer widget .
+
+
+
+

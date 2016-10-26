@@ -1,0 +1,53 @@
+---------------------------------------------------------------------------------------------
+         Module : Product Enquiry Form
+---------------------------------------------------------------------------------------------
+
+This Plugin requires "vQmod".
+
+This extension adds another tab in the Product detail page, called Product Enquiry.
+
+Your costumers can easily ask you something else they want to know about that particular product, via email, by simply filling the Product's Enquiry Form.
+
+This extension having Recaptcha validation for enquiring user.
+
+Now, you will get the link to your email automatically, and all you need to do, is to click Reply and answer the question.
+
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------------
+			
+1. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+2. Login to Admin panel 
+
+            Extensions -> Modules
+		
+		step 1 : See the "Product Enquiry Form ReCAPTCHA " Module then Click [install] link to install this Plugin.
+
+		step 2 : See the "Product Enquiry Form ReCAPTCHA " Module then Click [edit] link.
+
+		step 3 : Enter your public and private key.
+
+		step 4 :  And Click the save button.
+
+
+
+3. Go to Product detail page (For customer Enquiry)
+
+	Follow below steps for Product Enquiry :-
+
+       		step 1 :  Click the  Product Enquiry Tab 
+		  
+		step 2 :  Then enter the Name,Email id and Enquiry details
+		  
+		step 3 :  And Click the Send Enquiry button. 	
+		
+		step 4 : Now the enquiry mail has sent to admin config mail.
+
+
+4. Admin user can reply enquiring customers mail.
+

@@ -1,0 +1,63 @@
+---------------------------------------------------------------------------------------------
+         Module : Ask For Price
+---------------------------------------------------------------------------------------------
+
+This Plugin requires "vQmod".
+
+This extension Ask For Price has displays "Ask For Price" button on whether the particular product price is 0(ZERO), And also disables "Add To Cart" button.
+
+This extension has works in following pages :-
+	Product detail page
+	Category Page,
+	Search Page,
+	Featured Products widget,
+	Related Products widget.
+
+Main Feature :-
+
+When clicking "Ask for Price" button showing popup/lightbox form for asking about Product's price detail via email.
+
+This extension having Recaptcha validation feature also.
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------------
+			
+1. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+2. Login to Admin panel 
+
+            Extensions -> Modules (Choose Module from Dropdown)
+		
+		step 1 : See the "Ask for Price" Module then Click [install] link to install this Plugin.
+
+		step 2 : See the "Ask for Price" Module then Click [edit] link.
+
+		step 3 : Enter your sitekey and secret key.
+
+		step 4 : And Click the save button.
+
+
+3. Go to Product detail page (Ask For Price) 
+
+	Follow below steps for Ask for Price :-
+
+       		step 1 :  Click the  [Ask For Price] button.
+		  
+		step 2 :  Then enter the Name,Email id,Message and Required Quantity details.
+		  
+		step 3 :  And Click the Send Enquiry button. 	
+		
+		step 4 :  Now the enquiry mail has sent to admin config mail.
+
+4. Kindly follow the above four steps for Ask for Price in below pages:-
+	
+		-> Category Page
+		-> Search Page
+		-> Related Products Widget
+		-> Featured Products Widget
+
+5. Admin user can reply enquiring customers mail.

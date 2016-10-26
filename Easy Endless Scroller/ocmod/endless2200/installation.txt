@@ -1,0 +1,33 @@
+Endless Scroller OPENCART EXTENSION OCMOD
+========================================================
+1. First You must backup your opencart site/shop.
+
+2. Upload the "catalog" & "admin" to your root folder. (No file are replaced, all files are new)
+Done.
+
+===============================================================================================
+				Endless Scroller ===============================================================================================
+
+Admin Login :
+
+1. Extensions -> Extension Installer
+	
+	 Upload endlessscroller.ocmod.xml file via Extension installer.
+
+2. Extensions -> Modification
+
+	 Click refresh on the top corner of Modifications.
+
+3. Go to the Modules Page [Extensions -> Modules]
+
+		step 1 : See the "Endless Scroller" Module then Click [install] link to install this Plugin.
+
+		The extension is now installed and enabled.
+
+4. Go to category page or search page, To Scroll view products now endless scroller will work.
+
+
+In case of problems, please contact me at opencartsupport@irssoft.com
+
+Thank you!
+

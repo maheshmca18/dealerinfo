@@ -1,0 +1,39 @@
+---------------------------------------------------------------------------------------------
+         Module : Zaakpay
+---------------------------------------------------------------------------------------------
+
+	Here at zaakpay we are committed to providing the best experience to merchants and developers alike. We have worked hard on providing developerswith the easiest integration experience for any online payments products. Here you will find everything you need to get your website up and accepting payments!
+
+Features:-
+-Multi-Currency Support.
+-Auto-Retry Payment.
+-Fraud Detection, Negative-Card Database.
+-Payment-Instrument based Checks.
+-PCI Compliant.
+-Customized Reporting.
+-Integration Kits for all almost every platform.
+-Accepts VISA, MasterCard, Maestro, AmEx, Diners, Discover 
+
+
+=============
+Installation
+=============
+			
+1. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+2. Login to Admin panel 
+
+            Extensions -> Payments
+		
+		step 1 : See the "Zaakpay" Module then Click [install] link to install this Plugin.
+
+		step 2 : See the "Zaakpay" Module then Click [edit] link.
+
+		step 3 : Enter  your Merchant ID , secret key and fill up other details.
+
+		step 4 : And Click the save button.
+
+
+3. Now you can make your payment securely through zaakpay by selecting it as the Payment Method at the Checkout stage.
+
+[Reference Link : https://www.zaakpay.com/developers/guide ]

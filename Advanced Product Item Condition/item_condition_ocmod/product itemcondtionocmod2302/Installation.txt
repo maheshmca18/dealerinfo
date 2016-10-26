@@ -1,0 +1,81 @@
+---------------------------------------------------------------------------------------------
+         Module : Product item condition
+---------------------------------------------------------------------------------------------
+
+
+The Product item condition module allows:-
+
+	The admin user can add new Product item condition.
+	The admin user can update existing Product item condition.
+	The admin user can delete existing Product item condition.
+	
+	It will displays on product detail page.
+
+=============
+Installation
+=============
+
+
+1. First You must backup your opencart site/cart and also database. Because add a new files and new tables.
+
+		The new database tables are :
+		
+			(i) product_item_condition
+			(ii) product_item_condition_master
+			
+			
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin panel 		
+
+	     	Extensions -> Extension Installer
+		
+			Upload irs_product_item_condition.ocmod.xml file via Extension installer.
+		
+
+4. Extensions -> Modification 
+
+		Click refresh button at the right top corner
+
+5. Extensions -> Modules (Choose odules from DropDown)
+		
+		See the "Product item condition" Module then Click [install] link to install this Plugin.
+
+6. Go to System->Users->User Groups 
+
+		step 1 :  Click Edit button on the Administrator.
+
+		step 2 :  Select  localisation/item_condition from the Access Permission 
+
+		step 3 :  Select  localisation/item_condition from the Modify Permission
+		
+		step 4 :  And Click the save button. 
+
+7. Go to System->Localisation->Item Condition
+
+		step 1 :  Click Add button on the Item Condition page.
+		  
+		step 2 :  Enter the Item Condition Title,sort,status  and Click the Save button.
+		  
+		step 3 :  All the details displays on Table.
+		   	
+		step 4 :  If you want to edit particular Item condition details-> click edit button -> Then edit the item condition 				  detail-> click the Save button.
+		        
+		step 7 :  If you want to delete  particular Item condition details-> click delete button.
+			 
+	 
+8. Go to Products page 
+
+	Follow below steps for adding Product Item Condition :-
+
+      		step 1 :  Go to Catalog -> Products 
+		  
+		step 2 :  Click Edit button on the Products list.
+		  
+		step 3 :  Click the  Data Tab	
+		   
+		step 4 :  Then select the Item Condition details  
+		        
+		step 5 :  And Click the save button. 
+		        
+9.Now It Displays Product Item Condition in Product detail page.

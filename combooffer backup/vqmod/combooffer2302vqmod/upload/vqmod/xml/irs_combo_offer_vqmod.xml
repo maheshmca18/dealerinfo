@@ -1,0 +1,47 @@
+<modification>
+    <id>Combo Offer</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <authour>IRS SOFT</authour>
+
+	<file path="admin/controller/common/column_left.php">
+        <operation>
+            <search position="after"><![CDATA[$localisation = array();]]></search>
+            <add><![CDATA[ if ($this->user->hasPermission('access', 'localisation/combo_offerl')) { 
+				$localisation[] = array(
+					'name'	   => $this->language->get('combo_offerl'),
+					'href'     => $this->url->link('localisation/combo_offerl', 'token=' . $this->session->data['token'], true),
+					'children' => array()		
+				);	
+			}]]></add>
+        </operation>
+</file>
+<file path="admin/language/en-gb/common/column_left.php">
+        <operation>
+            <search position="after"><![CDATA[// Text]]></search>
+            <add><![CDATA[$_['combo_offerl']                 = 'Combo Offer';]]></add>
+        </operation>
+</file>
+<file path="catalog/controller/common/header.php">
+   	<operation>
+            <search position="after" ><![CDATA[$this->load->language('common/header');]]></search>
+            <add><![CDATA[//combo start
+		$this->load->language('extension/module/combo_offerm');
+		$data['combooffer_status'] = $this->config->get('combooffer_status');
+		$data['menucombo'] = $this->language->get('menucombo');
+		//combo end
+	]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation>
+            <search position="before"><![CDATA[<?php foreach ($categories as $category) { ?>]]></search>
+            <add><![CDATA[<!---combo start--->
+		<?php if(isset($combooffer_status)){ ?>
+		<li ><a href="index.php?route=extension/module/combo_offerm/comboofferlist" ><?php echo $menucombo; ?></a> </li>
+		<?php } ?>
+	<!---combo end--->]]>
+            </add>
+        </operation>
+   </file>
+</modification>

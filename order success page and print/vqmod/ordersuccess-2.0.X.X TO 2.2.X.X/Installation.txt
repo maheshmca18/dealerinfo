@@ -1,0 +1,56 @@
+---------------------------------------------------------------------------------------------
+         Module : Order Success Page & Print PDF
+---------------------------------------------------------------------------------------------
+
+This Plugin requires "VQmod".
+
+This module Generate a PDF file and show the order details in order success page.
+
+-PDF generate in order success page
+-PDF generate in customer order information page
+-Order details in success page
+-Show custom information  in order success page using HTML editor
+ 
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------------
+			
+1. First You must backup your opencart site/cart and also database. Because It adds new files and new tables.
+			
+2. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+3. Login to Admin panel 
+
+4. Go to the Modules Page [Extensions -> Modules]		
+		
+		step 1 : See the "Order Success Page Print & PDF" Module then Click [install] link to install this Plugin.
+
+		step 2 : See the "Order Success Page Print & PDF" Module then Click [edit] link.
+
+		step 3 : Select the Display Order Info On Success Page [Enable/Disable]
+				[If Enabled status in the PDF Generate Button will be shown ]
+		
+		step 4 : Enter the Miscellaneous HTML before Order Info
+				[This will be displayed just before order info ]
+		
+		step 5 : Enter the Miscellaneous HTML after Order Info
+				[This will be displayed just before order info ]
+		
+		step 6 :  And Click the save button.
+
+5.Now It Displays Order success page in store front
+
+		step 1 : If click Print PDF button, the PDF will be downloaded.
+
+6. Go to the  Account->Order History in store front
+		
+		step 1 : Go to the order view page
+		step 2 : If click Print PDF button, the PDF will be downloaded.	
+
+		  
+
+		
+

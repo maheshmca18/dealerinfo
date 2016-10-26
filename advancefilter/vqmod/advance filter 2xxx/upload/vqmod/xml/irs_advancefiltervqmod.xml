@@ -1,0 +1,1035 @@
+<modification>
+    <id>Advance Filter</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRS SOFT</author>
+
+ <file path="catalog/controller/module/category.php">
+    
+ 	<operation>
+            <search position="after" ><![CDATA[$categories = $this->model_catalog_category->getCategories(0);]]></search>
+            <add><![CDATA[//advance filter start here
+        if (isset($this->request->get['path'] ) ) {
+            $data['getpathurlfilter']=$this->request->get['path'] ;
+            $parts = explode('_', (string)$this->request->get['path']);
+            $pathcategory_id = (int)array_pop($parts);           
+        }
+		$data['filteroptionvalue'] = $this->model_catalog_product->getProductfilteroption($pathcategory_id);
+		$data['filterbrandname'] = $this->model_catalog_product->getProductbrandname($pathcategory_id);
+	    $filterattributegroup = $this->model_catalog_product->getProductattribute($pathcategory_id);
+		$attributedata=$this->model_catalog_product->getAdvancefilterattribute($pathcategory_id);
+	   $attributegroupfilter=array();
+	    foreach($filterattributegroup as $attributegroup){
+         	 $attributevaluefilter=array();
+if(!empty($attributedata)) {
+			$selectattrib = in_array($attributegroup['attribute_group_id'],$attributedata) ?  $attributegroup['attribute_group_id'] : '' ;
+			// echo $selectattrib."hi";
+			
+				$filterarri = $this->model_catalog_product->getProattributedetails($selectattrib);
+
+				foreach ($filterarri as $attributevalue) {
+					$filtermanuattribute = $this->model_catalog_product->getProductattributedetails($attributevalue['attribute_id']);
+					$attributevaluefilter[] = array(
+						'attrivaluename' => $attributevalue['name'],
+						'attriid' => $attributegroup['attribute_id'],
+						'attridetails' => $filtermanuattribute
+					);
+				}
+				$attributegroupfilter[] = array(
+					'groupname' => $attributegroup['name'],
+					'categorypathid' => $pathcategory_id,
+					'attrigroupid' => $attributegroup['attribute_group_id'],
+					'attrivaluedetails' => $attributevaluefilter
+				);
+			}
+        }
+		if(isset($attributegroupfilter)){
+			$data['filterattridetails']=$attributegroupfilter;
+		}else{
+			$data['filterattridetails']='';
+		}
+		$data['entry_brandstatus'] = $this->language->get('entry_brandstatus');
+		$data['entry_pricestatus'] = $this->language->get('entry_pricestatus');
+		$data['entry_optionstatus'] = $this->language->get('entry_optionstatus');
+		$data['entry_attributestatus'] = $this->language->get('entry_attributestatus');
+		$data['entry_customerstatus'] = $this->language->get('entry_customerstatus');
+		$data['entry_discountstatus'] = $this->language->get('entry_discountstatus');
+		$data['entry_avilablitystatus'] = $this->language->get('entry_avilablitystatus');
+		$data['advance_status'] = $this->config->get('advance_status');
+		$data['advance_brand_status'] = $this->config->get('advance_brand_status');
+		$data['advance_price_status'] = $this->config->get('advance_price_status');
+		$data['advance_option_status'] = $this->config->get('advance_option_status');
+		$data['advance_attribute_status'] = $this->config->get('advance_attribute_status');
+		$data['advance_crating_status'] = $this->config->get('advance_crating_status');
+		$data['advance_discount_status'] = $this->config->get('advance_discount_status');
+		$data['advance_availabile_status'] = $this->config->get('advance_availabile_status');
+		$data['colorpic'] = $this->config->get('advance_colorpic');
+        $data['getbrandname']=array();
+        if (isset($this->request->get['brandname'] ) ) {
+     $data['jquerybrandname']=$this->request->get['brandname'];
+            $data['getbrandname'] =explode(",", $this->request->get['brandname']);
+          }
+        else{
+            $data['jquerybrandname']='';
+        }		
+		 if (isset($this->request->get['fdiscount'] ) ) {
+    $data['jqueryfdiscount']=$this->request->get['fdiscount'];
+            $data['getfdiscount'] =explode(",", $this->request->get['fdiscount']);
+            }
+        else{
+            $data['jqueryfdiscount']='';
+			 $data['getfdiscount'] =array();
+        }		
+		if (isset($this->request->get['fattri'] ) ) {
+            $data['jqueryfattri']=$this->request->get['fattri'];			
+			$explodeattribute =explode(",", $this->request->get['fattri']);
+			$data['getfattri'] =$explodeattribute;
+        }
+        else{
+            $data['jqueryfattri']='';
+			$data['getfattri'] =array();
+        }
+		if (isset($this->request->get['fopvalue'] ) ) {
+            $data['jqueryfoption']=$this->request->get['fopvalue'];			
+			$explodeattribute =explode(",", $this->request->get['fopvalue']);
+            $data['getfoption'] =$explodeattribute;	
+        }
+        else{
+            $data['jqueryfoption']='';
+			$data['getfoption'] =array();
+        }
+	   $data['minandmaxprice'] = $this->model_catalog_product->getProductprice($pathcategory_id);
+        if (isset($this->request->get['filterprice'] ) ) {
+            $data['jqueryfilterprice']=$this->request->get['filterprice'];
+            $data['getfilterprice'] =$this->request->get['filterprice'];
+        }
+        else{
+            $data['jqueryfilterprice']='';
+        }
+
+        if (isset($this->request->get['stock'] ) ) {
+            $data['querystock']=$this->request->get['stock'];
+            $data['stock'] =$this->request->get['stock'];
+        }
+        else{
+            $data['querystock']='';
+        }
+		$data['frating'] = array();
+ if (isset($this->request->get['frating'] ) ) {
+            $data['queryrating']=$this->request->get['frating'];			
+			$data['frating'] =explode(",", $this->request->get['frating']);  
+        }
+        else{
+            $data['queryrating']='';			
+        }
+		
+		// advance filter end here
+]]></add>
+        </operation>
+    </file>  
+ <file path="catalog/language/*/module/category.php">
+    
+ 	<operation>
+            <search position="after" ><![CDATA[// Heading]]></search>
+            <add><![CDATA[$_['entry_brandstatus']        = 'Brand';
+$_['entry_pricestatus']        = 'Price';
+$_['entry_optionstatus']        = 'Option';
+$_['entry_attributestatus']        = 'Attribute';
+$_['entry_customerstatus']        = 'Customer Rating';
+$_['entry_discountstatus']        = 'Discount';
+$_['entry_avilablitystatus']        = 'Availability';]]></add>
+        </operation>
+  </file> 
+
+    <file path="catalog/view/theme/*/template/module/category.tpl">
+    
+ 	<operation>
+            <search position="before" offset="1"><![CDATA[<?php foreach ($categories as $category) { ?>]]></search>
+            <add><![CDATA[<link href="catalog/view/irsjs/css/bootstrap-slider.css" rel="stylesheet">
+<!-- Custom styles for this template -->
+<style type='text/css'>
+    /* Space out content a bit */
+    ul
+    {
+        list-style-type: none;
+        padding: 0px;
+        margin: 0px;
+    }     
+    .well {
+        background-color: #E0E0E0;
+    }
+    .adfilter{    
+    background:<?php  echo $colorpic;  ?>;     
+    }
+    .slider {
+        padding: 0px 0;
+        margin: 0px 0;
+    }
+
+</style>]]></add>
+        </operation>
+<operation>
+            <search position="after" offset="3"><![CDATA[<a href="<?php echo $category['href']; ?>" class="list-group-item"><?php echo $category['name']; ?></a>]]></search>
+            <add><![CDATA[<!----advance filter start here--->
+<?php if($advance_status==1){ ?>
+<div class="list-group">
+    <!---- brand --->
+    <?php if($advance_brand_status){ ?>
+    <?php $getpathurlfilter1=$url = strtok($_SERVER['REQUEST_URI'], '&');
+$filterredirpathurl=$getpathurlfilter1.'&path=' .$getpathurlfilter;
+ if(!empty($filterbrandname)){   ?>
+    <div class="list-group">
+        <a class="list-group-item adfilter"  >
+            <span><?php echo $entry_brandstatus; ?> </span>
+        </a>
+        <div class="list-group" style="height: 200px;overflow-y: auto;" >
+            <ul>
+                <?php foreach($filterbrandname as $brandname){ ?>
+                <?php $selectbrand = in_array($brandname['manufacturer_id'],$getbrandname) ?  'checked="checked"' : '' ; ?>
+                <li ><a class="list-group-item "  >
+                        <input type="checkbox" class="advancefilter" name="brandname" <?php echo $selectbrand; ?> value="<?php echo $brandname['manufacturer_id']; ?>" >&nbsp;&nbsp;<?php echo $brandname['name']; ?>
+                    </a>
+                </li>
+                <?php   }  ?>
+            </ul>
+        </div>
+    </div>
+    <?php } ?>
+    <?php } ?>
+    <!---- brand --->
+    <!---- price start--->
+    <?php if($advance_price_status){ ?>
+    <div class="list-group">
+        <div class='slider'>
+             <div class="list-group-item adfilter">
+                <span ><?php echo $entry_pricestatus; ?> </span>
+                <?php if(!empty($jqueryfilterprice)){ ?>
+                <button class="pull-right priceclear">
+                    <span >Clear </span>
+                </button>
+                <?php } ?>
+            </div>
+            <?php       foreach($minandmaxprice as $exprice){
+            $minprice= round($exprice['MinPrice']);
+            $maxprice= round($exprice['MaxPrice']);
+            }
+               $minmaxjoinvalue="[".$minprice.",".$maxprice."]";            ?>
+            <div class="well">
+                <input id="ex2" type="text" class="span2 slider" value="<?php if(!isset($jqueryfilterprice)){ echo $jqueryfilterprice; } else { echo $minmaxjoinvalue; } ?>" data-slider-min="<?php echo $minprice; ?>" data-slider-max="<?php echo$maxprice; ?>" data-slider-step="5" data-slider-value="<?php if(isset($getfilterprice)){ echo "[".$getfilterprice."]"; } else { echo $minmaxjoinvalue; } ?>" />
+                Current Price Range:<span id="ex6SliderVal"><?php  if(isset($getfilterprice)){ echo "[".$getfilterprice."]"; } else { echo $minmaxjoinvalue; }  ?></span>
+            </div>
+        </div>
+    </div>
+    <?php  }    ?>
+    <!---- price end--->
+    <!---- attribute start--->
+    <?php if($advance_attribute_status){ ?>
+    <?php
+         foreach($filterattridetails as $menuattributefilter){  ?>
+    <div> <a class="list-group-item adfilter"  >
+            <span><?php echo $menuattributefilter['groupname']; ?> </span>
+        </a>
+        <?php   foreach($menuattributefilter['attrivaluedetails'] as $menuattributefiltervalue){  ?>
+
+        <div> <a class="list-group-item " style="background:#ddd; ">
+                <span><?php echo $menuattributefiltervalue['attrivaluename']; ?> </span>
+            </a>
+            <?php foreach($menuattributefiltervalue['attridetails'] as $menuattributefiltergroup){
+          $attributejoinvalue=$menuattributefilter['attrigroupid'].'_'.$menuattributefiltergroup['attribute_id'].'_'.$menuattributefiltergroup['text'];
+
+         $selectattrib = in_array($attributejoinvalue,$getfattri) ?  'checked="checked"' : '' ;
+         ?>
+            <div> <a class="list-group-item "  >
+                    <input type="checkbox" class="advancefilterattribute" name="attri" <?php echo $selectattrib; ?> value="<?php echo $attributejoinvalue; ?>" >&nbsp;&nbsp;<?php echo $menuattributefiltergroup['text']; ?>
+                </a>
+            </div>
+            <?php  } ?>  </div> <?php  }    ?>  </div> <?php  }    ?>
+    <?php  }    ?>
+    <!---- attribute END--->
+    <!---- option start--->
+    <?php if($advance_option_status){ ?>
+    <?php   foreach($filteroptionvalue as $filteroptiondetails){  ?>
+    <div> <a class="list-group-item adfilter"  >
+            <span ><?php echo $filteroptiondetails['name']; ?> </span>
+        </a>
+        <?php   foreach($filteroptiondetails['product_option_value'] as $filteroptionvaluedetails){
+        $optionjoinvalue=$filteroptionvaluedetails['option_id'].'_'.$filteroptionvaluedetails['option_value_id'];
+      $selectoption = in_array($optionjoinvalue,$getfoption) ?  'checked="checked"' : '' ;
+        ?>
+        <div> <a class="list-group-item "  >
+                <input type="checkbox" class="advancefilteroptionvalue" name="filteroptionvalue" <?php echo $selectoption; ?> value="<?php echo $optionjoinvalue; ?>" >&nbsp;&nbsp;<?php echo $filteroptionvaluedetails['name']; ?>
+            </a>
+        </div>
+        <?php  }    ?>
+    </div>
+    <?php  }    ?>
+    <?php  }    ?>
+    <!---- option end--->
+    <!---- rating START--->
+    <?php if($advance_crating_status){ ?>
+    <div>
+        <div class="list-group-item adfilter">
+            <span ><?php echo $entry_customerstatus; ?></span>
+            <?php if(!empty($frating)){ ?>
+            <button class="pull-right ratingclear">
+                <span >Clear </span>
+            </button>
+            <?php } ?>
+        </div>
+        <?php $selectrating1 = in_array("1",$frating) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterrating" <?php echo $selectrating1; ?> name="filterrating"  value="1"><span class="fa fa-stack"><i class="fa fa-star fa-stack-1x"></i><i class="fa fa-star-o fa-stack-1x"></i></span>
+                & Up
+            </a>
+        </div>
+        <?php $selectrating2 = in_array("2",$frating) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterrating" <?php echo $selectrating2; ?> name="filterrating"  value="2">
+                <?php for ($i = 1; $i <= 2; $i++) { ?>
+                <span class="fa fa-stack"><i class="fa fa-star fa-stack-1x"></i><i class="fa fa-star-o fa-stack-1x"></i></span>
+                <?php } ?>
+                & Up
+            </a>
+        </div>
+        <?php $selectrating3 = in_array("3",$frating) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterrating" <?php echo $selectrating3; ?> name="filterrating"  value="3">
+                <?php for ($i = 1; $i <= 3; $i++) { ?>
+                <span class="fa fa-stack"><i class="fa fa-star fa-stack-1x"></i><i class="fa fa-star-o fa-stack-1x"></i></span>
+                <?php } ?>
+                & Up
+            </a>
+        </div>
+        <?php $selectrating4 = in_array("4",$frating) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterrating" <?php echo $selectrating4; ?> name="filterrating"  value="4">
+                <?php for ($i = 1; $i <= 4; $i++) { ?>
+                <span class="fa fa-stack"><i class="fa fa-star fa-stack-1x"></i><i class="fa fa-star-o fa-stack-1x"></i></span>
+                <?php } ?>
+                & Up
+            </a>
+        </div>
+    </div>
+    <?php } ?>
+    <!---- rating END--->
+    <!---- discount START--->
+    <?php if($advance_discount_status){ ?>
+    <div>
+        <div class="list-group-item adfilter">
+            <span ><?php echo $entry_discountstatus; ?> </span>
+            <?php if(!empty($getfdiscount)){ ?>
+            <button class="pull-right discountclear">
+                <span >Clear </span>
+            </button>
+            <?php } ?>
+        </div>
+        <?php $selectdiscound1 = in_array("10",$getfdiscount) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterdiscount" <?php echo $selectdiscound1; ?> name="discount"  value="10">&nbsp;&nbsp;10 % Above
+            </a>
+        </div>
+        <?php $selectdiscound6 = in_array("20",$getfdiscount) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterdiscount" <?php echo $selectdiscound6; ?> name="discount"  value="20">&nbsp;&nbsp;20 % Above
+            </a>
+        </div>
+        <?php $selectdiscound2 = in_array("40",$getfdiscount) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterdiscount" <?php echo $selectdiscound2; ?> name="discount"  value="40">&nbsp;&nbsp;40 % Above
+            </a>
+        </div>
+        <?php $selectdiscound3 = in_array("60",$getfdiscount) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterdiscount" <?php echo $selectdiscound3; ?> name="discount"  value="60">&nbsp;&nbsp;60 % Above
+            </a>
+        </div>
+        <?php $selectdiscound4 = in_array("80",$getfdiscount) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="radio" class="advancefilterdiscount" <?php echo $selectdiscound4; ?> name="discount"  value="80">&nbsp;&nbsp;80 % Above
+            </a>
+        </div>
+
+    </div>
+    <?php } ?>
+    <!---- discount END--->
+    <!---- OUT OF STOCK START--->
+    <?php if($advance_availabile_status){ ?>
+    <div>
+        <a class="list-group-item adfilter"  >
+            <span ><?php echo $entry_avilablitystatus; ?> </span>
+        </a>
+        <?php $selectstock = ($querystock) ?  'checked="checked"' : '' ; ?>
+        <div> <a class="list-group-item "  >
+                <input type="checkbox" class="advancefilterstock" <?php echo $selectstock; ?> name="outofstock"  value="1">&nbsp;&nbsp;EXCLUDE OUT OF STOCK
+            </a>
+        </div>
+    </div>
+    <?php } ?>
+    <!---- OUT OF STOCK END--->
+</div>
+<?php } ?>
+<script type='text/javascript' src="catalog/view/irsjs/js/bootstrap-slider.js"></script>
+<script type='text/javascript'>
+    $(document).ready(function() {
+
+        //brand click
+        $('.advancefilter').click(function(){
+            var favorite = [];
+            $.each($("input[name='brandname']:checked"), function(){
+                favorite.push($(this).val());
+            });
+            $brandname=favorite.join(",");
+            filterbrand($brandname);
+
+        });
+        //price click
+        $("#ex2").slider({
+            orientation: 'horizontal',
+            range:       true,
+            values:      [17,67]
+        });
+        $('#ex2').on('slide', function (ev) {
+            $filterprice=$('#ex2').slider().val();
+            filterprice($filterprice);
+        });
+        $("#ex2").on("slide", function(slideEvt) {
+            $("#ex6SliderVal").text(slideEvt.value);
+        });
+        //attribute click
+        $('.advancefilterattribute').click(function(){
+            var favorite = [];
+            $.each($("input[name='attri']:checked"), function(){
+                favorite.push($(this).val());
+            });
+            $attri=favorite.join(",");
+            filterattribut($attri);
+        });
+        //option click
+        $('.advancefilteroptionvalue').click(function(){
+            var favorite = [];
+            $.each($("input[name='filteroptionvalue']:checked"), function(){
+                favorite.push($(this).val());
+            });
+            $foptionvalue=favorite.join(",");
+            filteroptionvalue($foptionvalue);
+        });
+        //rating click
+        $('.advancefilterrating').click(function(){
+            var favorite = [];
+            $.each($("input[name='filterrating']:checked"), function(){
+                favorite.push($(this).val());
+            });
+            $filterrating=favorite.join(", ");
+            filterrating($filterrating);
+        });
+        //discount click
+        $('.advancefilterdiscount').click(function(){
+            var favorite = [];
+            $.each($("input[name='discount']:checked"), function(){
+                favorite.push($(this).val());
+            });
+            $discount=favorite.join(",");
+            filterdiscount($discount);
+        });
+//out of stock click
+        $('.advancefilterstock').click(function(){
+            var favorite = [];
+            if ($('.advancefilterstock').is(":checked"))
+            {
+                $outofstock= $('.advancefilterstock').val();
+            }else{
+                $outofstock='';
+            }
+            filteroutofstock($outofstock);
+        });
+//brand function
+        function filterbrand($brandname){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+
+            $pathurl = "<?php echo $filterredirpathurl; ?>&brandname="+$brandname;
+            $oldvaluebrandname="<?php echo $jquerybrandname; ?>";
+            $oldurlbrand="brandname="+$oldvaluebrandname;
+            if ($pathurl != window.location) {
+                $newurlvalue='';
+                if (window.location.href.indexOf("brandname") > -1) {
+                    if($brandname){
+                        $urlchange = location.href.replace(/(brandname=)[^\&]+/, '$1' + $brandname);
+                        window.location.href = $urlchange.replace($page, "");
+                    }else{
+                        $oldurlbrand="&"+$oldurlbrand;
+                        $urlchange = window.location.href.replace($oldurlbrand, "");
+                        window.location.href = $urlchange .replace($page, "");
+                    }
+                } else {
+                    if($brandname.length !== 0){
+                        $urlvariablebrand="&brandname="+$brandname;
+                        $newurlvalue +=  $urlvariablebrand;
+                    }
+                }
+                if($newurlvalue.length !== 0){
+                    $urlchange = window.location.href + $newurlvalue;
+                    window.location.href =$urlchange.replace($page, "");
+                }
+            }
+        }
+        //price function
+        function filterprice($filterprice){
+            if($filterprice.length !== 0){
+                $urlvariablepricevalue=$filterprice;
+                $urlvariableprice="&filterprice="+$filterprice;
+            }else{
+                $urlvariableprice='';
+            }
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $pathurl = "<?php echo $filterredirpathurl; ?>"+$urlvariableprice;
+            $oldurlprice="&filterprice="+"<?php echo $jqueryfilterprice; ?>";
+            if ($pathurl != window.location) {
+                $newurlvalue='';
+                if (window.location.href.indexOf("filterprice") > -1) {
+                    $urlchange =  location.href.replace(/(filterprice=)[^\&]+/, '$1' + $filterprice);
+                    window.location.href = $urlchange .replace($page, "");
+                } else {
+                    if($urlvariableprice.length !== 0) {
+                        $newurlvalue += $urlvariableprice;
+                    }
+                }
+                if($newurlvalue.length !== 0){
+                    $urlchange =  window.location.href + $newurlvalue;
+                    window.location.href = $urlchange .replace($page, "");
+                }
+            }
+        }
+        //attribute function
+        function filterattribut($attri){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $pathurl = "<?php echo $filterredirpathurl; ?>&fattri="+$attri;
+            $oldvaluebrandname="<?php echo $jqueryfattri; ?>";
+            $oldurlbrand="fattri="+$oldvaluebrandname;
+            if ($pathurl != window.location) {
+                $newurlvalue='';
+                if (window.location.href.indexOf("fattri") > -1) {
+                    if($attri){
+                        $urlchange =  location.href.replace(/(fattri=)[^\&]+/, '$1' + $attri);
+                        window.location.href = $urlchange .replace($page, "");
+                    }else{
+                        $oldurlbrand="&"+$oldurlbrand;
+                        $urlchange =  window.location.href.replace($oldurlbrand, "");
+                        window.location.href = $urlchange .replace($page, "");
+                    }
+                } else {
+                    if($attri.length !== 0){
+                        $urlvariablebrand="&fattri="+$attri;
+                        $newurlvalue +=  $urlvariablebrand;
+                    }
+                }
+                if($newurlvalue.length !== 0){
+                    $urlchange =  window.location.href + $newurlvalue;
+                    window.location.href = $urlchange .replace($page, "");
+                }
+            }
+        }
+        //option value function
+        function filteroptionvalue($foptionvalue){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $pathurl = "<?php echo $filterredirpathurl; ?>&fopvalue="+$foptionvalue;
+            $oldvaluebrandname="<?php echo $jqueryfoption; ?>";
+            $oldurlbrand="fopvalue="+$oldvaluebrandname;
+            if ($pathurl != window.location) {
+                $newurlvalue='';
+                if (window.location.href.indexOf("fopvalue") > -1) {
+                    if($foptionvalue){
+                        $urlchange =  location.href.replace(/(fopvalue=)[^\&]+/, '$1' + $foptionvalue);
+                        window.location.href = $urlchange .replace($page, "");
+                    }else{
+                        $oldurlbrand="&"+$oldurlbrand;
+                        $urlchange = window.location.href.replace($oldurlbrand, "");
+                        window.location.href =  $urlchange.replace($page, "");
+                    }
+                } else {
+                    if($foptionvalue.length !== 0){
+                        $urlvariablebrand="&fopvalue="+$foptionvalue;
+                        $newurlvalue +=  $urlvariablebrand;
+                    }
+                }
+                if($newurlvalue.length !== 0){
+                    $urlchange = window.location.href + $newurlvalue;
+                    window.location.href =  $urlchange .replace($page, "");
+                }
+            }
+        }
+        //rating function
+        function filterrating($filterrating){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $pathurl = "<?php echo $filterredirpathurl; ?>&frating="+$filterrating;
+            $oldvaluebrandname="<?php echo $queryrating; ?>";
+            $oldurlbrand="frating="+$oldvaluebrandname;
+            if ($pathurl != window.location) {
+                $newurlvalue='';
+                if (window.location.href.indexOf("frating") > -1) {
+                    if($filterrating){
+                        $urlchange = location.href.replace(/(frating=)[^\&]+/, '$1' + $filterrating);
+                        window.location.href =  $urlchange.replace($page, "");
+                    }else{
+                        $oldurlbrand="&"+$oldurlbrand;
+                        $urlchange = window.location.href.replace($oldurlbrand, "");
+                        window.location.href =  $urlchange.replace($page, "");
+                    }
+                } else {
+                    if($filterrating.length !== 0){
+                        $urlvariablebrand="&frating="+$filterrating;
+                        $newurlvalue +=  $urlvariablebrand;
+                    }
+                }
+                if($newurlvalue.length !== 0){
+                    $urlchange = window.location.href + $newurlvalue;
+                    window.location.href =  $urlchange.replace($page, "");
+                }
+            }
+        }
+        //filterdiscount function
+        function filterdiscount($discount){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $pathurl = "<?php echo $filterredirpathurl; ?>&fdiscount="+$discount;
+            $oldvaluebrandname="<?php echo $jqueryfdiscount; ?>";
+            $oldurlbrand="fdiscount="+$oldvaluebrandname;
+            if ($pathurl != window.location) {
+                $newurlvalue='';
+                if (window.location.href.indexOf("fdiscount") > -1) {
+                    if($discount){
+                        $urlchange = location.href.replace(/(fdiscount=)[^\&]+/, '$1' + $discount);
+                        window.location.href =  $urlchange.replace($page, "");
+                    }else{
+                        $oldurlbrand="&"+$oldurlbrand;
+                        $urlchange = window.location.href.replace($oldurlbrand, "");
+                        window.location.href =  $urlchange.replace($page, "");
+                    }
+                } else {
+                    if($discount.length !== 0){
+                        $urlvariablebrand="&fdiscount="+$discount;
+                        $newurlvalue +=  $urlvariablebrand;
+                    }
+                }
+                if($newurlvalue.length !== 0){
+                    $urlchange = window.location.href + $newurlvalue;
+                    window.location.href =  $urlchange.replace($page, "");
+                }
+            }
+        }
+        //outofstock function
+        function filteroutofstock($filteroutofstock){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $pathurl = "<?php echo $filterredirpathurl; ?>&stock="+$filteroutofstock;
+            $oldvaluebrandname="<?php echo $querystock; ?>";
+            $oldurlbrand="stock="+$oldvaluebrandname;
+            if ($pathurl != window.location) {
+                $newurlvalue='';
+                if (window.location.href.indexOf("stock") > -1) {
+                    if($filteroutofstock){
+                        $urlchange = location.href.replace(/(stock=)[^\&]+/, '$1' + $filteroutofstock);
+                        window.location.href =  $urlchange.replace($page, "");
+                    }else{
+                        $oldurlbrand="&"+$oldurlbrand;
+                        $urlchange = window.location.href.replace($oldurlbrand, "");
+                        window.location.href =  $urlchange.replace($page, "");
+                    }
+                } else {
+                    if($filteroutofstock.length !== 0){
+                        $urlvariablebrand="&stock="+$filteroutofstock;
+                        $newurlvalue +=  $urlvariablebrand;
+                    }
+                }
+                if($newurlvalue.length !== 0){
+                    $urlchange = window.location.href + $newurlvalue;
+                    window.location.href =  $urlchange.replace($page, "");
+                }
+            }
+        }
+        //priceclear click
+        $('.priceclear').click(function(){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $oldurlprice="&filterprice="+"<?php echo $jqueryfilterprice; ?>";
+            $urlchange = window.location.href.replace($oldurlprice, "");
+            window.location.href =  $urlchange.replace($page, "");
+        });
+        //ratingclear click
+        $('.ratingclear').click(function(){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $oldvaluebrandname="<?php echo $queryrating; ?>";
+            $oldurlbrand="&frating="+$oldvaluebrandname;
+            $urlchange = window.location.href.replace($oldurlbrand, "");
+            window.location.href =  $urlchange.replace($page, "");
+        });
+        //discountclear click
+        $('.discountclear').click(function(){
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                    return null;
+                }
+                else{
+                    return results[1] || 0;
+                }
+            }
+            var page=$.urlParam('page');
+            $page="&page="+page;
+            $oldvaluebrandname="<?php echo $jqueryfdiscount; ?>";
+            $oldurlbrand="&fdiscount="+$oldvaluebrandname;
+            $urlchange = window.location.href.replace($oldurlbrand, "");
+            window.location.href =  $urlchange.replace($page, "");
+        });
+
+    });
+</script>]]></add>
+        </operation>
+
+    </file>   
+<file path="catalog/controller/product/category.php">
+    
+ 	<operation>
+            <search position="after" ><![CDATA[$this->load->model('tool/image');]]></search>
+            <add><![CDATA[// advance filter start here
+        if(isset($this->request->get['brandname'])){
+            $brandname=$this->request->get['brandname'];
+           } else{
+            $brandname='';
+        }	
+			 if(isset($this->request->get['fattri'])){                      
+			$fattribute = $this->request->get['fattri'];			
+            } else{
+            $fattribute='';
+        }			
+			 if(isset($this->request->get['fopvalue'])){                       
+			$fopvalue = $this->request->get['fopvalue'];			
+            } else{
+            $fopvalue='';
+        }
+        if(isset($this->request->get['filterprice'])){
+             $filterprice=$this->request->get['filterprice'];
+              } else{
+            $filterprice='';
+        }		
+		 if(isset($this->request->get['frating'])){
+            $frating=$this->request->get['frating'];
+            } else{
+            $frating='';
+        }
+ if(isset($this->request->get['fdiscount'])){           
+            $fdiscount=$this->request->get['fdiscount'];          
+        } else{
+            $fdiscount='';
+        }		
+        if(isset($this->request->get['stock'])){
+            $filteroutofstock="Out Of Stock";
+            $filterstock=$this->model_catalog_product->getadvanceProductstockstatus($filteroutofstock);          
+        } else{
+            $filterstock='';
+        }		
+		// advance filter end here		
+]]></add>
+        </operation>
+<operation>
+            <search position="after" ><![CDATA['filter_category_id' => $category_id,]]></search>
+            <add><![CDATA['brandname'         => $brandname,
+                'filterprice'       => $filterprice,
+                'filterstock'       => $filterstock,
+                'frating'			=> $frating,
+                'fattribute'		=>$fattribute,
+                'fopvalue'			=> $fopvalue,
+                'fdiscount'			=> $fdiscount,]]></add>
+        </operation>
+<operation>
+            <search position="after" offset="1"><![CDATA[$url .= '&limit=' . $this->request->get['limit'];]]></search>
+            <add><![CDATA[if(isset($this->request->get['brandname'])){
+			    $url .= '&brandname='.$this->request->get['brandname'];
+			   }
+			if(isset($this->request->get['fattri'])){                      
+			
+				$url .= '&fattri='.$this->request->get['fattri'];			
+			  	 
+			}			
+			if(isset($this->request->get['fopvalue'])){                       
+			
+				 $url .= '&fopvalue='.$this->request->get['fopvalue'];			
+				   
+			}
+			if(isset($this->request->get['filterprice'])){
+			     
+				 $url .= '&filterprice='.$this->request->get['filterprice'];
+			     
+			}		
+			 if(isset($this->request->get['frating'])){
+		   		
+				 $url .= '&frating='.$this->request->get['frating'];
+		   		 
+	       		 }
+		 	if(isset($this->request->get['fdiscount'])){           
+			     
+				 $url .= '&fdiscount='.$this->request->get['fdiscount'];        
+		
+			}		
+			if(isset($this->request->get['stock'])){
+			      
+				 $url .= '&stock='.$this->request->get['stock'];       
+		
+			}]]></add>
+        </operation>
+    </file>  
+
+<file path="catalog/model/catalog/product.php">
+    
+ 	<operation>
+            <search position="before" ><![CDATA[$sql .= " LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) LEFT JOIN " . DB_PREFIX . "product_to_store p2s ON (p.product_id = p2s.product_id) WHERE pd.language_id = '" . (int)$this->config->get('config_language_id') . "' AND p.status = '1' AND p.date_available <= NOW() AND p2s.store_id = '" . (int)$this->config->get('config_store_id') . "'";]]></search>
+            <add><![CDATA[//advance filter start here
+ if(!empty($data['frating'])){
+            $sql .= " LEFT JOIN " . DB_PREFIX . "review rf ON (rf.product_id = p.product_id) ";
+        }        
+if(!empty($data['fattribute'])){
+            $sql .= " LEFT JOIN `" . DB_PREFIX . "product_attribute` fpa ON (p.product_id = fpa.product_id) LEFT JOIN `" . DB_PREFIX . "attribute` fa ON (fa.attribute_id = fpa.attribute_id) LEFT JOIN `" . DB_PREFIX . "attribute_group` fag ON (fa.attribute_group_id = fag.attribute_group_id) ";
+        }
+         if(!empty($data['fopvalue'])){
+         	   $sql .= " LEFT JOIN `" . DB_PREFIX . "product_option_value` fpov ON (p.product_id = fpov.product_id) LEFT JOIN `" . DB_PREFIX . "product_option` fpo ON (fpo.product_option_id = fpov.product_option_id) ";
+		 }        
+		 if(!empty($data['fdiscount'])){
+$sql .= " LEFT JOIN `" . DB_PREFIX . "product_discount` fpd ON (p.product_id = fpd.product_id) ";
+$sql .= " LEFT JOIN `" . DB_PREFIX . "product_special` fps ON (p.product_id = fps.product_id) ";
+}
+     //advance filter end here       		
+]]></add>
+        </operation>
+<operation>
+            <search position="after" ><![CDATA[$sql .= " LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) LEFT JOIN " . DB_PREFIX . "product_to_store p2s ON (p.product_id = p2s.product_id) WHERE pd.language_id = '" . (int)$this->config->get('config_language_id') . "' AND p.status = '1' AND p.date_available <= NOW() AND p2s.store_id = '" . (int)$this->config->get('config_store_id') . "'";]]></search>
+            <add><![CDATA[//advance filter start here
+        if(!empty($data['brandname'])){
+            $sql .= " AND p.manufacturer_id in(" . $this->db->escape($data['brandname']) .")";
+        }
+        if(!empty($data['filterstock'])){
+            $sql .= " AND p.stock_status_id NOT IN (" . (int)$data['filterstock'].")";
+        }
+        if(!empty($data['filterprice'])){
+            $filterprice=explode(",", $data['filterprice']);
+            $filterprice=implode(" AND ", $filterprice);
+            $sql .= " AND p.price BETWEEN " . $this->db->escape($filterprice) ;
+        }        
+       if(!empty($data['fdiscount'])){
+$fdiscount= $data['fdiscount'];
+
+$sql .= " AND (round((( p.price - fpd.price)/ p.price)*100 ,0) >= " . $this->db->escape($fdiscount); 
+$sql .= " AND ((fpd.date_start = '0000-00-00' OR fpd.date_start < NOW()) AND (fpd.date_end = '0000-00-00' OR fpd.date_end > NOW()))"; $sql .= " OR round((( p.price - fps.price)/ p.price)*100 ,0) >= " . $this->db->escape($fdiscount); 
+$sql .= " AND ((fps.date_start = '0000-00-00' OR fps.date_start < NOW()) AND (fps.date_end = '0000-00-00' OR fps.date_end > NOW())))";
+}       
+        if(!empty($data['fattribute'])){ 
+        	$fattribute1 = explode(',', $data['fattribute']);        	
+        	$attributegroupidexplode=array();
+			$attributeidexplode=array();
+			$attributetextexplode=array();			
+			//for loop start
+        	foreach ($fattribute1 as $fattribut ) {
+			$fattribute = explode('_', $fattribut);			
+			$attributegroupidexplode[]=$fattribute[0];
+			$attributeidexplode[]=$fattribute[1];
+			$attributetextexplode[]=$fattribute[2];     	
+            }			
+			$attributegroupidexplode = implode(',', $attributegroupidexplode);
+			$attributeidexplode = implode(',', $attributeidexplode);			
+			$attributetextexplode = implode("'".','."'", $attributetextexplode);				
+			 $sql .= " AND fa.attribute_id in(".$attributeidexplode.") AND fag.attribute_group_id in(".$attributegroupidexplode.") AND fpa.text in('".$attributetextexplode."')";
+			 } //if end here $fopvalue     
+        
+        if(!empty($data['fopvalue'])){  //if start
+        	$ffopvalue1 = explode(',', $data['fopvalue']);        	
+        	$foptionid=array();
+			$foptionvalueid=array();			
+			//for loop start
+        	foreach ($ffopvalue1 as $ffopvaluedetails ) {
+			$foption = explode('_', $ffopvaluedetails);
+			$foptionid[]=$foption[0];
+			$foptionvalueid[]=$foption[1];	           
+       }			
+			$foptionid = implode(',', $foptionid);
+			$foptionvalueid = implode(',', $foptionvalueid);									
+			 $sql .= " AND fpov.option_id in(".$foptionid.") AND fpov.option_value_id in(".$foptionvalueid.") ";			
+        } //if end here $fopvalue		
+		if(!empty($data['frating'])){
+            $sql .= " AND rf.rating >= ".$data['frating'];
+        }
+     //advance filter end here     		
+]]></add>
+        </operation>
+
+<operation>
+            <search position="before" ><![CDATA[public function getTotalProductSpecials() {]]></search>
+            <add><![CDATA[//advance filter start here
+    public function getProductbrandname($pathcategory_id) {
+        $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "manufacturer`  m LEFT JOIN " . DB_PREFIX . "product p ON (m.manufacturer_id = p.manufacturer_id)  LEFT JOIN `" . DB_PREFIX . "product_to_category` ptc ON (p.product_id = ptc.product_id) WHERE ptc.category_id='" . (int)$pathcategory_id. "' GROUP BY m.name ");
+            return $query->rows;
+    }
+    public function getProductprice($pathcategory_id) {
+        $query = $this->db->query("SELECT MIN(price) AS MinPrice, MAX(price) AS MaxPrice FROM " . DB_PREFIX . "product_description pd LEFT JOIN " . DB_PREFIX . "product p ON (p.product_id = pd.product_id) LEFT JOIN `" . DB_PREFIX . "product_to_category` ptc ON (p.product_id = ptc.product_id) WHERE ptc.category_id='" . (int)$pathcategory_id. "'");
+        return $query->rows;
+    }
+    public function getfilterProduct($data) {
+        $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "product` WHERE `manufacturer_id` IN (".implode(',',$data['brandname']).") ");
+  return $query->rows;
+    }      
+      public function getProductfilteroption($pathcategory_id) {
+		$product_option_data = array();
+        $query = $this->db->query("SELECT * FROM  `" . DB_PREFIX . "product_to_category` ptc  LEFT JOIN `" . DB_PREFIX ."product_option` fpo ON (fpo.product_id = ptc.product_id) LEFT JOIN `" . DB_PREFIX . "option` fo ON (fo.option_id = fpo.option_id) LEFT JOIN `" . DB_PREFIX . "option_description` fod ON (fo.option_id = fod.option_id) WHERE ptc.category_id='" . (int)$pathcategory_id. "' AND fo.type in('select','radio','checkbox') GROUP BY fod.name ORDER BY fo.sort_order");
+		$query1 = $this->db->query("SELECT afc.af_optionid FROM  `" . DB_PREFIX . "product_to_category` ptc  LEFT JOIN  " . DB_PREFIX ."advance_filter afc ON(ptc.category_id = afc.af_categoryid) WHERE afc.af_categoryid='" . (int)$pathcategory_id. "'");
+		 if(!empty($query1->row)){
+			  if(!empty($query1->row['af_optionid'])){
+			 $optiondata= explode(",",$query1->row['af_optionid']);
+			  }else{
+				  $optiondata= $this->config->get('advance_filteroptionvalue');
+			  }
+		  }else{
+			  $optiondata= $this->config->get('advance_filteroptionvalue');
+		  }
+		  if(!empty($optiondata)) {
+			  foreach ($query->rows as $product_option) {
+				  $product_option_value_data = array();
+				  $selectattrib = in_array($product_option['option_id'], $optiondata) ? $product_option['option_id'] : '';
+				 if (!empty($selectattrib)) {
+					  $product_option_value_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "option_value fov  LEFT JOIN " . DB_PREFIX . "option_value_description fovd ON (fov.option_value_id = fovd.option_value_id) WHERE fov.option_id = '" . (int)$selectattrib . "' ORDER BY  fov.sort_order ");
+					  foreach ($product_option_value_query->rows as $product_option_value) {
+						  $product_option_value_data[] = array(
+							  'option_value_id' => $product_option_value['option_value_id'],
+							  'name' => $product_option_value['name'],
+							  'image' => $product_option_value['image'],
+							  'option_id' => $product_option_value['option_id']
+						  );
+					  }
+					  $product_option_data[] = array(
+						  'product_option_value' => $product_option_value_data,
+						  'option_id' => $product_option['option_id'],
+						  'name' => $product_option['name']
+					  );
+				  }
+			  }
+		  }
+		return $product_option_data;
+    }    
+     public function getProductattributedetails($attributegroupid) {
+         $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "product_attribute`  WHERE attribute_id='" . (int)$attributegroupid. "' ");
+			 return $query->rows;
+    }
+    public function getProductattribute($pathcategory_id) {
+        $query = $this->db->query("SELECT * FROM  `" . DB_PREFIX . "product_attribute` pa LEFT JOIN `" . DB_PREFIX . "product_to_category` ptc ON (pa.product_id = ptc.product_id) LEFT JOIN `" . DB_PREFIX ."attribute` a ON (a.attribute_id = pa.attribute_id) LEFT JOIN `" . DB_PREFIX . "attribute_group` ag ON (a.attribute_group_id = ag.attribute_group_id) LEFT JOIN `" . DB_PREFIX . "attribute_group_description` agd ON (ag.attribute_group_id = agd.attribute_group_id) WHERE ptc.category_id='" . (int)$pathcategory_id. "' GROUP BY agd.name");
+        return $query->rows;
+    }    
+      public function getProattributedetails($attributegroupid) {
+        $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "product_attribute` pa LEFT JOIN `" . DB_PREFIX . "attribute` a ON (a.attribute_id = pa.attribute_id) LEFT JOIN `" . DB_PREFIX . "attribute_description` ad ON (a.attribute_id = ad.attribute_id) WHERE a.attribute_group_id='" . (int)$attributegroupid. "' GROUP BY  a.attribute_id ");
+	  return $query->rows;
+    } 
+    public function getadvanceProductstockstatus($filteroutofstock) {
+        $query = $this->db->query("SELECT stock_status_id FROM  `" . DB_PREFIX . "stock_status` WHERE name='" . $filteroutofstock. "'");
+        return $query->row['stock_status_id'];
+    }
+	public function getAdvancefilterattribute($pathcategory_id) {
+		$query1 = $this->db->query("SELECT afc.af_attributeid FROM  `" . DB_PREFIX . "product_to_category` ptc  LEFT JOIN  " . DB_PREFIX ."advance_filter afc ON(ptc.category_id = afc.af_categoryid) WHERE afc.af_categoryid='" . (int)$pathcategory_id. "'");
+		if(!empty($query1->row)){
+			if(!empty($query1->row['af_attributeid'])){
+				$attridata= explode(",",$query1->row['af_attributeid']);
+			}else{
+				$attridata= $this->config->get('advance_filterattributevalue');
+			}
+		}else{
+			$attridata= $this->config->get('advance_filterattributevalue');
+		}
+		return $attridata;
+	}
+    //advance filter end here      		
+]]></add>
+        </operation>
+    </file>  
+
+    </modification>

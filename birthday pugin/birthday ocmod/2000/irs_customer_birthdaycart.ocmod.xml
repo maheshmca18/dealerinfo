@@ -1,0 +1,567 @@
+<modification>
+     <name>Birthday Reminder</name>
+    <code>BirthdayReminder</code>
+    <version>2.0</version>
+    <authour>IRS SOFT</authour>
+
+    <!--catalog controller file start-->
+    <file path="catalog/controller/account/register.php">
+   	<operation>
+            <search><![CDATA[$data['entry_confirm'] = $this->language->get('entry_confirm');]]></search>
+            <add position="after" ><![CDATA[$data['entry_birthdaydate'] = $this->language->get('entry_birthdaydate');
+if (isset($this->error['birthdate'])) {
+            $data['error_birthdate'] = $this->error['birthdate'];
+        } else {
+            $data['error_birthdate'] = '';
+        }
+ if (isset($this->request->post['birthdate'])) {
+            $data['birthdate'] = $this->request->post['birthdate'];
+        } else {
+            $data['birthdate'] = '';
+        }
+$data['cronvaluefordate']=$this->config->get('crondatevalue');]]>
+            </add>
+        </operation>
+
+<operation>
+            <search><![CDATA[public function validate() {]]></search>
+            <add position="after" ><![CDATA[$test_date = $this->request->post['birthdate'];
+        if($test_date!=""){
+
+        $regex = '/([0-9]{2})\/([0-9]{2})\/([0-9]{4})/';
+        if (!preg_match($regex, $test_date)) {
+
+            $this->error['birthdate'] = $this->language->get('error_birthdaydate');
+        }else{
+            list($dd,$mm,$yyyy) = explode('/',$test_date);
+            if (!checkdate($mm,$dd,$yyyy)) {
+                $this->error['birthdate'] = $this->language->get('error_birthdaydate');
+            }
+        }
+        }]]>
+            </add>
+        </operation>
+
+    </file>
+
+
+    <!--catalog language file start-->
+    <file path="catalog/language/english/account/register.php">
+        <operation>
+            <search><![CDATA[$_['entry_confirm']        = 'Password Confirm';]]></search>
+            <add position="after" ><![CDATA[$_['entry_birthdaydate']      = 'Date Of Birth'; 
+$_['error_birthdaydate']        = 'Please enter the birthday date format dd/mm/yyyy';]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+
+   
+    <!--catalog view file start-->
+    <file path="catalog/view/theme/*/template/account/register.tpl">
+        <operation>
+            <search><![CDATA[<label class="col-sm-2 control-label" for="input-email"><?php echo $entry_email; ?></label>]]></search>
+            <add position="before" offset="1"><![CDATA[<?php if(isset($cronvaluefordate)){ ?> <div class="form-group ">
+
+                <label class="col-sm-2 control-label" for="input-fax"><?php echo $entry_birthdaydate; ?></label>
+                <div class="col-sm-10">
+                    <input type="text" id="datepicker" name="birthdate" placeholder="<?php echo $entry_birthdaydate; ?>" value="<?php echo $birthdate; ?>" data-date-format="DD/MM/YYYY" class="form-control">
+
+<?php if ($error_birthdate) { ?>
+                    <div class="text-danger"><?php echo $error_birthdate; ?></div>
+                    <?php } ?>
+                    
+                </div>
+
+            </div> <?php } ?>]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search><![CDATA[<?php echo $footer; ?>]]></search>
+            <add position="before"><![CDATA[<script type="text/javascript">
+
+    $('#datepicker').datetimepicker({
+       pickTime: false,
+format: 'DD/MM/YYYY '
+
+    });
+
+</script>]]>
+            </add>
+        </operation>
+
+    </file>
+
+<file path="catalog/controller/account/edit.php">
+   	<operation>
+            <search><![CDATA[if (isset($this->request->post['firstname'])) {]]></search>
+            <add position="before" ><![CDATA[$data['entry_birthdaydate'] = $this->language->get('entry_birthdaydate');
+if (isset($this->error['birthdate'])) {
+            $data['error_birthdate'] = $this->error['birthdate'];
+        } else {
+            $data['error_birthdate'] = '';
+        }
+  if (isset($this->request->post['birthdate'])) {
+            $data['birthdate'] = $this->request->post['birthdate'];
+        } elseif (!empty($customer_info['Dateofbirth'])) {
+
+            $dateempty=0000-00-00 ;
+            if($customer_info['Dateofbirth']!=$dateempty){
+                $newDate = date("d/m/Y", strtotime($customer_info['Dateofbirth']));
+                $data['birthdate'] = $newDate;
+            }
+            else{
+                $data['birthdate'] = '';
+            }
+
+        } else {
+            $data['birthdate'] = '';
+        }
+$data['cronvaluefordate']=$this->config->get('crondatevalue');]]>
+            </add>
+        </operation>
+<operation>
+            <search><![CDATA[protected function validate() {]]></search>
+            <add position="after" ><![CDATA[$test_date = $this->request->post['birthdate'];
+        if($test_date!=""){
+
+        $regex = '/([0-9]{2})\/([0-9]{2})\/([0-9]{4})/';
+        if (!preg_match($regex, $test_date)) {
+
+            $this->error['birthdate'] = $this->language->get('error_birthdaydate');
+        }else{
+            list($dd,$mm,$yyyy) = explode('/',$test_date);
+            if (!checkdate($mm,$dd,$yyyy)) {
+                $this->error['birthdate'] = $this->language->get('error_birthdaydate');
+            }
+        }
+        }]]>
+            </add>
+        </operation>
+
+    </file>
+    <!-- catalog controller file end-->
+<file path="catalog/language/english/account/edit.php">
+        <operation>
+            <search><![CDATA[$_['entry_firstname']    = 'First Name';]]></search>
+            <add position="after" ><![CDATA[$_['entry_birthdaydate']      = 'Date Of Birth';
+$_['error_birthdaydate']        = 'Please enter the birthday date format dd/mm/yyyy';]]>
+            </add>
+        </operation>
+    </file>
+
+ <!-- catalog view edit file -->
+
+<file path="catalog/view/theme/*/template/account/edit.tpl">
+        <operation>
+            <search><![CDATA[<label class="col-sm-2 control-label" for="input-email"><?php echo $entry_email; ?></label>]]></search>
+            <add position="before" offset="1"><![CDATA[<?php if(isset($cronvaluefordate)){ ?>  <div class="form-group ">
+                <label class="col-sm-2 control-label" for="input-telephone"><?php echo $entry_birthdaydate; ?></label>
+                <div class="col-sm-10">
+                    <input type="text" id="datepicker" data-date-format="DD/MM/YYYY" name="birthdate" placeholder="<?php echo $entry_birthdaydate; ?>" value="<?php echo $birthdate; ?>" class="form-control">
+<?php if ($error_birthdate) { ?>
+                    <div class="text-danger"><?php echo $error_birthdate; ?></div>
+                    <?php } ?>
+
+                </div>
+            </div> <?php } ?>]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search><![CDATA[<?php echo $footer; ?>]]></search>
+            <add position="before"><![CDATA[<script type="text/javascript">
+
+    $('#datepicker').datetimepicker({
+       pickTime: false,
+format: 'DD/MM/YYYY '
+    });
+
+
+</script>]]>
+            </add>
+        </operation>
+
+    </file>
+<!--catalog model file start-->
+    <file path="catalog/model/account/customer.php">
+        <operation>
+            <search><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$customer_group_id . "', store_id = '" . (int)$this->config->get('config_store_id') . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']['account']) ? serialize($data['custom_field']['account']) : '') . "', salt = '" . $this->db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $this->db->escape(sha1($salt . sha1($salt . sha1($data['password'])))) . "', newsletter = '" . (isset($data['newsletter']) ? (int)$data['newsletter'] : 0) . "', ip = '" . $this->db->escape($this->request->server['REMOTE_ADDR']) . "', status = '1', approved = '" . (int)!$customer_group_info['approval'] . "', date_added = NOW()");]]></search>
+            <add position="replace" ><![CDATA[if(isset($this->request->post['birthdate']))
+        { 
+ if($this->request->post['birthdate']=="")
+        {
+            $datevaluechange = $this->request->post['birthdate'];
+        }
+        else {
+            $date = str_replace('/', '-', $this->request->post['birthdate']);
+            $datevaluechange = date('Y-m-d', strtotime($date));
+        }
+
+        $this->db->query("INSERT INTO " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$customer_group_id . "', store_id = '" . (int)$this->config->get('config_store_id') . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', Dateofbirth = '" . $this->db->escape($datevaluechange) . "',fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']['account']) ? serialize($data['custom_field']['account']) : '') . "', salt = '" . $this->db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $this->db->escape(sha1($salt . sha1($salt . sha1($data['password'])))) . "', newsletter = '" . (isset($data['newsletter']) ? (int)$data['newsletter'] : 0) . "', ip = '" . $this->db->escape($this->request->server['REMOTE_ADDR']) . "', status = '1', approved = '" . (int)!$customer_group_info['approval'] . "', date_added = NOW()");
+ } 
+ else {
+$this->db->query("INSERT INTO " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$customer_group_id . "', store_id = '" . (int)$this->config->get('config_store_id') . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']['account']) ? serialize($data['custom_field']['account']) : '') . "', salt = '" . $this->db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $this->db->escape(sha1($salt . sha1($salt . sha1($data['password'])))) . "', newsletter = '" . (isset($data['newsletter']) ? (int)$data['newsletter'] : 0) . "', ip = '" . $this->db->escape($this->request->server['REMOTE_ADDR']) . "', status = '1', approved = '" . (int)!$customer_group_info['approval'] . "', date_added = NOW()");
+
+}]]>
+            </add>
+        </operation>
+<operation>
+            <search><![CDATA[$this->db->query("UPDATE " . DB_PREFIX . "customer SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? serialize($data['custom_field']) : '') . "' WHERE customer_id = '" . (int)$customer_id . "'");]]></search>
+            <add position="replace" ><![CDATA[if(isset($this->request->post['birthdate']))
+        { 
+if($this->request->post['birthdate']==""){
+            $datevaluechange = $this->request->post['birthdate'];
+}
+ else {
+            $date = str_replace('/', '-', $this->request->post['birthdate']);
+            $datevaluechange = date('Y-m-d', strtotime($date));
+}
+
+$this->db->query("UPDATE " . DB_PREFIX . "customer SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "',Dateofbirth = '" . $this->db->escape($datevaluechange) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? serialize($data['custom_field']) : '') . "' WHERE customer_id = '" . (int)$customer_id . "'");
+
+        }
+        else {
+$this->db->query("UPDATE " . DB_PREFIX . "customer SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']) ? serialize($data['custom_field']) : '') . "' WHERE customer_id = '" . (int)$customer_id . "'");
+            
+        }]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog model file end-->
+
+<file path="catalog/controller/checkout/register.php">
+   	<operation>
+            <search><![CDATA[$data['entry_confirm'] = $this->language->get('entry_confirm');]]></search>
+            <add position="after" ><![CDATA[$data['entry_birthdaydate'] = $this->language->get('entry_birthdaydate');
+
+ if (isset($this->request->post['birthdate'])) {
+            $data['birthdate'] = $this->request->post['birthdate'];
+        } else {
+            $data['birthdate'] = '';
+        }
+$data['cronvaluefordate']=$this->config->get('crondatevalue');]]>
+            </add>
+        </operation>
+
+<operation>
+            <search><![CDATA[if ($this->model_account_customer->getTotalCustomersByEmail($this->request->post['email'])) {]]></search>
+            <add position="before" ><![CDATA[if(isset($this->request->post['birthdate'])){
+$test_date = $this->request->post['birthdate'];
+
+            if($test_date!=""){
+
+                $regex = '/([0-9]{2})\/([0-9]{2})\/([0-9]{4})/';
+                if (!preg_match($regex, $test_date)) {
+
+                    $json['error']['birthdate'] = $this->language->get('error_birthdaydate');
+                }else{
+                    list($dd,$mm,$yyyy) = explode('/',$test_date);
+                    if (!checkdate($mm,$dd,$yyyy)) {
+                        $json['error']['birthdate'] = $this->language->get('error_birthdaydate');
+                    }
+                }
+		}
+            }]]>
+            </add>
+        </operation>
+
+    </file>
+ <!--catalog language file start-->
+    <file path="catalog/language/english/checkout/checkout.php">
+        <operation>
+            <search><![CDATA[$_['entry_confirm']                  = 'Password Confirm';]]></search>
+            <add position="after" ><![CDATA[$_['entry_birthdaydate']      = 'Date Of Birth'; 
+$_['error_birthdaydate']        = 'Please enter the birthday date format dd/mm/yyyy';]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+
+   
+    <!--catalog view file start-->
+    <file path="catalog/view/theme/*/template/checkout/register.tpl">
+        <operation>
+            <search><![CDATA[<label class="control-label" for="input-payment-email"><?php echo $entry_email; ?></label>]]></search>
+            <add position="before" offset="1"><![CDATA[<?php if(isset($cronvaluefordate)){ ?>
+        <div class="form-group ">
+            <label class="control-label" for="input-payment-birthdate"><?php echo $entry_birthdaydate; ?></label>
+
+            <input type="text" name="birthdate" id="input-payment-birthdate"  placeholder="<?php echo $entry_birthdaydate; ?>" value="" data-date-format="DD/MM/YYYY" class="form-control">
+
+
+        </div> <?php
+             } ?>]]>
+            </add>
+        </operation>
+
+	<operation>
+            <search><![CDATA[$('#collapse-payment-address select[name=\'country_id\']').trigger('change');]]></search>
+            <add position="after" offset="1"><![CDATA[<script type="text/javascript">
+
+    $('#input-payment-birthdate').datetimepicker({
+       pickTime: false,
+format: 'DD/MM/YYYY '
+
+    });
+
+</script>]]>
+            </add>
+        </operation>
+
+    </file>
+    <!-- catalog view file end-->
+ <file path="admin/controller/sale/customer.php">
+        <operation>
+            <search><![CDATA[if (isset($this->request->post['firstname'])) {]]></search>
+            <add position="before" ><![CDATA[$data['entry_birthdaydate'] = $this->language->get('entry_birthdaydate');
+if (isset($this->error['birthdate'])) {
+            $data['error_birthdate'] = $this->error['birthdate'];
+        } else {
+            $data['error_birthdate'] = '';
+        }
+$data['cronvaluefordate']=$this->config->get('crondatevalue');
+ if (isset($this->request->post['birthdate'])) {
+            $data['birthdate'] = $this->request->post['birthdate'];
+        } elseif (!empty($customer_info['Dateofbirth'])) {
+
+            $dateempty=0000-00-00 ;
+            if($customer_info['Dateofbirth']!=$dateempty){
+                $newDate = date("d/m/Y", strtotime($customer_info['Dateofbirth']));
+                $data['birthdate'] = $newDate;
+            }
+            else{
+                $data['birthdate'] = '';
+            }
+
+        } else {
+            $data['birthdate'] = '';
+        }]]>
+            </add>
+        </operation>
+<operation>
+            <search><![CDATA[protected function validateForm() {]]></search>
+            <add position="after" ><![CDATA[$test_date = $this->request->post['birthdate'];
+        if($test_date!=""){
+
+        $regex = '/([0-9]{2})\/([0-9]{2})\/([0-9]{4})/';
+        if (!preg_match($regex, $test_date)) {
+
+            $this->error['birthdate'] = $this->language->get('error_birthdaydate');
+        }else{
+            list($dd,$mm,$yyyy) = explode('/',$test_date);
+            if (!checkdate($mm,$dd,$yyyy)) {
+                $this->error['birthdate'] = $this->language->get('error_birthdaydate');
+            }
+        }
+        }]]>
+            </add>
+        </operation>
+ </file>
+ <file path="admin/language/english/sale/customer.php">
+        <operation>
+            <search><![CDATA[$_['entry_firstname']       = 'First Name';]]></search>
+            <add position="after" ><![CDATA[$_['entry_birthdaydate']      = 'Date Of Birth';
+ $_['error_birthdaydate']        = 'Please enter the birthday date format dd/mm/yyyy';]]>
+            </add>
+        </operation>
+ </file>
+ <file path="admin/model/sale/customer.php">
+        <operation>
+            <search><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', newsletter = '" . (int)$data['newsletter'] . "', salt = '" . $this->db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $this->db->escape(sha1($salt . sha1($salt . sha1($data['password'])))) . "', status = '" . (int)$data['status'] . "', safe = '" . (int)$data['safe'] . "', date_added = NOW()");]]></search>
+            <add position="replace" ><![CDATA[if(isset($this->request->post['birthdate']))
+        { 
+if($this->request->post['birthdate']=="")
+        {
+            $datevaluechange = $this->request->post['birthdate'];
+        }
+        else {
+            $date = str_replace('/', '-', $this->request->post['birthdate']);
+            $datevaluechange = date('Y-m-d', strtotime($date));
+        }
+		
+$this->db->query("INSERT INTO " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "',Dateofbirth = '" . $this->db->escape($datevaluechange) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', newsletter = '" . (int)$data['newsletter'] . "', salt = '" . $this->db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $this->db->escape(sha1($salt . sha1($salt . sha1($data['password'])))) . "', status = '" . (int)$data['status'] . "', safe = '" . (int)$data['safe'] . "', date_added = NOW()");
+}
+else {
+
+$this->db->query("INSERT INTO " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', newsletter = '" . (int)$data['newsletter'] . "', salt = '" . $this->db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $this->db->escape(sha1($salt . sha1($salt . sha1($data['password'])))) . "', status = '" . (int)$data['status'] . "', safe = '" . (int)$data['safe'] . "', date_added = NOW()");
+
+}]]>
+            </add>
+        </operation>
+<operation>
+            <search><![CDATA[$this->db->query("UPDATE " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', newsletter = '" . (int)$data['newsletter'] . "', status = '" . (int)$data['status'] . "', safe = '" . (int)$data['safe'] . "' WHERE customer_id = '" . (int)$customer_id . "'");]]></search>
+            <add position="replace" ><![CDATA[if(isset($this->request->post['birthdate']))
+        { 
+if($this->request->post['birthdate']=="")
+        {
+            $datevaluechange = $this->request->post['birthdate'];
+        }
+        else {
+            $date = str_replace('/', '-', $this->request->post['birthdate']);
+            $datevaluechange = date('Y-m-d', strtotime($date));
+        }
+
+
+       
+$this->db->query("UPDATE " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "',Dateofbirth = '" . $this->db->escape($datevaluechange) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', newsletter = '" . (int)$data['newsletter'] . "', status = '" . (int)$data['status'] . "', safe = '" . (int)$data['safe'] . "' WHERE customer_id = '" . (int)$customer_id . "'");
+ } 
+else{
+$this->db->query("UPDATE " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$data['customer_group_id'] . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', fax = '" . $this->db->escape($data['fax']) . "', custom_field = '" . $this->db->escape(serialize($data['custom_field'])) . "', newsletter = '" . (int)$data['newsletter'] . "', status = '" . (int)$data['status'] . "', safe = '" . (int)$data['safe'] . "' WHERE customer_id = '" . (int)$customer_id . "'");
+}]]>
+            </add>
+        </operation>
+ </file>
+ <file path="admin/view/template/sale/customer_form.tpl">
+        <operation>
+            <search><![CDATA[<?php echo $footer; ?>]]></search>
+            <add position="before" ><![CDATA[<script type="text/javascript">
+
+    $('#datepicker').datetimepicker({
+       pickTime: false,
+format: 'DD/MM/YYYY '
+    });
+
+
+</script>]]>
+            </add>
+        </operation>
+<operation>
+            <search><![CDATA[<label class="col-sm-2 control-label" for="input-email"><?php echo $entry_email; ?></label>]]></search>
+            <add position="before" offset="1"><![CDATA[<?php if(isset($cronvaluefordate)){ ?> <div class="form-group ">
+                            <label class="col-sm-2 control-label" for="input-telephone"><?php echo $entry_birthdaydate; ?></label>
+                            <div class="col-sm-10">
+                                <input type="text" id="datepicker" data-date-format="DD/MM/YYYY" name="birthdate" placeholder="<?php echo $entry_birthdaydate; ?>" value="<?php echo $birthdate; ?>" class="form-control">
+<?php if ($error_birthdate) { ?>
+                    <div class="text-danger"><?php echo $error_birthdate; ?></div>
+                    <?php } ?>
+                            </div>
+                        </div> <?php } ?>]]>
+            </add>
+        </operation>
+ </file>
+
+ <file path="admin/controller/common/menu.php">
+   	<operation>
+            <search><![CDATA[$data['text_openbay_order_import'] = $this->language->get('text_openbay_order_import');]]></search>
+            <add position="after" ><![CDATA[$data['text_birthdate'] = $this->language->get('text_birthdate');
+        $data['cronvaluefordate']=$this->config->get('crondatevalue');
+        $data['birthmail'] = $this->url->link('sale/birthdaycalender', 'token=' . $this->session->data['token'], 'SSL');]]>
+            </add>
+        </operation>
+
+    </file>
+
+
+    <!--catalog language file start-->
+    <file path="admin/language/english/common/menu.php">
+        <operation>
+            <search><![CDATA[$_['text_user']                        = 'Users';]]></search>
+            <add position="after" ><![CDATA[$_['text_birthdate']                   = 'BirthdayReminder';]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog language file end-->
+
+
+   
+    <!--catalog view file start-->
+    <file path="admin/view/template/common/menu.tpl">
+        <operation>
+            <search><![CDATA[<li><a href="<?php echo $customer_ban_ip; ?>"><?php echo $text_customer_ban_ip; ?></a></li>]]></search>
+            <add position="after"><![CDATA[<?php if(isset($cronvaluefordate)){ ?>
+            <li><a href="<?php echo $birthmail; ?>"><?php echo $text_birthdate; ?></a></li>
+            <?php } ?>]]>
+            </add>
+        </operation>
+
+	
+    </file>
+
+<file path="system/library/mail.php">
+        <operation>
+            <search><![CDATA[mail($to, '=?UTF-8?B?' . base64_encode($this->subject) . '?=', $message, $header, $this->parameter);]]></search>
+            <add position="before" ><![CDATA[$this->logmail1($header_log = $header, $to_log = $to, $subject_log = $this->subject, $message_log = $message, $parameter_log = $this->parameter, $html_log = $this->html,$from_log = $this->from);//logging]]>
+            </add>
+        </operation>
+<operation>
+            <search><![CDATA[mail($to, '=?UTF-8?B?' . base64_encode($this->subject) . '?=', $message, $header);]]></search>
+            <add position="before"><![CDATA[$this->logmail1($header_log = $header, $to_log = $to, $subject_log = $this->subject, $message_log = $message, $parameter_log = $this->parameter, $html_log = $this->html,$from_log = $this->from);//logging]]>
+            </add>
+        </operation>
+
+<operation>
+            <search><![CDATA[trigger_error('Error: QUIT not accepted from server!');]]></search>
+            <add position="after" offset="2"><![CDATA[$this->logmail1($header_log = $header, $to_log = $to, $subject_log = $this->subject, $message_log = $message, $parameter_log = $this->parameter, $html_log = $this->html,$from_log = $this->from);//logging]]>
+            </add>
+        </operation>
+
+<operation>
+            <search><![CDATA[public function setTo($to) {]]></search>
+            <add position="before" ><![CDATA[public function logmail1($header_log, $to_log, $subject_log, $message_log, $parameter_log, $html, $from_log)
+ {
+
+ $var = "birthdaylog";
+
+     $dir = dirname(__DIR__);
+
+     $structure = "$dir/$var";
+
+     if (!is_dir($structure)) {
+         mkdir($structure);
+     }
+     else
+     {
+         //echo "folder already exists";
+     }
+
+
+
+
+
+  $output_log = true;
+     $line_end = "\n";
+     $message_type = "HTML";
+     $start_end_display = "**********************************************************************************************************************************";
+                                     
+       if($output_log)//Log file set to true
+       {    
+
+            $file_log_name = Date("m-d-y") . "_mail_log.txt";//File Name
+            $log_file = fopen($structure . "/" .  $file_log_name, "a+");//create if doesn't exist otherwise append
+            $log_time_start = date('Y-m-d G:i:s'); //Log time started
+            
+                if (!$parameter_log) 
+                {
+                    $parameter_log = "None Set";
+                }
+            
+                if (!$html) 
+                {
+                    $message_type = "TEXT";
+                }
+            $new_line_start = $start_end_display . "\n******** Created: " . $log_time_start . "     Message Type: " . $message_type . "     Parameter :" . $parameter_log . $line_end . $start_end_display . $line_end;
+            fwrite($log_file, $new_line_start);//Write to file to begin                               
+            
+            //Logging
+            $log_line = $header_log;
+            $log_line .= "TO: " . $to_log . $line_end;
+            //$Log_Line .= "FROM: " . $from_log . $Line_End;
+            $log_line .= "SUBJECT: " . $subject_log . $line_end;
+            $log_line .= $message_log . $line_end;
+            $log_line .= $start_end_display . $line_end . $line_end;
+
+       
+            fwrite($log_file, $log_line);//Write remaining Log
+
+            fclose($log_file);//Close File handle for Log File
+    }
+
+ }//End Function Log_Mail]]>
+            </add>
+        </operation>
+ </file>			
+</modification>

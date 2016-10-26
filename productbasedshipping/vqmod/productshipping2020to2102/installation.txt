@@ -1,0 +1,62 @@
+INSTALLATION FOR Product Based Individual Shipping Price OPENCART EXTENSION VQMOD
+=========================================================================
+1. First You must backup your opencart site/shop And Database.
+
+2. Before install this addon you have to install "vQmod" in your shop.
+[NOTE : Opencart version 2.0.x ] install vQmod 2.3.2 version.
+
+3. Upload the "vqmod","catalog" & "admin" to your root folder. (No file are replaced, all files are new) Done.
+
+===============================================================================================
+Product Based Individual Shipping Price
+===============================================================================================
+
+Admin Login :
+
+	1. Go to the Modules Page [Extensions -> Shipping]
+
+		step 1 : See the "Product Based Shipping" Module then Click [install] link for install this Plugin.
+
+		step 2 : See the "Product Based Shipping" Module then Click [edit] link.
+		
+		step 3 : Select Product Based Shipping status AND Enter the Sort Order.
+
+		step 4 : And Click the save button.
+
+	2. Go to Products page 
+
+	       	step 1 :  Go to Catalog -> Products 
+		  
+		step 2 :  Click Edit button on the Products list.
+		  
+		step 3 :  Click the  Data Tab	
+		   
+		step 4 :  Then find Requires Shipping field [YES/NO] and shipping price field
+		
+		step 5 :  If select Requires Shipping [YES] and enter the shipping price 
+		        
+		step 6 :  And Click the save button. 
+
+	3.  Go to store front Product detail page.
+		
+		See the shipping Charge / Free delivery below the product price 
+		
+	4.  Go to store front cart checkout page
+
+		Go to Delivery Method Section
+			
+			Now showing Shipping Charge 
+
+		Go to Confirm Order Section
+
+			Now added the Shipping Charge  in order totals
+	
+	5. Go to the admin side
+	
+		Go to the order list page 
+
+			step 1 :  Click view button on the Order list.
+		  
+			step 2 :  Click the  Products Tab
+		
+			step 3 :  Now you can see the shipping price.	

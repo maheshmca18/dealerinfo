@@ -1,0 +1,1217 @@
+<modification>
+    <id>Product PDF Invoice</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <author>IRS SOFT</author>
+ 
+    <file path="admin/controller/sale/order.php">
+    
+ 	<operation>
+            <search position="before" ><![CDATA[public function shipping() {]]></search>
+            <add><![CDATA[ public function pdf() {
+
+            $this->load->language('sale/order');
+$this->load->model('tool/image');
+
+        $html='';
+
+        $text_order_id = $this->language->get('text_order_id');
+        $text_invoice_no = $this->language->get('text_invoice_no');
+        $text_date_oder = $this->language->get('date_oder');
+        $text_telephone = $this->language->get('text_telephone');
+        $text_fax = $this->language->get('text_fax');
+        $text_email = $this->language->get('text_email');
+        $text_payment_method = $this->language->get('text_payment_method');
+        $text_shipping_method = $this->language->get('text_shipping_method');
+
+        $column_product = $this->language->get('column_product');
+        $column_model = $this->language->get('column_model');
+        $column_quantity = $this->language->get('column_quantity');
+        $column_price = $this->language->get('column_price');
+        $column_total = $this->language->get('column_total');
+
+        $entry_billingaddress = $this->language->get('entry_billingaddress');
+        $entry_shippingaddress = $this->language->get('entry_shippingaddress');
+        $authorized_signatory = $this->language->get('authorized_signatory');
+        $retail_invoice = $this->language->get('retail_invoice');
+
+        $this->load->model('sale/order');
+
+        $this->load->model('setting/setting');
+
+        $data['orders'] = array();
+
+        $orders = array();
+
+        if (isset($this->request->post['selected'])) {
+            $orders = $this->request->post['selected'];
+        } elseif (isset($this->request->get['order_id'])) {
+            $orders[] = $this->request->get['order_id'];
+        }
+
+        $pdftaxdetails = $this->model_sale_order->getpdfinvoice();
+
+        foreach ($orders as $order_id) {
+            $order_info = $this->model_sale_order->getOrder($order_id);
+
+            if ($order_info) {
+
+
+                $store_info = $this->model_setting_setting->getSetting('config', $order_info['store_id']);
+
+                if ($store_info) {
+                    $store_address = $store_info['config_address'];
+                    $store_email = $store_info['config_email'];
+                    $store_telephone = $store_info['config_telephone'];
+                    $store_fax = $store_info['config_fax'];
+                } else {
+                    $store_address = $this->config->get('config_address');
+                    $store_email = $this->config->get('config_email');
+                    $store_telephone = $this->config->get('config_telephone');
+                    $store_fax = $this->config->get('config_fax');
+                }
+
+                //company detail start here
+                $html.='<table class="table"><tr><td colspan="3"><h2> <center>'.$retail_invoice.'</center></h2></td></tr> <tr><td style="width: 22%;">';
+                 // company logo add here
+                if($this->config->get('pdfinvoice_logo_status')==1) {
+		if ($this->config->get('config_logo') && is_file(DIR_IMAGE . $this->config->get('config_logo'))) {
+			$datalogo = $this->model_tool_image->resize($this->config->get('config_logo'), 75, 75);
+		}else{
+			 $datalogo = 'view/image/logo.png';
+}
+			 		
+                    $html .= '<img src="'. $datalogo .'" alt="" title="" /></a>';
+                }
+                $html.= '<br><br><strong>'.$order_info['store_name'].'</strong></td><td>
+          <b> '.$text_telephone.' </b>'.$store_telephone.'<br />';
+                //fax number add here
+                if ($store_fax) {
+                    $html.=' <b>'.$text_fax.' </b> '.$store_fax;
+                }
+                $html.='<br /><b> '.$text_email.' </b>'; $html.= $store_email.'</td>';
+                //invoice number add
+
+                if ($order_info['invoice_no']) {
+                    $invoice_no = $order_info['invoice_prefix'] . $order_info['invoice_no'];
+                    $html.='<td align="right"><h4><h4><strong> '.$text_invoice_no. $invoice_no.'</strong></h4> </td>';
+                } else {
+                    $invoice_no = '';
+                }
+
+                $downloadinvoiceno=$invoice_no;
+                $downloadname=$order_info['store_name'];
+
+                $customeremailid=$order_info['email'];
+
+                $html.='</tr><tr><td></td><td colspan="2"><strong><address>'. $store_address.'</address></strong></td></tr></table>';
+                $html.='<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+                //company detail end here
+
+                if ($order_info['payment_address_format']) {
+                    $format = $order_info['payment_address_format'];
+                } else {
+                    $format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+                }
+
+                $find = array(
+                    '{firstname}',
+                    '{lastname}',
+                    '{company}',
+                    '{address_1}',
+                    '{address_2}',
+                    '{city}',
+                    '{postcode}',
+                    '{zone}',
+                    '{zone_code}',
+                    '{country}'
+                );
+
+                $replace = array(
+                    'firstname' => $order_info['payment_firstname'],
+                    'lastname'  => $order_info['payment_lastname'],
+                    'company'   => $order_info['payment_company'],
+                    'address_1' => $order_info['payment_address_1'],
+                    'address_2' => $order_info['payment_address_2'],
+                    'city'      => $order_info['payment_city'],
+                    'postcode'  => $order_info['payment_postcode'],
+                    'zone'      => $order_info['payment_zone'],
+                    'zone_code' => $order_info['payment_zone_code'],
+                    'country'   => $order_info['payment_country']
+                );
+
+                $payment_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+
+                if ($order_info['shipping_address_format']) {
+                    $format = $order_info['shipping_address_format'];
+                } else {
+                    $format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+                }
+
+                $find = array(
+                    '{firstname}',
+                    '{lastname}',
+                    '{company}',
+                    '{address_1}',
+                    '{address_2}',
+                    '{city}',
+                    '{postcode}',
+                    '{zone}',
+                    '{zone_code}',
+                    '{country}'
+                );
+
+                $replace = array(
+                    'firstname' => $order_info['shipping_firstname'],
+                    'lastname'  => $order_info['shipping_lastname'],
+                    'company'   => $order_info['shipping_company'],
+                    'address_1' => $order_info['shipping_address_1'],
+                    'address_2' => $order_info['shipping_address_2'],
+                    'city'      => $order_info['shipping_city'],
+                    'postcode'  => $order_info['shipping_postcode'],
+                    'zone'      => $order_info['shipping_zone'],
+                    'zone_code' => $order_info['shipping_zone_code'],
+                    'country'   => $order_info['shipping_country']
+                );
+
+                $shipping_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+                $date_added         = date($this->language->get('date_format_short'), strtotime($order_info['date_added']));
+                // billing detail start here
+
+                $html.='<table class="table" style="border-top-color: #000044;"><tbody>
+                <tr><td style="width: 35%;"><b> '.$text_date_oder.' </b>'.$date_added.' <br /><b>
+                 '.$text_order_id.' </b>'. $order_id.'<br /> <b> '.$text_payment_method.' </b>'.$order_info['payment_method'];
+
+                //shipping method add here
+                if ($order_info['shipping_method']) {
+                    $html.='<br /><b>'.$text_shipping_method.'</b>'.$order_info['shipping_method'];
+                }
+                //tax detail add here
+                if(isset($pdftaxdetails)){
+                    foreach ($pdftaxdetails as $pdftax) {
+                        $html.='<br /><b>'.$pdftax['pdf_invoice_taxname'].':</b>'.$pdftax['pdf_invoice_taxnumber'];
+                    }
+                }
+                $html.='<br /></td><td><h5><strong>'.$entry_billingaddress.'</strong></h5>'. $payment_address.' </td><td><h5><strong>
+         '.$entry_shippingaddress.'</strong></h5>'.$shipping_address.'</td></tr></tbody></table> ';
+
+
+                $html.='<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+                // billing detail start here
+
+                $this->load->model('tool/upload');
+                $products = $this->model_sale_order->getOrderProducts($order_id);
+                // total start here
+
+                $html.=' <table class="table " style="width:100%; "><thead><tr><td><b>'. $column_product.'</b></td>
+                    <td><b> '.$column_model.' </b></td><td class="text-right"><b> '.$column_quantity.' </b></td>
+                    <td class="text-right"><b> '.$column_price.' </b></td><td class="text-right"><b> '.$column_total.' </b></td>
+                </tr> </thead> <tbody>';
+
+                foreach ($products as $product) {
+                     $options = $this->model_sale_order->getOrderOptions($order_id, $product['order_product_id']);
+
+                    $html.=' <tr> <td>'.$product['name'];
+                    foreach ($options as $option) {
+                        if ($option['type'] != 'file') {
+                            $value = $option['value'];
+                        } else {
+                            $upload_info = $this->model_tool_upload->getUploadByCode($option['value']);
+
+                            if ($upload_info) {
+                                $value = $upload_info['name'];
+                            } else {
+                                $value = '';
+                            }
+                        }
+
+                        $html.='<br />&nbsp;<small> -'. $option['name'].':'.$value.'</small>';
+                    }
+
+
+                        $price    = $this->currency->format($product['price'] + ($this->config->get('config_tax') ? $product['tax'] : 0), $order_info['currency_code'], $order_info['currency_value']);
+                        $total    = $this->currency->format($product['total'] + ($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value']);
+
+
+                    $html.='</td><td>'.$product['model'].'</td><td class="text-right">'. $product['quantity'].'</td><td class="text-right">'
+                        .$price.'</td><td class="text-right">'.$total.'</td></tr>';
+                }
+
+
+                $vouchers = $this->model_sale_order->getOrderVouchers($order_id);
+
+                foreach ($vouchers as $voucher) {
+
+                        $amount      = $this->currency->format($voucher['amount'], $order_info['currency_code'], $order_info['currency_value']);
+
+
+                    $html.='<tr><td>'.$voucher['description'].'</td><td></td><td class="text-right">1</td><td class="text-right">'
+                        .$amount.'</td> <td class="text-right">'.$amount.'</td></tr>';
+                }
+
+                $html.='<tr><td colspan="5"><hr style="background-color:#000000; border-width:0; color:#000000; height:1px; lineheight:0; display: -moz-inline-stack; text-align: left; width:100%;"></td></tr>';
+
+
+                $totals = $this->model_sale_order->getOrderTotals($order_id);
+
+                foreach ($totals as $total) {
+
+                        $text  = $this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']);
+
+
+                    if($total['title']=='Total'){
+                        $html.='<tr><td colspan="5"><hr style="background-color:#000000; border-width:0; color:#000000; height:1px; lineheight:0; display: -moz-inline-stack; text-align: left; width:100%;"></td></tr>';
+
+                        $html.=' <tr><td class="text-right" style="font-size:20px;" colspan="4" ><b>'.$total['title'].'</b></td>
+                        <td class="text-right" style="font-size:20px;" >'.$text.'</td></tr>';
+
+                    }
+                    else{
+                        $html.=' <tr><td class="text-right" colspan="4" ><b>'.$total['title'].'</b></td>
+                        <td class="text-right" >'.$text.'</td></tr>';
+                    }
+                }
+                $html.='</tbody></table>';
+
+                // total end here
+                if ($order_info['comment']) {
+                    $html.='<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+                    $html.='<table class="table "><thead><tr><td><b> $column_comment</b></td></tr></thead><tbody><tr><td>'. $order_info['comment'].'</td></tr></tbody></table>';
+                }
+
+                $html.='<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+                $html.='<table class="table"><tr><td style="width: 90%;  font-size:8px;">*This is a computer generated invoice.</td></tr>';
+
+                $htmlmail=$html;
+                $htmlmail.=' </table></div>';
+
+                $pdfinvoice_image=$this->config->get('pdfinvoice_image');
+
+                $this->load->model('tool/image');
+
+                if (!empty($pdfinvoice_image) && is_file(DIR_IMAGE . $pdfinvoice_image)) {
+                    $pdfinvoice_signimage = $this->model_tool_image->resize($pdfinvoice_image, 100, 50);
+                } else {
+                    $pdfinvoice_signimage = $this->model_tool_image->resize('no_image.png', 100, 50);
+                }
+
+
+                if($this->config->get('pdfinvoice_authorized_status')==1) {
+
+                    $html .= '<tr><td></td><td style="width: 20%; text-align: center;"><strong><b>'.$order_info['store_name'].'</b></strong><br>
+                            <img src="'.$pdfinvoice_signimage.'" alt="" title="" /></a><br>'.$authorized_signatory.'</center></td></tr>';
+                }
+
+                $html.=' </table></div>';
+
+
+            }
+        }
+
+
+
+        set_time_limit(600);
+
+         include("../system/library/mpdf60/mpdf.php");
+
+        $mpdf=new mPDF('');
+
+        $mpdf->list_auto_mode = 'mpdf';	// Used for demonstration of lists
+        //==============================================================
+
+        $mpdf->h2bookmarks = array('H3'=>0, 'H4'=>1);
+        $mpdf->defaultPageNumStyle = 'arabic-indic';
+
+        $mpdf->autoLangToFont = true;
+        $mpdf->WriteHTML($html);
+
+        $mpdf->Output('../irssoft/'.$downloadinvoiceno.'.pdf', 'F');
+
+        if(isset($this->request->post['mail'])){
+
+
+            $text_admin = ' Invoice copy and Delivery Confirmation for your order '.$downloadinvoiceno;
+            $downloadname=$downloadname." Order";
+		
+	$htmlmail = $this->config->get('pdfinvoice_messagecontent').$htmlmail; //mail content
+
+            $mail = new Mail();
+            $mail->setTo($customeremailid);
+            $mail->setFrom($this->config->get('config_email'));
+            $mail->setSender($downloadname);
+            $mail->setSubject(sprintf($text_admin));
+            $mail->setHtml(html_entity_decode($htmlmail, ENT_QUOTES, 'UTF-8'));
+
+            $mail->addAttachment('../irssoft/'.$downloadinvoiceno.'.pdf');
+
+            $mail->protocol = $this->config->get('config_mail_protocol');
+            $mail->parameter = $this->config->get('config_mail_parameter');
+            $mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+            $mail->smtp_username = $this->config->get('config_mail_smtp_username');
+            $mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+            $mail->smtp_port = $this->config->get('config_mail_smtp_port');
+
+            $mail->Send();
+
+            $json="successfully send mail";
+            unlink('../irssoft/'.$downloadinvoiceno.'.pdf');
+			$this->response->addHeader('Content-Type: application/json');
+			$this->response->setOutput(json_encode($json));
+        }
+        else  {
+           $mpdf->Output($downloadinvoiceno . '.pdf', 'D');
+           // $mpdf->Output();
+        }
+       
+    }]]>
+            </add>
+        </operation>
+
+ <operation>
+            <search position="before" ><![CDATA[$data['edit'] = $this->url->link('sale/order/edit', 'token=' . $this->session->data['token'] . '&order_id=' . (int)$this->request->get['order_id'], true);]]></search>
+            <add><![CDATA[$data['pdf'] = $this->url->link('sale/order/pdf', 'token=' . $this->session->data['token'] . '&order_id=' . (int)$this->request->get['order_id'], true);
+$data['button_pdf_print'] = $this->language->get('button_pdf_print');
+            $data['send_pdf'] = $this->language->get('send_pdf');
+$data['pdfinvoice_status']=$this->config->get('pdfinvoice_status');
+            $data['pdfinvoice_attach_email_status']=$this->config->get('pdfinvoice_attach_email_status');]]>
+            </add>
+        </operation>
+
+
+    </file>
+    <file path="admin/language/*/sale/order.php">
+        <operation>
+            <search position="after" ><![CDATA[// Text]]></search>
+            <add><![CDATA[$_['entry_billingaddress']              = 'Billing Address';
+$_['entry_shippingaddress']     = 'shipping Address';
+$_['date_oder']        		= 'Order Date';
+$_['button_pdf_print']          = 'Print Pdf';
+$_['send_pdf']        		= 'Send Invoice Mail';
+$_['authorized_signatory']      = '(Authorized Signatory)';
+$_['retail_invoice']        	= 'Retail Invoice/Bill';]]>
+            </add>
+        </operation>
+    </file>
+
+ <file path="admin/model/sale/order.php">
+        <operation>
+            <search position="before" ><![CDATA[public function getTotalEmailsByProductsOrdered($products) {]]></search>
+            <add><![CDATA[public function getpdfinvoice() {
+        $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "pdf_invoice ");
+
+        return $query->rows;
+    }]]>
+            </add>
+        </operation>
+    </file>   
+    <file path="admin/view/template/sale/order_info.tpl">
+        <operation>
+            <search position="replace" ><![CDATA[<div class="pull-right"><a href="<?php echo $invoice; ?>" target="_blank" data-toggle="tooltip" title="<?php echo $button_invoice_print; ?>" class="btn btn-info"><i class="fa fa-print"></i></a> <a href="<?php echo $shipping; ?>" target="_blank" data-toggle="tooltip" title="<?php echo $button_shipping_print; ?>" class="btn btn-info"><i class="fa fa-truck"></i></a> <a href="<?php echo $edit; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a> <a href="<?php echo $cancel; ?>" data-toggle="tooltip" title="<?php echo $button_cancel; ?>" class="btn btn-default"><i class="fa fa-reply"></i></a></div>]]></search>
+            <add><![CDATA[<div class="pull-right">
+         <?php if($pdfinvoice_status==1){ ?>
+          <?php if($pdfinvoice_attach_email_status==1){ ?>
+          <?php if ($invoice_no) { $style=''; } else { $style='style="display: none;"'; }?>
+          <a href="javascript:void(0)" id="pdfmail" <?php echo $style; ?> data-toggle="tooltip" title="<?php echo $send_pdf; ?>" class="btn btn-info"><i class="fa fa-envelope"></i>
+          </a>
+          <?php  } } ?>
+          <?php if($pdfinvoice_status==1){ ?>
+          <?php if ($invoice_no) { $style=''; } else { $style='style="display: none;"'; }?>
+          <a href="<?php echo $pdf; ?>" id="pdfinvoice" <?php echo $style; ?> data-toggle="tooltip" title="<?php echo $button_pdf_print; ?>" class="btn btn-info"><i class="fa fa-file-pdf-o"></i>
+          </a>
+          <?php  } ?>
+<a href="<?php echo $invoice; ?>" target="_blank" data-toggle="tooltip" title="<?php echo $button_invoice_print; ?>" class="btn btn-info"><i class="fa fa-print"></i></a> <a href="<?php echo $shipping; ?>" target="_blank" data-toggle="tooltip" title="<?php echo $button_shipping_print; ?>" class="btn btn-info"><i class="fa fa-truck"></i></a> <a href="<?php echo $edit; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a> <a href="<?php echo $cancel; ?>" data-toggle="tooltip" title="<?php echo $button_cancel; ?>" class="btn btn-default"><i class="fa fa-reply"></i></a></div>]]>
+            </add>
+        </operation>
+
+	
+<operation>
+            <search position="after" ><![CDATA[$('#button-invoice').replaceWith('<button disabled="disabled" class="btn btn-success btn-xs"><i class="fa fa-cog"></i></button>');]]></search>
+            <add><![CDATA[
+$('#pdfmsg').replaceWith('');
+$("#pdfinvoice").removeAttr("style");
+$("#pdfmail").removeAttr("style");]]>
+            </add>
+        </operation>
+
+<operation>
+            <search position="before" ><![CDATA[<?php echo $footer; ?>]]></search>
+            <add><![CDATA[<script type="text/javascript">
+
+                $(document).ready(function() { //READY STARTS HERE
+                    //-----------------------------------------------------//
+                    $(document).on('click','#pdfmail',function () {
+                $mailsendid=1;
+                $.ajax({
+                    url: 'index.php?route=sale/order/pdf&token=<?php echo $token; ?>&order_id=<?php echo $order_id; ?>',
+                    type: 'post',
+                    data:{ mail:$mailsendid},
+                    dataType: 'json',
+
+                    beforeSend: function() {
+                        $('#pdfmail').button('loading');
+                    },
+                    complete: function() {
+                        $('#pdfmail').button('reset');
+                    },
+                    success: function(json) {
+                        $('.alert').remove();
+
+                        if (json) {
+                            $('#content > .container-fluid').prepend('<div class="alert alert-success"><i class="fa fa-check-circle"></i> ' + json + '</div>');
+                        }
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+                    }
+                });
+                    });
+            });
+</script>]]>
+            </add>
+        </operation>
+
+    </file>
+<file path="catalog/model/checkout/order.php">
+        <operation>
+            <search position="before" ><![CDATA[public function addOrderHistory($order_id, $order_status_id, $comment = '', $notify = false, $override = false) {]]></search>
+            <add><![CDATA[function pdf($order_id)
+    {
+echo $this->config->get('config_logo');
+exit;
+        $this->load->language('account/order');
+$this->load->model('tool/image');
+
+        $html = '';
+
+        $text_order_id = $this->language->get('text_order_id');
+        $text_invoice_no = $this->language->get('text_invoice_no');
+        $text_date_oder = "Order Date";
+        $text_telephone = "Telephone:";
+        $text_fax = "Fax:";
+        $text_email = "E-Mail:";
+        $text_payment_method = $this->language->get('text_payment_method');
+        $text_shipping_method = $this->language->get('text_shipping_method');
+
+        $column_product = $this->language->get('column_product');
+        $column_model = $this->language->get('column_model');
+        $column_quantity = $this->language->get('column_quantity');
+        $column_price = $this->language->get('column_price');
+        $column_total = $this->language->get('column_total');
+
+        $entry_billingaddress = "Billing Address";
+        $entry_shippingaddress = "shipping Address";
+        $authorized_signatory = "(Authorized Signatory)";
+        $retail_invoice = "Retail Invoice/Bill";
+
+        $this->load->model('account/order');
+
+        $this->load->model('setting/setting');
+
+        $data['orders'] = array();
+
+        $orders = array();
+
+        if (isset($this->request->post['selected'])) {
+            $orders = $this->request->post['selected'];
+        } elseif (isset($order_id)) {
+            $orders[] = $order_id;
+        }
+
+        $pdftaxdetails = $this->db->query("SELECT * FROM " . DB_PREFIX . "pdf_invoice ");
+
+
+            $order_info = $this->getOrder($order_id);
+
+            if ($order_info) {
+
+                $store_info = $this->model_setting_setting->getSetting('config', $order_info['store_id']);
+
+                if ($store_info) {
+                    $store_address = $store_info['config_address'];
+                    $store_email = $store_info['config_email'];
+                    $store_telephone = $store_info['config_telephone'];
+                    $store_fax = $store_info['config_fax'];
+                } else {
+                    $store_address = $this->config->get('config_address');
+                    $store_email = $this->config->get('config_email');
+                    $store_telephone = $this->config->get('config_telephone');
+                    $store_fax = $this->config->get('config_fax');
+                }
+
+                //company detail start here
+                $html .= '<table class="table"><tr><td colspan="3"><h2> <center>' . $retail_invoice . '</center></h2></td></tr> <tr><td style="width: 22%;">';
+              // company logo add here
+                if($this->config->get('pdfinvoice_logo_status')==1) {
+		if ($this->config->get('config_logo') && is_file(DIR_IMAGE . $this->config->get('config_logo'))) {
+			$datalogo = $this->model_tool_image->resize($this->config->get('config_logo'), 75, 75);
+		}else{
+			 $datalogo = 'view/image/logo.png';
+}
+			 		
+                    $html .= '<img src="'. $datalogo .'" alt="" title="" /></a>';
+                }
+                $html .= '<br><br><strong>' . $order_info['store_name'] . '</strong></td><td>
+          <b> ' . $text_telephone . ' </b>' . $store_telephone . '<br />';
+                //fax number add here
+                if ($store_fax) {
+                    $html .= ' <b>' . $text_fax . ' </b> ' . $store_fax;
+                }
+                $html .= '<br /><b> ' . $text_email . ' </b>';
+                $html .= $store_email . '</td>';
+                //invoice number add
+
+
+                if ($order_info['invoice_no']) {
+                    $invoice_no = $order_info['invoice_prefix'] . $order_info['invoice_no'];
+
+                    $html .= '<td align="right"><h4><h4><strong> ' . $text_invoice_no . $invoice_no . '</strong></h4> </td>';
+                } else {
+                    $invoice_no = $this->createInvoiceNo($order_id);
+                    $html .= '<td align="right"><h4><h4><strong> ' . $text_invoice_no . $invoice_no . '</strong></h4> </td>';
+                }
+
+                $downloadinvoiceno = $invoice_no;
+                $downloadname = $order_info['store_name'];
+
+                $customeremailid = $order_info['email'];
+
+                $html .= '</tr><tr><td></td><td colspan="2"><strong><address>' . $store_address . '</address></strong></td></tr></table>';
+                $html .= '<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+                //company detail end here
+
+                if ($order_info['payment_address_format']) {
+                    $format = $order_info['payment_address_format'];
+                } else {
+                    $format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+                }
+
+                $find = array(
+                    '{firstname}',
+                    '{lastname}',
+                    '{company}',
+                    '{address_1}',
+                    '{address_2}',
+                    '{city}',
+                    '{postcode}',
+                    '{zone}',
+                    '{zone_code}',
+                    '{country}'
+                );
+
+                $replace = array(
+                    'firstname' => $order_info['payment_firstname'],
+                    'lastname' => $order_info['payment_lastname'],
+                    'company' => $order_info['payment_company'],
+                    'address_1' => $order_info['payment_address_1'],
+                    'address_2' => $order_info['payment_address_2'],
+                    'city' => $order_info['payment_city'],
+                    'postcode' => $order_info['payment_postcode'],
+                    'zone' => $order_info['payment_zone'],
+                    'zone_code' => $order_info['payment_zone_code'],
+                    'country' => $order_info['payment_country']
+                );
+
+                $payment_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+
+                if ($order_info['shipping_address_format']) {
+                    $format = $order_info['shipping_address_format'];
+                } else {
+                    $format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+                }
+
+                $find = array(
+                    '{firstname}',
+                    '{lastname}',
+                    '{company}',
+                    '{address_1}',
+                    '{address_2}',
+                    '{city}',
+                    '{postcode}',
+                    '{zone}',
+                    '{zone_code}',
+                    '{country}'
+                );
+
+                $replace = array(
+                    'firstname' => $order_info['shipping_firstname'],
+                    'lastname' => $order_info['shipping_lastname'],
+                    'company' => $order_info['shipping_company'],
+                    'address_1' => $order_info['shipping_address_1'],
+                    'address_2' => $order_info['shipping_address_2'],
+                    'city' => $order_info['shipping_city'],
+                    'postcode' => $order_info['shipping_postcode'],
+                    'zone' => $order_info['shipping_zone'],
+                    'zone_code' => $order_info['shipping_zone_code'],
+                    'country' => $order_info['shipping_country']
+                );
+
+                $shipping_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+                $date_added = date($this->language->get('date_format_short'), strtotime($order_info['date_added']));
+                // billing detail start here
+
+                $html .= '<table class="table" style="border-top-color: #000044;"><tbody>
+                <tr><td style="width: 35%;"><b> ' . $text_date_oder . ' </b>' . $date_added . ' <br /><b>
+                 ' . $text_order_id . ' </b>' . $order_id . '<br /> <b> ' . $text_payment_method . ' </b>' . $order_info['payment_method'];
+
+                //shipping method add here
+                if ($order_info['shipping_method']) {
+                    $html .= '<br /><b>' . $text_shipping_method . '</b>' . $order_info['shipping_method'];
+                }
+                //tax detail add here
+                if (isset($pdftaxdetails)) {
+                    foreach ($pdftaxdetails->rows as $pdftax) {
+
+                        $html .= '<br /><b>' . $pdftax['pdf_invoice_taxname'] . ':</b>' . $pdftax['pdf_invoice_taxnumber'];
+                    }
+                }
+                $html .= '<br /></td><td><h5><strong>' . $entry_billingaddress . '</strong></h5>' . $payment_address . ' </td><td><h5><strong>
+         ' . $entry_shippingaddress . '</strong></h5>' . $shipping_address . '</td></tr></tbody></table> ';
+
+
+                $html .= '<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+                // billing detail start here
+
+                $this->load->model('tool/upload');
+                $products = $this->model_account_order->getOrderProducts($order_id);
+                // total start here
+
+                $html .= ' <table class="table " style="width:100%; "><thead><tr><td><b>' . $column_product . '</b></td>
+                    <td><b> ' . $column_model . ' </b></td><td class="text-right"><b> ' . $column_quantity . ' </b></td>
+                    <td class="text-right"><b> ' . $column_price . ' </b></td><td class="text-right"><b> ' . $column_total . ' </b></td>
+                </tr> </thead> <tbody>';
+
+                foreach ($products as $product) {
+                    $options = $this->model_account_order->getOrderOptions($order_id, $product['order_product_id']);
+
+                    $html .= ' <tr> <td>' . $product['name'];
+                    foreach ($options as $option) {
+                        if ($option['type'] != 'file') {
+                            $value = $option['value'];
+                        } else {
+                            $upload_info = $this->model_tool_upload->getUploadByCode($option['value']);
+
+                            if ($upload_info) {
+                                $value = $upload_info['name'];
+                            } else {
+                                $value = '';
+                            }
+                        }
+
+                        $html .= '<br />&nbsp;<small> -' . $option['name'] . ':' . $value . '</small>';
+                    }
+
+
+                    $price = $this->currency->format($product['price'] + ($this->config->get('config_tax') ? $product['tax'] : 0), $order_info['currency_code'], $order_info['currency_value']);
+                    $total = $this->currency->format($product['total'] + ($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value']);
+
+
+                    $html .= '</td><td>' . $product['model'] . '</td><td class="text-right">' . $product['quantity'] . '</td><td class="text-right">'
+                        . $price . '</td><td class="text-right">' . $total . '</td></tr>';
+                }
+
+
+                $vouchers = $this->model_account_order->getOrderVouchers($order_id);
+
+                foreach ($vouchers as $voucher) {
+
+                    $amount = $this->currency->format($voucher['amount'], $order_info['currency_code'], $order_info['currency_value']);
+
+
+                    $html .= '<tr><td>' . $voucher['description'] . '</td><td></td><td class="text-right">1</td><td class="text-right">'
+                        . $amount . '</td> <td class="text-right">' . $amount . '</td></tr>';
+                }
+
+                $html .= '<tr><td colspan="5"><hr style="background-color:#000000; border-width:0; color:#000000; height:1px; lineheight:0; display: -moz-inline-stack; text-align: left; width:100%;"></td></tr>';
+
+
+                $totals = $this->model_account_order->getOrderTotals($order_id);
+
+                foreach ($totals as $total) {
+
+                    $text = $this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']);
+
+
+                    if ($total['title'] == 'Total') {
+                        $html .= '<tr><td colspan="5"><hr style="background-color:#000000; border-width:0; color:#000000; height:1px; lineheight:0; display: -moz-inline-stack; text-align: left; width:100%;"></td></tr>';
+
+                        $html .= ' <tr><td class="text-right" style="font-size:20px;" colspan="4" ><b>' . $total['title'] . '</b></td>
+                        <td class="text-right" style="font-size:20px;" >' . $text . '</td></tr>';
+
+                    } else {
+                        $html .= ' <tr><td class="text-right" colspan="4" ><b>' . $total['title'] . '</b></td>
+                        <td class="text-right" >' . $text . '</td></tr>';
+                    }
+                }
+                $html .= '</tbody></table>';
+
+                // total end here
+                if ($order_info['comment']) {
+                    $html .= '<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+                    $html .= '<table class="table "><thead><tr><td><b> $column_comment</b></td></tr></thead><tbody><tr><td>' . $order_info['comment'] . '</td></tr></tbody></table>';
+                }
+
+                $html .= '<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+                $html .= '<table class="table"><tr><td style="width: 90%;  font-size:8px;">*This is a computer generated invoice.</td></tr>';
+
+                $htmlmail = $html;
+                $htmlmail .= ' </table></div>';
+
+                $pdfinvoice_image = $this->config->get('pdfinvoice_image');
+
+                $this->load->model('tool/image');
+
+                if (!empty($pdfinvoice_image) && is_file(DIR_IMAGE . $pdfinvoice_image)) {
+                    $pdfinvoice_signimage = $this->model_tool_image->resize($pdfinvoice_image, 100, 50);
+                } else {
+                    $pdfinvoice_signimage = $this->model_tool_image->resize('no_image.png', 100, 50);
+                }
+
+
+                if ($this->config->get('pdfinvoice_authorized_status') == 1) {
+
+                    $html .= '<tr><td></td><td style="width: 20%; text-align: center;"><strong><b>' . $order_info['store_name'] . '</b></strong><br>
+                            <img src="' . $pdfinvoice_signimage . '" alt="" title="" /></a><br>' . $authorized_signatory . '</center></td></tr>';
+                }
+
+                $html .= ' </table></div>';
+
+
+            }
+
+
+
+        set_time_limit(600);
+
+        include("system/library/mpdf60/mpdf.php");
+
+        $mpdf = new mPDF('');
+
+        $mpdf->list_auto_mode = 'mpdf';    // Used for demonstration of lists
+        //==============================================================
+
+        $mpdf->h2bookmarks = array('H3' => 0, 'H4' => 1);
+        $mpdf->defaultPageNumStyle = 'arabic-indic';
+
+        $mpdf->autoLangToFont = true;
+        $mpdf->WriteHTML($html);
+
+        $mpdf->Output('irssoft/' . $downloadinvoiceno . '.pdf', 'F');
+
+
+        $text_admin = ' Invoice copy and Delivery Confirmation for your order ' . $downloadinvoiceno;
+        $downloadname = $downloadname . " Order";
+
+$htmlmail = $this->config->get('pdfinvoice_messagecontent').$htmlmail; //mail content
+
+        $mail = new Mail();
+        $mail->setTo($customeremailid);
+        $mail->setFrom($this->config->get('config_email'));
+        $mail->setSender($downloadname);
+        $mail->setSubject(sprintf($text_admin));
+        $mail->setHtml(html_entity_decode($htmlmail, ENT_QUOTES, 'UTF-8'));
+
+        $mail->addAttachment('irssoft/' . $downloadinvoiceno . '.pdf');
+
+        $mail->protocol = $this->config->get('config_mail_protocol');
+        $mail->parameter = $this->config->get('config_mail_parameter');
+        $mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+        $mail->smtp_username = $this->config->get('config_mail_smtp_username');
+        $mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+        $mail->smtp_port = $this->config->get('config_mail_smtp_port');
+
+        $mail->Send();
+
+        unlink('irssoft/' . $downloadinvoiceno . '.pdf');
+
+    }
+
+    public function createInvoiceNo($order_id) {
+        $order_info = $this->getOrder($order_id);
+
+        if ($order_info && !$order_info['invoice_no']) {
+            $query = $this->db->query("SELECT MAX(invoice_no) AS invoice_no FROM `" . DB_PREFIX . "order` WHERE invoice_prefix = '" . $this->db->escape($order_info['invoice_prefix']) . "'");
+
+            if ($query->row['invoice_no']) {
+                $invoice_no = $query->row['invoice_no'] + 1;
+            } else {
+                $invoice_no = 1;
+            }
+
+            $this->db->query("UPDATE `" . DB_PREFIX . "order` SET invoice_no = '" . (int)$invoice_no . "', invoice_prefix = '" . $this->db->escape($order_info['invoice_prefix']) . "' WHERE order_id = '" . (int)$order_id . "'");
+
+            return $order_info['invoice_prefix'] . $invoice_no;
+        }
+    }]]>
+            </add>
+        </operation>
+<operation>
+            <search position="before" offset="3"><![CDATA[public function editOrder($order_id, $data) {]]></search>
+            <add><![CDATA[//pdf invoice mail
+	if ($this->config->get('pdfinvoice_status') == 1) {
+            if ($this->config->get('pdfinvoice_automailstatus') == 1) {
+
+                if ($this->config->get('$config_order_status_id') == $this->config->get('pdfinvoice_orderstatus')) {
+
+                    $this->pdf($order_id);
+                }
+                 }
+            }]]>
+            </add>
+        </operation>
+
+
+<operation>
+            <search position="before" offset="1"><![CDATA[if ($order_info['order_status_id'] && $order_status_id && $notify) {]]></search>
+            <add><![CDATA[ if ($this->config->get('pdfinvoice_status') == 1) {
+            if ($this->config->get('pdfinvoice_automailstatus') == 1) {
+
+                if ($order_status_id == $this->config->get('pdfinvoice_orderstatus')) {
+
+                    $this->pdf($order_id);
+                }
+                 }
+            }]]>
+            </add>
+        </operation>
+    </file>   
+
+<file path="catalog/controller/account/order.php">
+        <operation>
+            <search position="before" ><![CDATA[public function info() {]]></search>
+            <add><![CDATA[public function pdf()
+    {
+        $this->language->load('account/order');
+
+        if (isset($this->request->get['order_id'])) {
+            $order_id = $this->request->get['order_id'];
+        }
+
+        $this->load->model('account/order');
+
+        $order_info = $this->model_account_order->getOrder($order_id);
+
+        if ($order_info) {
+            $this->document->setTitle($this->language->get('text_order'));
+
+            $heading_title = $this->language->get('text_order');
+            $ordersuccess_status = $this->config->get('ordersuccess_status');
+            $text_order_detail = $this->language->get('text_order_detail');
+            $text_invoice_no = $this->language->get('text_invoice_no');
+            $text_order_id = $this->language->get('text_order_id');
+            $text_date_added = $this->language->get('text_date_added');
+            $text_shipping_method = $this->language->get('text_shipping_method');
+            $text_shipping_address = $this->language->get('text_shipping_address');
+            $text_payment_method = $this->language->get('text_payment_method');
+            $text_payment_address = $this->language->get('text_payment_address');
+            $text_history = $this->language->get('text_history');
+            $text_comment = $this->language->get('text_comment');
+
+            $column_name = $this->language->get('column_name');
+            $column_model = $this->language->get('column_model');
+            $column_quantity = $this->language->get('column_quantity');
+            $column_price = $this->language->get('column_price');
+            $column_total = $this->language->get('column_total');
+            $column_action = $this->language->get('column_action');
+            $column_date_added = $this->language->get('column_date_added');
+            $column_status = $this->language->get('column_status');
+            $column_comment = $this->language->get('column_comment');
+
+
+            $html = '';
+
+            $html .= '<table class="table" width="100%"><tr><td ><h2><center>Order Information</center></h2></td></tr></table><hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+            $html .= ' <table class="table " width="100%" >
+        <thead>
+        <tr>
+            <td class="text-left" colspan="2">' . $text_order_detail . '</td>
+        </tr>
+        </thead>
+        <hr style = "background-color:#000000; border-width:0; color:#000000; height:1px; lineheight:0; display: inline-block; text-align: left; width:100%;" />
+        <tbody>
+        <tr>
+            <td class="text-left" style="width: 50%;">';
+
+            if (isset($order_info['invoice_no'])) {
+                $invoice_no = $order_info['invoice_prefix'] . $order_info['invoice_no'];
+                $html .= '<b>' . $text_invoice_no . '</b> ' . $invoice_no . '<br />';
+            }
+            $order_id = $this->request->get['order_id'];
+            $date_added = date($this->language->get('date_format_short'), strtotime($order_info['date_added']));
+
+            $html .= ' <b>' . $text_order_id . '</b> #' . $order_id . '<br />
+                <b>' . $text_date_added . '</b> ' . $date_added . '</td>
+            <td class="text-left">';
+
+            if ($order_info['payment_address_format']) {
+                $format = $order_info['payment_address_format'];
+            } else {
+                $format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+            }
+
+            $find = array(
+                '{firstname}',
+                '{lastname}',
+                '{company}',
+                '{address_1}',
+                '{address_2}',
+                '{city}',
+                '{postcode}',
+                '{zone}',
+                '{zone_code}',
+                '{country}'
+            );
+
+            $replace = array(
+                'firstname' => $order_info['payment_firstname'],
+                'lastname' => $order_info['payment_lastname'],
+                'company' => $order_info['payment_company'],
+                'address_1' => $order_info['payment_address_1'],
+                'address_2' => $order_info['payment_address_2'],
+                'city' => $order_info['payment_city'],
+                'postcode' => $order_info['payment_postcode'],
+                'zone' => $order_info['payment_zone'],
+                'zone_code' => $order_info['payment_zone_code'],
+                'country' => $order_info['payment_country']
+            );
+
+            $payment_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+
+            $payment_method = $order_info['payment_method'];
+
+            if ($order_info['shipping_address_format']) {
+                $format = $order_info['shipping_address_format'];
+            } else {
+                $format = '{firstname} {lastname}' . "\n" . '{company}' . "\n" . '{address_1}' . "\n" . '{address_2}' . "\n" . '{city} {postcode}' . "\n" . '{zone}' . "\n" . '{country}';
+            }
+
+            $find = array(
+                '{firstname}',
+                '{lastname}',
+                '{company}',
+                '{address_1}',
+                '{address_2}',
+                '{city}',
+                '{postcode}',
+                '{zone}',
+                '{zone_code}',
+                '{country}'
+            );
+
+            $replace = array(
+                'firstname' => $order_info['shipping_firstname'],
+                'lastname' => $order_info['shipping_lastname'],
+                'company' => $order_info['shipping_company'],
+                'address_1' => $order_info['shipping_address_1'],
+                'address_2' => $order_info['shipping_address_2'],
+                'city' => $order_info['shipping_city'],
+                'postcode' => $order_info['shipping_postcode'],
+                'zone' => $order_info['shipping_zone'],
+                'zone_code' => $order_info['shipping_zone_code'],
+                'country' => $order_info['shipping_country']
+            );
+
+            $shipping_address = str_replace(array("\r\n", "\r", "\n"), '<br />', preg_replace(array("/\s\s+/", "/\r\r+/", "/\n\n+/"), '<br />', trim(str_replace($find, $replace, $format))));
+
+            $shipping_method = $order_info['shipping_method'];
+
+            if ($payment_method) {
+
+                $html .= '<b>' . $text_payment_method . '</b> ' . $payment_method . '<br />';
+            }
+            if ($shipping_method) {
+                $html .= '<b>' . $text_shipping_method . '</b> ' . $shipping_method;
+            }
+            $html .= '</td>
+        </tr>
+        </tbody>
+    </table>';
+
+            $html .= '<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+            $html .= ' <table class="table table-bordered table-hover" width="100%">
+        <thead>
+        <tr>
+            <td class="text-left" style="width: 50%;">' . $text_payment_address . '</td>';
+
+            if ($shipping_address) {
+                $html .= '<td class="text-left">' . $text_shipping_address . '</td>';
+            }
+            $html .= ' </tr>
+
+        </thead>
+        <tbody>
+        <tr>
+            <td class="text-left">' . $payment_address . '</td>';
+            if ($shipping_address) {
+                $html .= '<td class="text-left">' . $shipping_address . '</td>';
+            }
+            $html .= '</tr>
+        </tbody>
+    </table>';
+
+            $html .= '<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+
+
+            $products = $this->model_account_order->getOrderProducts($order_id);
+
+            $html .= '<table class="table table-bordered table-hover"  width="100%">
+        <thead>
+        <tr>
+            <td class="text-left">' . $column_name . '</td>
+            <td class="text-left">' . $column_model . '</td>
+            <td class="text-right">' . $column_quantity . '</td>
+            <td class="text-right">' . $column_price . '</td>
+            <td class="text-right">' . $column_total . '</td>
+
+        </tr>
+        <tr><td colspan="5">        <hr style = "background-color:#000000; border-width:0; color:#000000; height:1px; lineheight:0; display: inline-block; text-align: left; width:100%;" />
+            </td></tr>
+        </thead>
+        <tbody>';
+            foreach ($products as $product) {
+
+
+
+                $price = $this->currency->format($product['price'] + ($this->config->get('config_tax') ? $product['tax'] : 0), $order_info['currency_code'], $order_info['currency_value']);
+                $total = $this->currency->format($product['total'] + ($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value']);
+
+                $html .= '<tr>
+            <td class="text-left">' . $product['name'];
+
+                $options = $this->model_account_order->getOrderOptions($this->request->get['order_id'], $product['order_product_id']);
+
+                foreach ($options as $option) {
+                    if ($option['type'] != 'file') {
+                        $value = $option['value'];
+                    } else {
+                        $value = utf8_substr($option['value'], 0, utf8_strrpos($option['value'], '.'));
+                    }
+
+                    $optionvalue = (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value);
+
+
+                    $html .= ' <br />
+                &nbsp;<small> - ' . $option['name'] . ':' . $optionvalue . '</small>';
+                }
+
+                $html .= '</td>
+            <td class="text-left">' . $product['model'] . '</td>
+            <td class="text-right">' . $product['quantity'] . '</td>
+            <td class="text-right">' . $price . '</td>
+            <td class="text-right">' . $total . '</td>
+        </tr>';
+            }
+
+            // Voucher
+
+            $vouchers = $this->model_account_order->getOrderVouchers($this->request->get['order_id']);
+
+            foreach ($vouchers as $voucher) {
+
+                $amount = $this->currency->format($voucher['amount'], $order_info['currency_code'], $order_info['currency_value']);
+
+                $html .= '<tr>
+            <td class="text-left">' . $voucher['description'] . '</td>
+            <td class="text-left"></td>
+            <td class="text-right">1</td>
+            <td class="text-right">' . $amount . '</td>
+            <td class="text-right">' . $amount . '</td>
+
+        </tr>';
+            }
+            $html .= '<tr><td colspan="5"><hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" /></td></tr>';
+
+            $totals = $this->model_account_order->getOrderTotals($this->request->get['order_id']);
+
+            $comment = nl2br($order_info['comment']);
+
+            $html .= '</tbody>
+        <tfoot>';
+            foreach ($totals as $total) {
+        $value=$this->currency->format($total['value'], $order_info['currency_code'], $order_info['currency_value']);
+                if ($total['title'] == 'Total') {
+                    $html .= '<tr><td colspan="5"><hr style="background-color:#000000; border-width:0; color:#000000; height:1px; lineheight:0; display: -moz-inline-stack; text-align: left; width:100%;"></td></tr>';
+
+                    $html .= ' <tr><td colspan="3"></td><td class="text-right" style="font-size:20px;" ><b>' . $total['title'] . '</b></td>
+            <td class="text-right" style="font-size:20px;" >' . $value . '</td></tr>';
+
+                } else {
+                    $html .= ' <tr><td colspan="3"></td><td class="text-right" ><b>' . $total['title'] . '</b></td>
+            <td class="text-right" >' . $value . '</td></tr>';
+                }
+
+            }
+            $html .= '</tfoot>
+        </table>';
+
+            $html .= '<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+            if ($comment) {
+
+                $html .= '<table class="table table-bordered table-hover" width="100%">
+    <thead>
+    <tr>
+        <td class="text-left">' . $text_comment . '</td>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="text-left">' . $comment . '</td>
+    </tr>
+    </tbody>
+    </table>';
+
+                $html .= '<hr style = "background-color:#000000; border-width:0; color:#000000; height:2px; lineheight:0; display: inline-block; text-align: left; width:100%;" />';
+
+            }
+
+            set_time_limit(600);
+
+            include("system/library/mpdf60/mpdf.php");
+
+            $mpdf = new mPDF('');
+
+            $mpdf->list_auto_mode = 'mpdf';    // Used for demonstration of lists
+            //==============================================================
+
+            $mpdf->h2bookmarks = array('H3' => 0, 'H4' => 1);
+            $mpdf->defaultPageNumStyle = 'arabic-indic';
+
+            $mpdf->autoLangToFont = true;
+            $mpdf->WriteHTML($html);
+
+            $mpdf->Output('order' . $order_id . '.pdf', 'D');
+
+        }
+
+    }]]>
+            </add>
+        </operation>
+<operation>
+            <search position="after"><![CDATA[$data['text_order_detail'] = $this->language->get('text_order_detail');]]></search>
+            <add><![CDATA[$data['pdf'] = $this->url->link('account/order/pdf', 'order_id=' . $this->request->get['order_id'] . $url, 'SSL');
+            $data['pdfinvoice_status']=$this->config->get('pdfinvoice_status'); ]]>
+            </add>
+        </operation>
+    </file>
+<file path="catalog/view/theme/*/template/account/order_info.tpl">
+        <operation>
+            <search position="after" ><![CDATA[<h2><?php echo $heading_title; ?></h2>]]></search>
+            <add><![CDATA[<?php if($invoice_no){ if($pdfinvoice_status==1){ ?>
+        <div class="buttons"><form method="post">
+                <div class="pull-right"> <a href="<?php echo $pdf; ?>" id="pdfinvoice"  data-toggle="tooltip" title="PDF Generate" class="btn btn-info"><i class="fa fa-file-pdf-o"></i>
+                    </a></div>
+            </form></div> <?php } }?><br><br>]]>
+            </add>
+        </operation>
+    </file>   
+
+    </modification>

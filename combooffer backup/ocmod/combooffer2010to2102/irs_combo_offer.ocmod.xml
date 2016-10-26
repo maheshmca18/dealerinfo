@@ -1,0 +1,60 @@
+<modification>
+    
+    <name>Combo Offer</name>
+    <code>combooffer</code>
+    <version>2.0</version>
+    <author>IRS SOFT</author>
+
+    <file path="admin/controller/common/menu.php">
+   	<operation>
+            <search><![CDATA[$data['text_openbay_order_import'] = $this->language->get('text_openbay_order_import');]]></search>
+            <add position="after"><![CDATA[//combo start
+	$data['combooffer_status'] = $this->config->get('combooffer_status');
+	$data['text_combo_offerl'] = $this->language->get('text_combo_offerl');
+	$data['combo_offerl'] = $this->url->link('localisation/combo_offerl', 'token=' . $this->session->data['token'], 'SSL');
+	//combo end
+	]]></add>
+        </operation>
+    </file>
+    <file path="admin/language/*/common/menu.php">
+        <operation>
+            <search><![CDATA[// Text]]></search>
+            <add position="after" ><![CDATA[//combo start
+$_['text_combo_offerl']                = 'Combo Offer';]]>
+            </add>
+        </operation>
+    </file>
+    <file path="admin/view/template/common/menu.tpl">
+        <operation>
+            <search><![CDATA[<li><a href="<?php echo $weight_class; ?>"><?php echo $text_weight_class; ?></a></li>]]></search>
+            <add position="after"><![CDATA[<!---combo start--->
+	<?php if(isset($combooffer_status)){ ?>
+	  <li><a href="<?php echo $combo_offerl; ?>"><?php echo $text_combo_offerl; ?></a></li>
+	<?php } ?>
+	<!---combo end--->]]>
+            </add>
+        </operation>
+   </file>
+<file path="catalog/controller/common/header.php">
+   	<operation>
+            <search><![CDATA[$this->load->language('common/header');]]></search>
+            <add position="after" ><![CDATA[//combo start
+		$this->load->language('module/combo_offerm');
+		$data['combooffer_status'] = $this->config->get('combooffer_status');
+		$data['menucombo'] = $this->language->get('menucombo');
+		//combo end
+	]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation>
+            <search><![CDATA[<?php foreach ($categories as $category) { ?>]]></search>
+            <add position="before"><![CDATA[<!---combo start--->
+		<?php if(isset($combooffer_status)){ ?>
+		<li ><a href="index.php?route=module/combo_offerm/comboofferlist" ><?php echo $menucombo; ?></a> </li>
+		<?php } ?>
+	<!---combo end--->]]>
+            </add>
+        </operation>
+   </file>
+</modification>

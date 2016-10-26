@@ -1,0 +1,393 @@
+<modification>
+    <id>Product Recaptcha</id>
+    <version>2.0</version>
+    <vqmver>2.4.1</vqmver>
+    <authour>IRS SOFT</authour>
+
+    <!--catalog controller file start-->
+   <file path="catalog/controller/product/product.php">
+       
+ 	<operation>
+            <search position="before" ><![CDATA[$this->data['tab_description'] = $this->language->get('tab_description');]]></search>
+            <add><![CDATA[//send maill coding start here
+
+
+            if (isset($this->error['captcha'])) {
+                $this->data['error_captcha'] = $this->error['captcha'];
+            } else {
+                $this->data['error_captcha'] = '';
+            }
+
+            
+
+            if ($this->config->get('recaptcha_private_key') && $this->config->get('recaptcha_public_key')) {
+            require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+            if ($this->config->get('config_ssl')) {
+                $recaptcha_ssl = true;
+            } else {
+                $recaptcha_ssl = false;
+            }
+
+            $colorpic=$this->config->get('recaptcha_colorpic');  ?>
+            <script>
+                var RecaptchaOptions = {
+                    theme : 'clean'
+                };
+            </script>
+            <style type="text/css">
+                .recaptchatable .recaptcha_image_cell, #recaptcha_table {
+                    background-color:<?php echo $colorpic; ?> !important;
+                }
+
+                #recaptcha_table {
+                    border-color: <?php echo $colorpic; ?> !important;
+                }
+
+                #recaptcha_response_field {
+                    border-color: <?php echo $colorpic; ?> !important;
+
+                }
+            </style> <?php
+
+            $this->data['recaptcha'] = recaptcha_get_html($this->config->get('recaptcha_public_key'), null, $recaptcha_ssl);
+            $this->data['recaptcha_status'] = $this->config->get('recaptcha_status');
+
+        } else {
+            $this->data['recaptcha'] = '';
+        }
+   //send maill coding end here]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="replace" offset="3" ><![CDATA[if (empty($this->session->data['captcha']) || ($this->session->data['captcha'] != $this->request->post['captcha'])) {]]></search>
+            <add><![CDATA[ if($this->config->get('recaptcha_status')==1) {
+
+            if (!$this->config->get('recaptcha_private_key') || !$this->config->get('recaptcha_public_key')) {
+                if (empty($this->session->data['captcha']) || ($this->session->data['captcha'] != $this->request->post['captcha'])) {
+                    $json['error'] = $this->language->get('error_captcha');
+                }
+            } else {
+
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+               // print_r($this->request->post['recaptcha_challenge_field']);
+                if (!isset($this->request->post['recaptcha_challenge_field']) || !isset($this->request->post['recaptcha_response_field'])) {
+                    $json['error'] = $this->language->get('error_captcha');
+                } else {
+                    $response = recaptcha_check_answer($this->config->get('recaptcha_private_key'), $this->request->server['REMOTE_ADDR'], $this->request->post['recaptcha_challenge_field'], $this->request->post['recaptcha_response_field']);
+
+                    if (!$response->is_valid) {
+                        $json['error'] = $this->language->get('error_captcha');
+                    }
+                }
+
+            }
+            
+    }]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog controller file end-->
+
+   
+
+ <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search position="replace" offset="4"><![CDATA[<?php echo $entry_captcha; ?>]]></search>
+            <add><![CDATA[ <input name="recaptcha_status" type="hidden" value="<?php echo $recaptcha_status; ?>" class="recaptcha_status"><?php if($recaptcha_status){ ?>
+            <?php if ($recaptcha) { ?>
+            <?php echo $recaptcha; ?>
+            <br />
+            <?php if ($error_captcha) { ?>
+            <span class="error"><?php echo $error_captcha; ?></span>
+            <?php } ?>
+
+                          <?php } } ?></div></div> ]]>
+            </add>
+        </operation>
+<operation>
+             <search position="after"><![CDATA[$('#button-review').bind('click', function() {]]></search>
+            <add><![CDATA[$recaptcha_status=$('.recaptcha_status').val();
+  
+    var recaptcha='';
+    if($recaptcha_status==1){
+	
+     var recaptcha = '&recaptcha_response_field=' + encodeURIComponent($('input[name=\'recaptcha_response_field\']').val()) + '&recaptcha_challenge_field=' + encodeURIComponent($('input[name=\'recaptcha_challenge_field\']').val());
+
+    }]]>
+            </add>
+        </operation>
+
+<operation>
+             <search position="replace" ><![CDATA[data: 'name=' + encodeURIComponent($('input[name=\'name\']').val()) + '&text=' + encodeURIComponent($('textarea[name=\'text\']').val()) + '&rating=' + encodeURIComponent($('input[name=\'rating\']:checked').val() ? $('input[name=\'rating\']:checked').val() : '') + '&captcha=' + encodeURIComponent($('input[name=\'captcha\']').val()),]]></search>
+            <add><![CDATA[data: 'name=' + encodeURIComponent($('input[name=\'name\']').val()) + '&text=' + encodeURIComponent($('textarea[name=\'text\']').val()) + '&rating=' + encodeURIComponent($('input[name=\'rating\']:checked').val() ? $('input[name=\'rating\']:checked').val() : '') + recaptcha ,]]>
+            </add>
+        </operation>
+
+	<operation>
+             <search position="after"><![CDATA[$('#review-title').after('<div class="warning">' + data['error'] + '</div>');]]></search>
+            <add><![CDATA[$recaptcha_status = $('.recaptcha_status').val();
+
+                if($recaptcha_status==1) {
+
+                   Recaptcha.reload();
+               
+    }]]>
+            </add>
+        </operation>
+
+<operation>
+             <search position="replace"><![CDATA[$('input[name=\'captcha\']').val('');]]></search>
+            <add><![CDATA[$recaptcha_status = $('.recaptcha_status').val();
+
+                if($recaptcha_status==1) {
+                   Recaptcha.reload();
+               
+    }]]>
+            </add>
+        </operation>
+
+        
+
+    </file>
+   
+    
+    <!-- catalog view file end-->
+
+<file path="catalog/controller/information/contact.php">
+        
+ 	<operation>
+            <search position="before" ><![CDATA[$this->data['entry_name'] = $this->language->get('entry_name');]]></search>
+            <add><![CDATA[//send maill coding start here
+
+
+            if (isset($this->error['captcha'])) {
+                $this->data['error_captcha'] = $this->error['captcha'];
+            } else {
+                $this->data['error_captcha'] = '';
+            }
+
+           
+
+             if ($this->config->get('recaptcha_private_key') && $this->config->get('recaptcha_public_key')) {
+            require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+            if ($this->config->get('config_ssl')) {
+                $recaptcha_ssl = true;
+            } else {
+                $recaptcha_ssl = false;
+            }
+
+            $colorpic=$this->config->get('recaptcha_colorpic');  ?>
+            <script>
+                var RecaptchaOptions = {
+                    theme : 'clean'
+                };
+            </script>
+            <style type="text/css">
+                .recaptchatable .recaptcha_image_cell, #recaptcha_table {
+                    background-color:<?php echo $colorpic; ?> !important;
+                }
+
+                #recaptcha_table {
+                    border-color: <?php echo $colorpic; ?> !important;
+                }
+
+                #recaptcha_response_field {
+                    border-color: <?php echo $colorpic; ?> !important;
+
+                }
+            </style> <?php
+
+            $this->data['recaptcha'] = recaptcha_get_html($this->config->get('recaptcha_public_key'), null, $recaptcha_ssl);
+            $this->data['recaptcha_status'] = $this->config->get('recaptcha_status');
+
+        } else {
+            $this->data['recaptcha'] = '';
+        }
+   //send maill coding end here]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="replace" offset="2" ><![CDATA[if (empty($this->session->data['captcha']) || ($this->session->data['captcha'] != $this->request->post['captcha'])) {]]></search>
+            <add><![CDATA[//recaptcha
+     if($this->config->get('recaptcha_status')==1) {
+
+            if (!$this->config->get('recaptcha_private_key') || !$this->config->get('recaptcha_public_key')) {
+                if (empty($this->session->data['captcha']) || ($this->session->data['captcha'] != $this->request->post['captcha'])) {
+                    $this->error['captcha'] = $this->language->get('error_captcha');
+                }
+            } else {
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+                if (!isset($this->request->post['recaptcha_challenge_field']) || !isset($this->request->post['recaptcha_response_field'])) {
+                    $this->error['captcha'] = $this->language->get('error_captcha');
+                } else {
+                    $response = recaptcha_check_answer($this->config->get('recaptcha_private_key'), $this->request->server['REMOTE_ADDR'], $this->request->post['recaptcha_challenge_field'], $this->request->post['recaptcha_response_field']);
+
+                    if (!$response->is_valid) {
+                        $this->error['captcha'] = $this->language->get('error_captcha');
+                    }
+                }
+            }
+        
+        
+        
+    }]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog controller file end-->
+
+<file path="catalog/view/theme/*/template/information/contact.tpl">
+        
+        <operation>
+             <search position="replace" offset="7" ><![CDATA[<?php echo $entry_captcha; ?>]]></search>
+            <add><![CDATA[<div class="col-sm-offset-2 col-sm-10"><input name="recaptcha_status" type="hidden" value="<?php echo $recaptcha_status; ?>" class="recaptcha_status">
+                                  <?php if($recaptcha_status){ ?>
+            <?php if ($recaptcha) { ?>
+            <?php echo $recaptcha; ?>
+            <br />
+            <?php if ($error_captcha) { ?>
+            <span class="error"><?php echo $error_captcha; ?></span>
+            <?php } ?>
+
+                          <?php } } ?>]]>
+            </add>
+        </operation>
+
+
+
+    </file>
+
+
+					<!--- Register page start here-->
+    <!-- catalog view file end-->
+
+<file path="catalog/controller/account/register.php">
+        
+ 	<operation>
+            <search position="before" ><![CDATA[if (isset($this->error['firstname'])) {]]></search>
+            <add><![CDATA[//send maill coding start here
+
+
+            if (isset($this->error['captcha'])) {
+                $this->data['error_captcha'] = $this->error['captcha'];
+            } else {
+                $this->data['error_captcha'] = '';
+            }
+
+           
+
+             if ($this->config->get('recaptcha_private_key') && $this->config->get('recaptcha_public_key')) {
+            require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+            if ($this->config->get('config_ssl')) {
+                $recaptcha_ssl = true;
+            } else {
+                $recaptcha_ssl = false;
+            }
+
+            $colorpic=$this->config->get('recaptcha_colorpic');  ?>
+            <script>
+                var RecaptchaOptions = {
+                    theme : 'clean'
+                };
+            </script>
+            <style type="text/css">
+                .recaptchatable .recaptcha_image_cell, #recaptcha_table {
+                    background-color:<?php echo $colorpic; ?> !important;
+                }
+
+                #recaptcha_table {
+                    border-color: <?php echo $colorpic; ?> !important;
+                }
+
+                #recaptcha_response_field {
+                    border-color: <?php echo $colorpic; ?> !important;
+
+                }
+            </style> <?php
+
+            $this->data['recaptcha'] = recaptcha_get_html($this->config->get('recaptcha_public_key'), null, $recaptcha_ssl);
+            $this->data['recaptcha_status'] = $this->config->get('recaptcha_status');
+
+        } else {
+            $this->data['recaptcha'] = '';
+        }
+   //send maill coding end here]]>
+            </add>
+        </operation>
+
+        <operation>
+            <search position="before" ><![CDATA[if ($this->request->post['zone_id'] == '') {]]></search>
+            <add><![CDATA[//recaptcha
+     if($this->config->get('recaptcha_status')==1) {
+
+            if (!$this->config->get('recaptcha_private_key') || !$this->config->get('recaptcha_public_key')) {
+                if (empty($this->session->data['captcha']) || ($this->session->data['captcha'] != $this->request->post['captcha'])) {
+                    $this->error['captcha'] = $this->language->get('error_captcha');
+                }
+            } else {
+                require_once(DIR_SYSTEM . 'library/recaptchalib.php');
+
+                if (!isset($this->request->post['recaptcha_challenge_field']) || !isset($this->request->post['recaptcha_response_field'])) {
+                    $this->error['captcha'] = $this->language->get('error_captcha');
+                } else {
+                    $response = recaptcha_check_answer($this->config->get('recaptcha_private_key'), $this->request->server['REMOTE_ADDR'], $this->request->post['recaptcha_challenge_field'], $this->request->post['recaptcha_response_field']);
+
+                    if (!$response->is_valid) {
+                        $this->error['captcha'] = $this->language->get('error_captcha');
+                    }
+                }
+            }
+        
+        
+        
+    }]]>
+            </add>
+        </operation>
+    </file>
+    <!-- catalog controller file end-->
+
+<!--catalog language file start-->
+ <file path="catalog/language/english/account/register.php">
+        <operation>
+            <search position="after" ><![CDATA[$_['entry_confirm']        = 'Password Confirm:';]]></search>
+            <add><![CDATA[$_['error_captcha']  = 'Verification code does not match the image!';]]>
+            </add>
+        </operation>
+    </file>
+
+    <!-- catalog language file end-->
+
+<file path="catalog/view/theme/*/template/account/register.tpl">
+        
+        <operation>
+             <search position="after" offset="5"><![CDATA[<input type="radio" name="newsletter" value="0" checked="checked" />]]></search>
+            <add><![CDATA[<div class="form-group">
+                             <div class="col-sm-offset-2 col-sm-10">
+<?php if($recaptcha_status){ ?>
+                                  <?php if ($recaptcha) { ?>
+                                  <?php echo $recaptcha; ?>
+                                  <br />
+                                  <?php if ($error_captcha) { ?>
+                                  <span class="error"><?php echo $error_captcha; ?></span>
+                                  <?php } ?>
+
+                          <?php } } ?>
+            </div></div>]]>
+            </add>
+        </operation>
+
+
+    </file>
+
+
+ 
+
+
+
+</modification>

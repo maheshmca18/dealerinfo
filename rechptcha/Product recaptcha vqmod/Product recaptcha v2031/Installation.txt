@@ -1,0 +1,51 @@
+---------------------------------------------------------------------------------------------
+         Module : Advanced ReCAPTCHA
+---------------------------------------------------------------------------------------------
+
+This Plugin requires "vQmod".
+
+
+Advanced ReCAPTCHA module has displays recaptcha in following page forms :-
+	Contact Us page,
+	Product's Review page,
+	Customer Registeration page.
+
+The Advanced ReCAPTCHA module allows
+	Admin user to pick own color for recaptcha.
+        And also having Select Status[enabled/disabled] option.	
+	
+
+=============
+Installation
+=============
+-------------------------------------------------------------------------------------------------------------
+ Note :- Before install this addon you have to install "vQmod" in your shop.
+-------------------------------------------------------------------------------------------------------------
+			
+1. Copy the files from the 'upload' directory to your target installation directory of OpenCart or root directory.
+
+2. Login to Admin panel 
+
+            Extensions -> Modules
+		
+		step 1 : See the "Advanced ReCAPTCHA" Module then Click [install] link to install this Plugin.
+
+		step 2 : See the "Advanced ReCAPTCHA" Module then Click [edit] link.
+		
+		step 3 : Register your recaptcha account from the below link
+				[ http://www.google.com/recaptcha/intro/ ]
+
+		step 4 : Now enter your recaptcha's public key and private key in Advanced Recaptcha page
+
+			 And also pick recaptcha color and select captcha status.
+
+		step 5 :  And Click the save button.
+
+3. Advanced ReCAPTCHA Now displays following page forms :-
+	Contact Us page,
+	Product's Review page,
+	Customer Registeration page.
+
+
+
+

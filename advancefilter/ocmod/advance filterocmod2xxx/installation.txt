@@ -1,0 +1,78 @@
+INSTALLATION FOR Advance Filter OPENCART EXTENSION OCMOD
+=========================================================================
+1. First You must backup your opencart site/shop.
+
+2  Upload the "vqmod","catalog" & "admin" to your root folder. (No file are replaced, all files are new) Done.
+
+===============================================================================================
+Advance Filter
+===============================================================================================
+
+Admin Login :
+
+Go to the Extensions -> Extension Installer
+	
+	 Upload irs_advance_filter.ocmod.xml file via Extension installer.
+
+Go to the Extensions -> Modification
+
+	 Click refresh on the top corner of Modifications.
+
+Go to the Modules Page [Extensions -> Modules]
+
+First configure the global setting Filter:
+
+		step 1 : See the "Advance Filter" Module then Click [install] link to install this Plugin.
+		
+		step 2 : See the "Advance Filter" Module then Click [edit] link.
+
+		step 3 : For Global Setting Tab
+
+				-> Choose your desire color and Select the global status [Enable/Disable].
+			
+				-> Select the Brand Status [Enable/Disable]
+
+				-> Select the Price Status [Enable/Disable]
+
+				-> Select the Option Status [Enable/Disable]
+
+					[Note : If you Enable the "Option" settings in Global setting form only options are visible]
+				
+				->Select the Attribute Status [Enable/Disable]
+
+					[Note : If you Enable the "Attributes" settings in Global setting form only options are visible]
+
+				->Select the Customer Rating Status [Enable/Disable]
+
+				->Select the Discount Status [Enable/Disable]
+
+				->Select the Availability Status [Enable/Disable]
+		  				  
+		step 4 :  Click the Category Setting Tab
+		   
+		step 5 :  Click the Add button. 
+
+				->Select the category name which you want, it will populate in autocomplete
+				
+				->select the option details
+				
+				->select the Attribute details
+				
+				->And Click the Save button
+				
+					[Note : One Attribute / Option must to be select to add a new category]
+		        
+		step 6 :  All the Category filter details saved and now the category filter will show in the user end.
+				
+				->If you want to see the Category filter details click plus(+) symbol
+				
+		step 7 :  If you want to edit particular category details-> click edit button -> Then edit the category detail-> click the update button.
+		        
+		step 8 :  If you want to delete  particular category details-> click delete button.
+
+		step 9 :  And Click the save button.
+
+ Now the Advance Filter configured Successfully and shows in the user end.
+
+
+

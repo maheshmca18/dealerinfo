@@ -1,0 +1,74 @@
+INSTALLATION FOR Order Cancel and Return OPENCART EXTENSION OCMOD
+=========================================================================
+1. First You must backup your opencart site/shop.
+
+
+3. Upload the "catalog" & "admin" to your root folder. (No file are replaced, all files are new) Done.
+
+============================================================================================
+Order Cancel and Return
+============================================================================================
+
+Admin Login :
+			
+	
+1. Go to the Extension Installer
+
+	     	Extensions -> Extension Installer
+		
+			Upload irs_order_cancel.ocmod.xml file via Extension installer.
+		
+
+2. Extensions -> Modification 
+
+		Click refresh button at the right top corner
+
+3. Extensions -> Modules 
+		
+		See the "Order Cancel and Return" Module then Click [install] link to install this Plugin.
+		
+6. Go to the User Groups Page [System -> Users -> User Groups]
+
+		step 1 :  Click Edit button on the Administrator.
+
+		step 2 :  Select  module/order_cancel from the Access Permission 
+
+		step 3 :  Select  module/order_cancel from the Modify Permission
+		
+		step 4 :  And Click the save button.
+
+7. Go to the Modules Page [Extensions -> Modules] .See the "Order Cancel and Return" Module then Click [edit] link
+
+		step 1 : click the setting tab
+		
+				=>  Choose Status 
+				=>  Enter Return Dates
+				=>  Enter Cancel Hours
+				=>  Enter Order Cancel Admin Subject Message
+				=>  Enter Order Cancel Admin Mail Content
+				=>  Enter Order Cancel Customer Subject Message
+				=>  Enter Admin Mail Content
+				=>  Enter User Mail Content
+					
+		step 2 : click the Add Reason tab.
+		
+				1) Click Add Reason button
+				2)  then enter Enter Reason and sort
+				3) then click save button.
+				
+				
+		step 3 : click the setting tab
+		
+				=>  Choose Status 
+				=>  Enter Return Dates
+				=>  Enter Cancel Hours
+				=>  Enter Order Cancel Admin Subject Message
+				=>  Enter Order Cancel Admin Mail Content
+				=>  Enter Order Cancel Customer Subject Message
+				=>  Enter Admin Mail Content
+				=>  Enter User Mail Content		
+				
+		step 3 : And Click the save button.
+
+8.Go to Your Store Front order Information page and See the order cancel button and product return button not visible.
+
